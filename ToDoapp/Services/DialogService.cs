@@ -1,0 +1,422 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+
+namespace ToDoapp.Services;
+
+public enum DialogResult
+{
+    None,
+    OK,
+    Cancel,
+    Yes,
+    No
+}
+
+public enum DialogType
+{
+    None,
+    Information,
+    Warning,
+    Error,
+    Question,
+    Success
+}
+
+public static class DialogService
+{
+    public static Func<FrameworkElement, bool>? OnDialogConfirmed { get; set; }
+
+    public static DialogResult ShowCustomDialog(string title, DialogType dialogType, FrameworkElement customContent, string primaryButtonText = "确定", string? secondaryButtonText = "取消")
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 380,
+            SizeToContent = SizeToContent.Height,
+            WindowStyle = WindowStyle.None,
+            AllowsTransparency = true,
+            Background = Brushes.Transparent,
+            ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            Topmost = true,
+            ShowInTaskbar = false,
+            Owner = Application.Current.MainWindow
+        };
+
+        var border = new Border
+        {
+            Background = (Brush)Application.Current.Resources["DialogBackgroundBrush"],
+            CornerRadius = new CornerRadius(8),
+            BorderBrush = (Brush)Application.Current.Resources["DialogBorderBrush"],
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(24)
+        };
+
+        var contentGrid = new Grid();
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var titlePanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+
+        var iconTextBlock = new TextBlock
+        {
+            FontSize = 20,
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontWeight = FontWeights.Bold
+        };
+
+        string icon = "";
+        Brush iconColor = Brushes.Transparent;
+
+        switch (dialogType)
+        {
+            case DialogType.None:
+                iconTextBlock.Visibility = Visibility.Collapsed;
+                break;
+            case DialogType.Information:
+                icon = "\u2139";
+                iconColor = (Brush)Application.Current.Resources["DialogForegroundBrush"];
+                break;
+            case DialogType.Warning:
+                icon = "\u26A0";
+                iconColor = Brushes.Orange;
+                break;
+            case DialogType.Error:
+                icon = "\u2717";
+                iconColor = Brushes.Red;
+                break;
+            case DialogType.Question:
+                icon = "?";
+                iconColor = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"];
+                break;
+            case DialogType.Success:
+                icon = "\u2713";
+                iconColor = (Brush)Application.Current.Resources["PrimaryButtonBackgroundBrush"];
+                break;
+        }
+
+        iconTextBlock.Text = icon;
+        iconTextBlock.Foreground = iconColor;
+
+        var titleText = new TextBlock
+        {
+            Text = title,
+            FontSize = 18,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = (Brush)Application.Current.Resources["DialogForegroundBrush"],
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        titlePanel.Children.Add(iconTextBlock);
+        titlePanel.Children.Add(titleText);
+        Grid.SetRow(titlePanel, 0);
+
+        customContent.Margin = new Thickness(0, 0, 0, 20);
+        Grid.SetRow(customContent, 1);
+
+        var buttonGrid = new Grid();
+        buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var primaryButton = new Button
+        {
+            Content = primaryButtonText,
+            MinWidth = 80,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(0, 0, 10, 0)
+        };
+
+        var secondaryButton = new Button
+        {
+            Content = secondaryButtonText,
+            MinWidth = 80,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(10, 0, 0, 0)
+        };
+
+        var primaryStyle = Application.Current.Resources["DialogPrimaryButtonStyle"] as Style;
+        if (primaryStyle != null)
+        {
+            primaryButton.Style = primaryStyle;
+        }
+
+        var secondaryStyle = Application.Current.Resources["DialogButtonStyle"] as Style;
+        if (secondaryStyle != null)
+        {
+            secondaryButton.Style = secondaryStyle;
+        }
+
+        bool? dialogCloseResult = null;
+
+        primaryButton.Click += (s, e) =>
+        {
+            if (OnDialogConfirmed != null && OnDialogConfirmed(customContent))
+            {
+                dialogCloseResult = true;
+                dialog.DialogResult = true;
+            }
+            else if (OnDialogConfirmed == null)
+            {
+                dialogCloseResult = true;
+                dialog.DialogResult = true;
+            }
+            dialog.Close();
+        };
+
+        secondaryButton.Click += (s, e) =>
+        {
+            dialogCloseResult = false;
+            dialog.DialogResult = false;
+            dialog.Close();
+        };
+
+        Grid.SetColumn(primaryButton, 0);
+        Grid.SetColumn(secondaryButton, 1);
+        buttonGrid.Children.Add(primaryButton);
+        buttonGrid.Children.Add(secondaryButton);
+        Grid.SetRow(buttonGrid, 2);
+
+        contentGrid.Children.Add(titlePanel);
+        contentGrid.Children.Add(customContent);
+        contentGrid.Children.Add(buttonGrid);
+
+        border.Child = contentGrid;
+        dialog.Content = border;
+
+        border.MouseLeftButtonDown += (s, e) =>
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+            {
+                dialog.DragMove();
+            }
+        };
+
+        dialog.ShowDialog();
+
+        if (dialogCloseResult == true)
+        {
+            return DialogResult.OK;
+        }
+        return DialogResult.Cancel;
+    }
+
+    public static DialogResult ShowConfirm(string message, string title = "确认")
+    {
+        return ShowDialog(title, message, DialogType.Question, "确定", "取消");
+    }
+
+    public static DialogResult ShowConfirm(string message, string title, DialogType dialogType)
+    {
+        return ShowDialog(title, message, dialogType, "确定", "取消");
+    }
+
+    private static DialogResult ShowDialog(string title, string message, DialogType dialogType, string primaryButtonText, string? secondaryButtonText = null)
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 380,
+            Height = 200,
+            WindowStyle = WindowStyle.None,
+            AllowsTransparency = true,
+            Background = Brushes.Transparent,
+            ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            Topmost = true,
+            ShowInTaskbar = false,
+            Owner = Application.Current.MainWindow
+        };
+
+        var border = new Border
+        {
+            Background = (System.Windows.Media.Brush)Application.Current.Resources["DialogBackgroundBrush"],
+            CornerRadius = new CornerRadius(8),
+            BorderBrush = (System.Windows.Media.Brush)Application.Current.Resources["DialogBorderBrush"],
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(24)
+        };
+
+        var contentGrid = new Grid();
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var titlePanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+
+        var iconTextBlock = new TextBlock
+        {
+            FontSize = 20,
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        string icon;
+        System.Windows.Media.Brush iconColor;
+
+        switch (dialogType)
+        {
+            case DialogType.Information:
+                icon = "\u2139";
+                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DialogForegroundBrush"];
+                break;
+            case DialogType.Warning:
+                icon = "\u26A0";
+                iconColor = System.Windows.Media.Brushes.Orange;
+                break;
+            case DialogType.Error:
+                icon = "\u2717";
+                iconColor = System.Windows.Media.Brushes.Red;
+                break;
+            case DialogType.Question:
+                icon = "?";
+                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"];
+                break;
+            case DialogType.Success:
+                icon = "\u2713";
+                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["PrimaryButtonBackgroundBrush"];
+                break;
+            default:
+                icon = "\u2139";
+                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DialogForegroundBrush"];
+                break;
+        }
+
+        iconTextBlock.Text = icon;
+        iconTextBlock.Foreground = iconColor;
+        iconTextBlock.FontWeight = FontWeights.Bold;
+
+        var titleText = new TextBlock
+        {
+            Text = title,
+            FontSize = 18,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = (System.Windows.Media.Brush)Application.Current.Resources["DialogForegroundBrush"],
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        titlePanel.Children.Add(iconTextBlock);
+        titlePanel.Children.Add(titleText);
+        Grid.SetRow(titlePanel, 0);
+
+        var messageText = new TextBlock
+        {
+            Text = message,
+            FontSize = 14,
+            Foreground = (System.Windows.Media.Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 20),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetRow(messageText, 1);
+
+        var buttonGrid = new Grid();
+        buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        buttonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        
+        var primaryButton = new Button
+        {
+            Content = primaryButtonText,
+            MinWidth = 80,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(0, 0, 10, 0)
+        };
+
+        if (secondaryButtonText != null)
+        {
+            var secondaryButton = new Button
+            {
+                Content = secondaryButtonText,
+                MinWidth = 80,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(10, 0, 0, 0)
+            };
+
+            var secondaryStyle = Application.Current.Resources["DialogButtonStyle"] as Style;
+            if (secondaryStyle != null)
+            {
+                secondaryButton.Style = secondaryStyle;
+            }
+
+            var primaryStyle = Application.Current.Resources["DialogPrimaryButtonStyle"] as Style;
+            if (primaryStyle != null)
+            {
+                primaryButton.Style = primaryStyle;
+            }
+
+            secondaryButton.Click += (s, e) =>
+            {
+                dialog.DialogResult = false;
+                dialog.Close();
+            };
+
+            Grid.SetColumn(secondaryButton, 1);
+            buttonGrid.Children.Add(secondaryButton);
+        }
+        else
+        {
+            var primaryStyle = Application.Current.Resources["DialogPrimaryButtonStyle"] as Style;
+            if (primaryStyle != null)
+            {
+                primaryButton.Style = primaryStyle;
+            }
+        }
+
+        primaryButton.Click += (s, e) =>
+        {
+            dialog.DialogResult = true;
+            dialog.Close();
+        };
+
+        Grid.SetColumn(primaryButton, 0);
+        buttonGrid.Children.Add(primaryButton);
+        Grid.SetRow(buttonGrid, 2);
+
+        contentGrid.Children.Add(titlePanel);
+        contentGrid.Children.Add(messageText);
+        contentGrid.Children.Add(buttonGrid);
+
+        border.Child = contentGrid;
+        dialog.Content = border;
+
+        border.MouseLeftButtonDown += (s, e) =>
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+            {
+                dialog.DragMove();
+            }
+        };
+
+        var result = dialog.ShowDialog();
+
+        if (result == true)
+        {
+            return primaryButtonText switch
+            {
+                "确定" => DialogResult.OK,
+                "是" => DialogResult.Yes,
+                "取消" => DialogResult.Cancel,
+                "否" => DialogResult.No,
+                _ => DialogResult.OK
+            };
+        }
+
+        return secondaryButtonText switch
+        {
+            "取消" => DialogResult.Cancel,
+            "否" => DialogResult.No,
+            _ => DialogResult.None
+        };
+    }
+}

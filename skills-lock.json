@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "csharp-developer": {
+      "source": "smithery.ai",
+      "sourceType": "well-known",
+      "computedHash": "89c4bd1c2cae3b05100f45bc074a06933287b83a21bd2cadd928a8b768896c55"
+    }
+  }
+}
