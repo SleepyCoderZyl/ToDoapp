@@ -12,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Media.Animation;
 using System.Windows.Interop;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using ToDoapp.Models;
 using ToDoapp.Services;
@@ -96,8 +97,50 @@ public partial class MainWindow : Window
         
         SourceInitialized += (s, e) =>
         {
+            ApplyNativeWindowAppearance();
             InitializeGlobalHotKey();
         };
+    }
+
+    private void ApplyNativeWindowAppearance()
+    {
+        try
+        {
+            var helper = new WindowInteropHelper(this);
+            if (helper.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            const int darkModeAttribute = 20;
+            const int cornerPreferenceAttribute = 33;
+            var useDarkMode = 1;
+            var cornerPreference = 2;
+
+            NativeMethods.DwmSetWindowAttribute(
+                helper.Handle,
+                darkModeAttribute,
+                ref useDarkMode,
+                Marshal.SizeOf<int>());
+
+            NativeMethods.DwmSetWindowAttribute(
+                helper.Handle,
+                cornerPreferenceAttribute,
+                ref cornerPreference,
+                Marshal.SizeOf<int>());
+        }
+        catch (DllNotFoundException)
+        {
+        }
+        catch (EntryPointNotFoundException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"应用原生窗口外观失败: {ex.Message}");
+        }
+
+        UpdateWindowFrameState();
     }
 
     private void OnOpacityChanged(object? sender, double effectiveOpacity)
@@ -479,6 +522,14 @@ public partial class MainWindow : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (e.ClickCount == 2 && ResizeMode == ResizeMode.CanResize)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+            return;
+        }
+
         if (e.ButtonState == MouseButtonState.Pressed)
         {
             DragMove();
@@ -1733,6 +1784,61 @@ public partial class MainWindow : Window
         }
     }
 
+    public void RestoreMainWindow()
+    {
+        if (_isWidgetMode)
+        {
+            Show();
+            Activate();
+            return;
+        }
+
+        RestoreTaskbarIcon();
+
+        if (!IsVisible)
+        {
+            Show();
+        }
+
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        BringWindowToFront();
+    }
+
+    public Task RestoreFromTrayAnimatedAsync()
+    {
+        RestoreMainWindow();
+        return Task.CompletedTask;
+    }
+
+    private void BringWindowToFront()
+    {
+        Activate();
+
+        var helper = new WindowInteropHelper(this);
+        if (helper.Handle != IntPtr.Zero)
+        {
+            NativeMethods.ShowWindow(helper.Handle, NativeMethods.SW_RESTORE);
+            NativeMethods.SetForegroundWindow(helper.Handle);
+        }
+    }
+
+    private void UpdateWindowFrameState()
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            MainBorder.CornerRadius = new CornerRadius(0);
+            MainBorder.Margin = new Thickness(8);
+            return;
+        }
+
+        MainBorder.CornerRadius = new CornerRadius(8);
+        MainBorder.Margin = new Thickness(0);
+    }
+
     private void EnsureWindowInScreen()
     {
         try
@@ -1780,11 +1886,7 @@ public partial class MainWindow : Window
     protected override void OnStateChanged(EventArgs e)
     {
         base.OnStateChanged(e);
-        if (WindowState == WindowState.Minimized && _systemTrayService != null)
-        {
-            this.Hide();
-            _systemTrayService.ShowNotification("待办便签", "应用已最小化到系统托盘");
-        }
+        UpdateWindowFrameState();
     }
 
     private static class NativeMethods
@@ -1808,5 +1910,8 @@ public partial class MainWindow : Window
         
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+
+        [System.Runtime.InteropServices.DllImport("dwmapi.dll", PreserveSig = true)]
+        public static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
     }
 }

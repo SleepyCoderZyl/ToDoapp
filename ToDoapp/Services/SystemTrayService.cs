@@ -171,10 +171,7 @@ public class SystemTrayService : IDisposable
             }
             else
             {
-                _mainWindow.Show();
-                _mainWindow.WindowState = WindowState.Normal;
-                _mainWindow.Activate();
-                _mainWindow.Focus();
+                _mainWindow.RestoreMainWindow();
             }
         }
         catch (Exception ex)

@@ -1,5 +1,5 @@
 using System;
-using System.Globalization;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace ToDoapp.Services;
@@ -12,136 +12,342 @@ public class SmartTodoParser
         public DateTime? DueDate { get; set; }
     }
 
-    private static readonly Regex DayAfterTomorrowRegex = new Regex(@"(后天|后日)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex TomorrowRegex = new Regex(@"(明天|明日)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex TodayRegex = new Regex(@"(今天|今日)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex DaysLaterRegex = new Regex(@"(\d+)(?:天后|天以后)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex NextWeekRegex = new Regex(@"(?:下(?:周|星期)(一|二|三|四|五|六|日|天))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex ThisWeekRegex = new Regex(@"(本周)(一|二|三|四|五|六|日|天)?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex WeekDayRegex = new Regex(@"(?:周|星期)(一|二|三|四|五|六|日|天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex FullDateRegex = new Regex(@"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex ShortDateRegex = new Regex(@"(\d{1,2})[/-](\d{1,2})", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex MonthDayRegex = new Regex(@"(?:(?:本)?月)?(\d{1,2})(?:日|号)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex DayRegex = new Regex(@"(\d{1,2})(?:日|号)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex LeadingPunctuationRegex = new Regex(@"^\s*[，,。.、；;：:！!?？\s]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex TrailingPunctuationRegex = new Regex(@"[，,。.、；;：:！!?？\s]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex WhitespaceRegex = new Regex(@"\s+", RegexOptions.Compiled);
+    private readonly record struct DateExtractionResult(DateTime? DueDate, string MatchedText);
+
+    private static readonly Regex GreatDayAfterTomorrowRegex = new(@"(大后天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DayAfterTomorrowRegex = new(@"(后天|后日)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex TomorrowRegex = new(@"(明天|明日)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex TodayRegex = new(@"(今天|今日)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DaysLaterRegex = new(@"(?<!\d)(\d+)(?:天后|天以后)(?!\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex NextNextWeekendRegex = new(@"(下下周末)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NextWeekendRegex = new(@"(下周末)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex ThisWeekendRegex = new(@"((?:本周末|这周末|周末))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NextNextWeekRegex = new(@"(?:下下(?:周|星期))(一|二|三|四|五|六|日|天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NextWeekRegex = new(@"(?:下(?:周|星期))(一|二|三|四|五|六|日|天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex ThisWeekRegex = new(@"(?:本(?:周|星期))(一|二|三|四|五|六|日|天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex WeekDayRegex = new(@"(?:周|星期)(一|二|三|四|五|六|日|天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex NextYearMonthDayRegex = new(@"(明年)\s*(\d{1,2})月(\d{1,2})(?:日|号)?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex FullDateRegex = new(@"(?<!\d)(\d{4})[年/-](\d{1,2})[月/-](\d{1,2})(?:日|号)?(?!\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NextMonthDayRegex = new(@"(下个月)\s*(\d{1,2})(?:日|号)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex MonthDayTextRegex = new(@"(?<!\d)(\d{1,2})月(\d{1,2})(?:日|号)(?!\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex ShortDateRegex = new(@"(?<!\d)(\d{1,2})[/-](\d{1,2})(?!\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DayOfMonthRegex = new(@"(?<![\d月])(\d{1,2})(?:日|号)(?!\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex EndOfMonthRegex = new(@"(月底|月末)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex StartOfMonthRegex = new(@"(月初)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex TimeQualifierRegex = new(@"(今晚|今早|今晨|明早|明晨|下午|上午|晚上|早上|凌晨|中午|傍晚)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex LeadingPunctuationRegex = new(@"^\s*[，,。.、；;：:！!?？\s]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex TrailingPunctuationRegex = new(@"[，,。.、；;：:！!?？\s]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex InnerPunctuationRegex = new(@"^[，,。.、；;：:\-—\s]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex LeadingWeakPhraseRegex = new(
+        @"^(?:(?:提醒我|记得|帮我|帮忙|我要|我得|需要|安排|处理|完成|做|去)(?:一下|一件|一趟|一份|一版)?)+",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly IReadOnlyList<Regex> CleanupDateRegexes =
+    [
+        GreatDayAfterTomorrowRegex,
+        DayAfterTomorrowRegex,
+        TomorrowRegex,
+        TodayRegex,
+        DaysLaterRegex,
+        NextNextWeekendRegex,
+        NextWeekendRegex,
+        ThisWeekendRegex,
+        NextNextWeekRegex,
+        NextWeekRegex,
+        ThisWeekRegex,
+        WeekDayRegex,
+        NextYearMonthDayRegex,
+        FullDateRegex,
+        NextMonthDayRegex,
+        MonthDayTextRegex,
+        ShortDateRegex,
+        EndOfMonthRegex,
+        StartOfMonthRegex,
+        DayOfMonthRegex
+    ];
 
     public static ParsedTodoResult Parse(string input)
     {
-        var result = new ParsedTodoResult();
         var cleanedInput = input.Trim();
+        var dateResult = ExtractDate(cleanedInput);
 
-        result.DueDate = ExtractDate(cleanedInput);
-        result.Title = ExtractTitle(cleanedInput, result.DueDate);
-
-        return result;
+        return new ParsedTodoResult
+        {
+            DueDate = dateResult.DueDate,
+            Title = ExtractTitle(cleanedInput, dateResult.MatchedText)
+        };
     }
 
-    private static DateTime? ExtractDate(string input)
+    private static DateExtractionResult ExtractDate(string input)
     {
         var today = DateTime.Today;
 
-        var match = TodayRegex.Match(input);
-        if (match.Success)
+        foreach (var extractor in GetDateExtractors(today))
         {
-            return today;
+            var result = extractor(input);
+            if (result.DueDate.HasValue)
+            {
+                return result;
+            }
         }
 
-        match = TomorrowRegex.Match(input);
-        if (match.Success)
+        return default;
+    }
+
+    private static IEnumerable<Func<string, DateExtractionResult>> GetDateExtractors(DateTime today)
+    {
+        yield return input => TryExtractSimpleDate(input, GreatDayAfterTomorrowRegex, today.AddDays(3));
+        yield return input => TryExtractSimpleDate(input, DayAfterTomorrowRegex, today.AddDays(2));
+        yield return input => TryExtractSimpleDate(input, TomorrowRegex, today.AddDays(1));
+        yield return input => TryExtractSimpleDate(input, TodayRegex, today);
+        yield return input => TryExtractDaysLater(input, today);
+
+        yield return input => TryExtractWeekday(input, NextNextWeekendRegex, today, offsetWeeks: 2, weekend: true, useCalendarWeekOffset: true);
+        yield return input => TryExtractWeekday(input, NextWeekendRegex, today, offsetWeeks: 1, weekend: true, useCalendarWeekOffset: true);
+        yield return input => TryExtractWeekday(input, ThisWeekendRegex, today, weekend: true);
+        yield return input => TryExtractWeekday(input, NextNextWeekRegex, today, offsetWeeks: 2, useCalendarWeekOffset: true);
+        yield return input => TryExtractWeekday(input, NextWeekRegex, today, offsetWeeks: 1, useCalendarWeekOffset: true);
+        yield return input => TryExtractWeekday(input, ThisWeekRegex, today, allowToday: true);
+        yield return input => TryExtractWeekday(input, WeekDayRegex, today, allowToday: true);
+
+        yield return input => TryExtractNextYearMonthDay(input);
+        yield return input => TryExtractFullDate(input);
+        yield return input => TryExtractNextMonthDay(input, today);
+        yield return input => TryExtractMonthDay(input, MonthDayTextRegex, today, nextMonthWhenPast: false);
+        yield return input => TryExtractMonthDay(input, ShortDateRegex, today, nextMonthWhenPast: false);
+        yield return input => TryExtractMonthBoundary(input, EndOfMonthRegex, today, endOfMonth: true);
+        yield return input => TryExtractMonthBoundary(input, StartOfMonthRegex, today, endOfMonth: false);
+        yield return input => TryExtractDayOfMonth(input, today);
+    }
+
+    private static DateExtractionResult TryExtractSimpleDate(string input, Regex regex, DateTime date)
+    {
+        var match = regex.Match(input);
+        return match.Success
+            ? new DateExtractionResult(date, match.Value)
+            : default;
+    }
+
+    private static DateExtractionResult TryExtractDaysLater(string input, DateTime today)
+    {
+        var match = DaysLaterRegex.Match(input);
+        if (!match.Success || !int.TryParse(match.Groups[1].Value, out var days))
         {
-            return today.AddDays(1);
+            return default;
         }
 
-        match = DayAfterTomorrowRegex.Match(input);
-        if (match.Success)
+        return new DateExtractionResult(today.AddDays(days), match.Value);
+    }
+
+    private static DateExtractionResult TryExtractWeekday(
+        string input,
+        Regex regex,
+        DateTime today,
+        int offsetWeeks = 0,
+        bool allowToday = false,
+        bool weekend = false,
+        bool useCalendarWeekOffset = false)
+    {
+        var match = regex.Match(input);
+        if (!match.Success)
         {
-            return today.AddDays(2);
+            return default;
         }
 
-        match = DaysLaterRegex.Match(input);
-        if (match.Success && int.TryParse(match.Groups[1].Value, out int days))
+        var dueDate = weekend
+            ? GetWeekendDate(today, offsetWeeks, useCalendarWeekOffset)
+            : GetWeekdayDate(today, GetDayOfWeek(match.Groups[1].Value), offsetWeeks, allowToday, useCalendarWeekOffset);
+
+        return new DateExtractionResult(dueDate, match.Value);
+    }
+
+    private static DateExtractionResult TryExtractNextYearMonthDay(string input)
+    {
+        var match = NextYearMonthDayRegex.Match(input);
+        if (!match.Success)
         {
-            return today.AddDays(days);
+            return default;
         }
 
-        match = NextWeekRegex.Match(input);
-        if (match.Success)
+        return TryCreateResult(match, (DateTime.Today.Year + 1).ToString(), match.Groups[2].Value, match.Groups[3].Value);
+    }
+
+    private static DateExtractionResult TryExtractFullDate(string input)
+    {
+        var match = FullDateRegex.Match(input);
+        if (!match.Success)
         {
-            var dayName = match.Groups[1].Value;
-            var targetDayOfWeek = GetDayOfWeek(dayName);
-            var daysUntil = ((int)targetDayOfWeek - (int)today.DayOfWeek + 7) % 7;
-            if (daysUntil == 0) daysUntil = 7;
-            return today.AddDays(daysUntil);
+            return default;
         }
 
-        match = ThisWeekRegex.Match(input);
-        if (match.Success)
+        return TryCreateResult(match, match.Groups[1].Value, match.Groups[2].Value, match.Groups[3].Value);
+    }
+
+    private static DateExtractionResult TryExtractNextMonthDay(string input, DateTime today)
+    {
+        var match = NextMonthDayRegex.Match(input);
+        if (!match.Success)
         {
-            var dayName = match.Groups[1].Value;
-            if (string.IsNullOrEmpty(dayName)) return today;
-            var targetDayOfWeek = GetDayOfWeek(dayName);
-            var daysUntil = ((int)targetDayOfWeek - (int)today.DayOfWeek + 7) % 7;
-            return today.AddDays(daysUntil);
+            return default;
         }
 
-        match = WeekDayRegex.Match(input);
-        if (match.Success)
+        var firstDayOfNextMonth = new DateTime(today.Year, today.Month, 1).AddMonths(1);
+        return TryCreateResult(match, firstDayOfNextMonth.Year, firstDayOfNextMonth.Month, match.Groups[2].Value);
+    }
+
+    private static DateExtractionResult TryExtractMonthDay(string input, Regex regex, DateTime today, bool nextMonthWhenPast)
+    {
+        var match = regex.Match(input);
+        if (!match.Success)
         {
-            var dayName = match.Groups[1].Value;
-            var targetDayOfWeek = GetDayOfWeek(dayName);
-            var daysUntil = ((int)targetDayOfWeek - (int)today.DayOfWeek + 7) % 7;
-            if (daysUntil == 0) return today;
-            return today.AddDays(daysUntil);
+            return default;
         }
 
-        match = FullDateRegex.Match(input);
-        if (match.Success && 
-            int.TryParse(match.Groups[1].Value, out int year) &&
-            int.TryParse(match.Groups[2].Value, out int month) &&
-            int.TryParse(match.Groups[3].Value, out int day))
+        if (!int.TryParse(match.Groups[1].Value, out var month) ||
+            !int.TryParse(match.Groups[2].Value, out var day))
         {
-            try { return new DateTime(year, month, day); }
-            catch { }
+            return default;
         }
 
-        match = ShortDateRegex.Match(input);
-        if (match.Success &&
-            int.TryParse(match.Groups[1].Value, out int month2) &&
-            int.TryParse(match.Groups[2].Value, out int day2))
+        var dueDate = TryCreateFutureMonthDay(today, month, day, nextMonthWhenPast ? 1 : 1);
+        return dueDate.HasValue
+            ? new DateExtractionResult(dueDate.Value, match.Value)
+            : default;
+    }
+
+    private static DateExtractionResult TryExtractMonthBoundary(string input, Regex regex, DateTime today, bool endOfMonth)
+    {
+        var match = regex.Match(input);
+        if (!match.Success)
+        {
+            return default;
+        }
+
+        var dueDate = endOfMonth
+            ? new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month))
+            : new DateTime(today.Year, today.Month, 1);
+
+        if (dueDate < today)
+        {
+            var nextMonth = new DateTime(today.Year, today.Month, 1).AddMonths(1);
+            dueDate = endOfMonth
+                ? new DateTime(nextMonth.Year, nextMonth.Month, DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month))
+                : nextMonth;
+        }
+
+        return new DateExtractionResult(dueDate, match.Value);
+    }
+
+    private static DateExtractionResult TryExtractDayOfMonth(string input, DateTime today)
+    {
+        var match = DayOfMonthRegex.Match(input);
+        if (!match.Success || !int.TryParse(match.Groups[1].Value, out var day))
+        {
+            return default;
+        }
+
+        var dueDate = TryCreateFutureDayOfMonth(today, day);
+        return dueDate.HasValue
+            ? new DateExtractionResult(dueDate.Value, match.Value)
+            : default;
+    }
+
+    private static DateExtractionResult TryCreateResult(Match match, string yearText, string monthText, string dayText)
+    {
+        if (!int.TryParse(yearText, out var year) ||
+            !int.TryParse(monthText, out var month) ||
+            !int.TryParse(dayText, out var day))
+        {
+            return default;
+        }
+
+        return TryCreateResult(match, year, month, day);
+    }
+
+    private static DateExtractionResult TryCreateResult(Match match, int year, int month, string dayText)
+    {
+        return int.TryParse(dayText, out var day)
+            ? TryCreateResult(match, year, month, day)
+            : default;
+    }
+
+    private static DateExtractionResult TryCreateResult(Match match, int year, int month, int day)
+    {
+        try
+        {
+            return new DateExtractionResult(new DateTime(year, month, day), match.Value);
+        }
+        catch
+        {
+            return default;
+        }
+    }
+
+    private static DateTime GetWeekdayDate(DateTime today, DayOfWeek targetDay, int offsetWeeks, bool allowToday, bool useCalendarWeekOffset)
+    {
+        if (useCalendarWeekOffset)
+        {
+            var currentWeekStart = today.AddDays(-GetMondayBasedDayIndex(today.DayOfWeek));
+            return currentWeekStart.AddDays(offsetWeeks * 7 + GetMondayBasedDayIndex(targetDay));
+        }
+
+        var daysUntil = ((int)targetDay - (int)today.DayOfWeek + 7) % 7;
+        if (daysUntil == 0 && !allowToday)
+        {
+            daysUntil = 7;
+        }
+
+        return today.AddDays(daysUntil + offsetWeeks * 7);
+    }
+
+    private static DateTime GetWeekendDate(DateTime today, int offsetWeeks, bool useCalendarWeekOffset)
+    {
+        var saturday = GetWeekdayDate(today, DayOfWeek.Saturday, offsetWeeks, allowToday: true, useCalendarWeekOffset);
+        return saturday;
+    }
+
+    private static DateTime? TryCreateFutureMonthDay(DateTime today, int month, int day, int yearSearchWindow)
+    {
+        for (var offset = 0; offset <= yearSearchWindow; offset++)
         {
             try
             {
-                var shortDate = new DateTime(today.Year, month2, day2);
-                if (shortDate < today) shortDate = shortDate.AddYears(1);
-                return shortDate;
+                var candidate = new DateTime(today.Year + offset, month, day);
+                if (candidate >= today)
+                {
+                    return candidate;
+                }
             }
-            catch { }
+            catch
+            {
+                return null;
+            }
         }
 
-        match = MonthDayRegex.Match(input);
-        if (match.Success && int.TryParse(match.Groups[1].Value, out int day3))
-        {
-            try
-            {
-                var monthDate = new DateTime(today.Year, today.Month, day3);
-                if (monthDate < today) monthDate = monthDate.AddMonths(1);
-                return monthDate;
-            }
-            catch { }
-        }
+        return null;
+    }
 
-        match = DayRegex.Match(input);
-        if (match.Success && int.TryParse(match.Groups[1].Value, out int day4))
+    private static DateTime? TryCreateFutureDayOfMonth(DateTime today, int day)
+    {
+        var cursor = new DateTime(today.Year, today.Month, 1);
+
+        for (var monthOffset = 0; monthOffset < 24; monthOffset++)
         {
-            try
+            var candidateMonth = cursor.AddMonths(monthOffset);
+            if (day > DateTime.DaysInMonth(candidateMonth.Year, candidateMonth.Month))
             {
-                var dayDate = new DateTime(today.Year, today.Month, day4);
-                if (dayDate < today) dayDate = dayDate.AddMonths(1);
-                return dayDate;
+                continue;
             }
-            catch { }
+
+            var candidate = new DateTime(candidateMonth.Year, candidateMonth.Month, day);
+            if (candidate >= today)
+            {
+                return candidate;
+            }
         }
 
         return null;
@@ -162,27 +368,91 @@ public class SmartTodoParser
         };
     }
 
-    private static string ExtractTitle(string input, DateTime? dueDate)
+    private static int GetMondayBasedDayIndex(DayOfWeek dayOfWeek)
+    {
+        return dayOfWeek switch
+        {
+            DayOfWeek.Monday => 0,
+            DayOfWeek.Tuesday => 1,
+            DayOfWeek.Wednesday => 2,
+            DayOfWeek.Thursday => 3,
+            DayOfWeek.Friday => 4,
+            DayOfWeek.Saturday => 5,
+            _ => 6
+        };
+    }
+
+    private static string ExtractTitle(string input, string matchedDateText)
+    {
+        var conservativeTitle = CleanupTitle(input, matchedDateText, removeWeakPhrases: false);
+        var refinedTitle = CleanupTitle(input, matchedDateText, removeWeakPhrases: true);
+
+        return IsValidCleanTitle(refinedTitle)
+            ? refinedTitle
+            : conservativeTitle;
+    }
+
+    private static string CleanupTitle(string input, string matchedDateText, bool removeWeakPhrases)
     {
         var title = input;
-        
-        title = TodayRegex.Replace(title, "");
-        title = TomorrowRegex.Replace(title, "");
-        title = DayAfterTomorrowRegex.Replace(title, "");
-        title = DaysLaterRegex.Replace(title, "");
-        title = NextWeekRegex.Replace(title, "");
-        title = ThisWeekRegex.Replace(title, "");
-        title = WeekDayRegex.Replace(title, "");
-        title = FullDateRegex.Replace(title, "");
-        title = ShortDateRegex.Replace(title, "");
-        title = MonthDayRegex.Replace(title, "");
-        title = DayRegex.Replace(title, "");
-        title = LeadingPunctuationRegex.Replace(title, "");
-        title = TrailingPunctuationRegex.Replace(title, "");
 
-        title = WhitespaceRegex.Replace(title, " ").Trim();
-        title = title.Trim('，', ',', '。', '.', '、', '；', ';', '：', ':', '！', '!', '?', '？');
+        if (!string.IsNullOrWhiteSpace(matchedDateText))
+        {
+            title = title.Replace(matchedDateText, " ", StringComparison.OrdinalIgnoreCase);
+        }
 
-        return string.IsNullOrWhiteSpace(title) ? input : title;
+        foreach (var regex in CleanupDateRegexes)
+        {
+            title = regex.Replace(title, " ");
+        }
+
+        title = TimeQualifierRegex.Replace(title, " ");
+        title = NormalizeSeparators(title);
+
+        if (removeWeakPhrases)
+        {
+            var previous = title;
+            do
+            {
+                previous = title;
+                title = LeadingWeakPhraseRegex.Replace(title, string.Empty);
+                title = NormalizeSeparators(title);
+            }
+            while (!string.Equals(previous, title, StringComparison.Ordinal));
+        }
+
+        title = NormalizeSeparators(title);
+        return string.IsNullOrWhiteSpace(title) ? input.Trim() : title;
+    }
+
+    private static string NormalizeSeparators(string value)
+    {
+        var normalized = WhitespaceRegex.Replace(value, " ").Trim();
+        normalized = LeadingPunctuationRegex.Replace(normalized, string.Empty);
+        normalized = TrailingPunctuationRegex.Replace(normalized, string.Empty);
+
+        while (!string.IsNullOrEmpty(normalized))
+        {
+            var updated = InnerPunctuationRegex.Replace(normalized, string.Empty);
+            if (updated == normalized)
+            {
+                break;
+            }
+
+            normalized = updated;
+        }
+
+        return normalized.Trim('，', ',', '。', '.', '、', '；', ';', '：', ':', '！', '!', '?', '？', '-', '—');
+    }
+
+    private static bool IsValidCleanTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return false;
+        }
+
+        var compact = WhitespaceRegex.Replace(title, string.Empty);
+        return compact.Length >= 2;
     }
 }

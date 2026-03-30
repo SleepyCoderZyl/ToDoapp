@@ -6,15 +6,23 @@
         xmlns:local="clr-namespace:ToDoapp"
         xmlns:widgets="clr-namespace:ToDoapp.Widgets"
         xmlns:hc="https://handyorg.github.io/handycontrol"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="待办便签" Height="700" Width="420"
         WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="#202020"
         Topmost="False"
         ResizeMode="CanResize"
         FontSize="14"
         WindowStartupLocation="CenterScreen">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="52"
+                            CornerRadius="8"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="8"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
     
     <Window.Resources>
         <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
@@ -53,10 +61,7 @@
         </EventTrigger>
     </Window.Triggers>
     
-    <Border x:Name="MainBorder" Background="#202020" CornerRadius="8" BorderBrush="#3D3D3D" BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect ShadowDepth="2" BlurRadius="8" Opacity="0.3" Color="#000000"/>
-        </Border.Effect>
+    <Border x:Name="MainBorder" Background="{StaticResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="#3D3D3D" BorderThickness="1">
         <Grid>
             <Grid x:Name="MainInterfaceGrid">
                 <Grid.RowDefinitions>
@@ -66,7 +71,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
             
-            <Border Grid.Row="0" Background="#1F1F1F" CornerRadius="8,8,0,0" 
+            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8,8,0,0" 
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="16,10">
                     <Grid.ColumnDefinitions>
@@ -81,35 +86,41 @@
                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     
                     <Button Grid.Column="1" x:Name="SettingsButton" Width="32" Height="32"
-                           Click="SettingsButton_Click" ToolTip="设置" Style="{StaticResource IconButtonStyle}">
+                           Click="SettingsButton_Click" ToolTip="设置" Style="{StaticResource IconButtonStyle}"
+                           shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     </Button>
                     
                     <Button Grid.Column="2" x:Name="WidgetModeButton" Width="32" Height="32"
                            Click="WidgetModeButton_Click" ToolTip="切换小组件模式" 
-                           Style="{StaticResource IconButtonStyle}">
+                           Style="{StaticResource IconButtonStyle}"
+                           shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <TextBlock x:Name="WidgetModeButtonIcon" Text="&#xE8A7;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     </Button>
                     
                     <Button Grid.Column="3" x:Name="MinimizeButton" Width="32" Height="32"
-                           Click="MinimizeButton_Click" ToolTip="最小化" Style="{StaticResource IconButtonStyle}">
+                           Click="MinimizeButton_Click" ToolTip="最小化" Style="{StaticResource IconButtonStyle}"
+                           shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <TextBlock Text="&#xE738;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     </Button>
                     
                     <Button Grid.Column="4" Content="&#xE711;" Width="32" Height="32"
                            Click="ExitButton_Click" FontFamily="Segoe Fluent Icons" FontSize="14" 
-                           Style="{StaticResource IconButtonStyle}" Foreground="{StaticResource DangerBrush}"/>
+                           Style="{StaticResource IconButtonStyle}" Foreground="{StaticResource DangerBrush}"
+                           shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
                 </Grid>
             </Border>
             
-            <Border Grid.Row="1" Background="#282828" Padding="16,12">
+            <Border Grid.Row="1"
+                    Background="{StaticResource SurfaceLightBrush}"
+                    Padding="16,14">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     
-                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
                         <TextBox x:Name="NewTaskTextBox" 
                                 ToolTip="输入新的待办事项..."
                                 KeyDown="NewTaskTextBox_KeyDown"
@@ -132,7 +143,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
-                        <TextBlock Grid.Column="0" Text="截止日期:" Foreground="{StaticResource TextSecondaryBrush}" 
+                        <TextBlock Grid.Column="0" Text="截止日期:" Foreground="{StaticResource TextPrimaryBrush}" 
                                   FontSize="13" VerticalAlignment="Center"/>
                         
                         <hc:DatePicker Grid.Column="1" x:Name="DueDatePicker" 
@@ -158,13 +169,9 @@
                 </Grid>
             </Border>
             
-            <Border Grid.Row="2" Background="#252525" Padding="12,8">
-                <Border.BorderBrush>
-                    <SolidColorBrush Color="#3D3D3D"/>
-                </Border.BorderBrush>
-                <Border.BorderThickness>
-                    <Thickness>0,1,0,0</Thickness>
-                </Border.BorderThickness>
+            <Border Grid.Row="2"
+                    Background="{StaticResource SurfaceBrush}"
+                    Padding="12,10">
                 <TabControl x:Name="TaskTabs" Background="Transparent" BorderThickness="0" 
                           TabStripPlacement="Top" Style="{StaticResource ModernTabControlStyle}"
                           SelectionChanged="TaskTabs_SelectionChanged">
