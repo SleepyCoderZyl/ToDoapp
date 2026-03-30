@@ -2,9 +2,9 @@
   "version": 1,
   "skills": {
     "csharp-developer": {
-      "source": "smithery.ai",
-      "sourceType": "well-known",
-      "computedHash": "89c4bd1c2cae3b05100f45bc074a06933287b83a21bd2cadd928a8b768896c55"
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "computedHash": "4f5879f8ab6f0a8b767b7a362ed188650d072bc929eeda1d8692578acf4a876e"
     }
   }
 }

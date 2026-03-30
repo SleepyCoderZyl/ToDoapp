@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -11,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Media.Animation;
 using System.Windows.Interop;
 using System.Threading.Tasks;
+using Microsoft.Win32;
 using ToDoapp.Models;
 using ToDoapp.Services;
 using ToDoapp.Views;
@@ -62,6 +64,7 @@ public partial class MainWindow : Window
     private ObservableCollection<TodoItem> _deletedTasks = new();
     private ObservableCollection<TodoItem> _archivedTasks = new();
     private ObservableCollection<ArchivedGroup> _archivedGroups = new();
+    private Dictionary<string, bool> _archivedExpansionStates = new();
     private DispatcherTimer _mainTimer = new();
     private DateTime _lastAutoSaveTime = DateTime.Now;
     private DateTime _lastOverdueCheckTime = DateTime.Now;
@@ -348,20 +351,30 @@ public partial class MainWindow : Window
 
     private void UpdateArchivedGroups()
     {
+        _archivedExpansionStates = CaptureArchivedExpansionStates();
         _archivedGroups = ArchivedGroup.BuildGroupTree(_archivedTasks);
+        var hasSavedExpansionState = _archivedExpansionStates.Count > 0;
 
-        foreach (var yearGroup in _archivedGroups)
+        if (hasSavedExpansionState)
         {
-            foreach (var monthGroup in yearGroup.Children)
+            ApplyArchivedExpansionStates(_archivedGroups, null);
+        }
+
+        if (!hasSavedExpansionState)
+        {
+            foreach (var yearGroup in _archivedGroups)
             {
-                foreach (var weekGroup in monthGroup.Children)
+                foreach (var monthGroup in yearGroup.Children)
                 {
-                    var currentWeekNumber = GetCurrentWeekNumber();
-                    if (weekGroup.Name == $"第{currentWeekNumber}周")
+                    foreach (var weekGroup in monthGroup.Children)
                     {
-                        yearGroup.IsExpanded = true;
-                        monthGroup.IsExpanded = true;
-                        weekGroup.IsExpanded = true;
+                        var currentWeekNumber = GetCurrentWeekNumber();
+                        if (weekGroup.Name == $"第{currentWeekNumber}周")
+                        {
+                            yearGroup.IsExpanded = true;
+                            monthGroup.IsExpanded = true;
+                            weekGroup.IsExpanded = true;
+                        }
                     }
                 }
             }
@@ -371,6 +384,51 @@ public partial class MainWindow : Window
         {
             ArchivedGroupsListBox.ItemsSource = _archivedGroups;
         }
+
+        _archivedExpansionStates = CaptureArchivedExpansionStates();
+    }
+
+    private Dictionary<string, bool> CaptureArchivedExpansionStates()
+    {
+        var states = new Dictionary<string, bool>();
+
+        foreach (var group in _archivedGroups)
+        {
+            CaptureArchivedExpansionStates(group, null, states);
+        }
+
+        return states;
+    }
+
+    private static void CaptureArchivedExpansionStates(ArchivedGroup group, string? parentKey, Dictionary<string, bool> states)
+    {
+        var key = BuildArchivedGroupKey(group, parentKey);
+        states[key] = group.IsExpanded;
+
+        foreach (var child in group.Children)
+        {
+            CaptureArchivedExpansionStates(child, key, states);
+        }
+    }
+
+    private void ApplyArchivedExpansionStates(IEnumerable<ArchivedGroup> groups, string? parentKey)
+    {
+        foreach (var group in groups)
+        {
+            var key = BuildArchivedGroupKey(group, parentKey);
+            if (_archivedExpansionStates.TryGetValue(key, out var isExpanded))
+            {
+                group.IsExpanded = isExpanded;
+            }
+
+            ApplyArchivedExpansionStates(group.Children, key);
+        }
+    }
+
+    private static string BuildArchivedGroupKey(ArchivedGroup group, string? parentKey)
+    {
+        var currentKey = $"{group.Level}:{group.Name}";
+        return string.IsNullOrEmpty(parentKey) ? currentKey : $"{parentKey}/{currentKey}";
     }
 
     private static int GetCurrentWeekNumber()
@@ -507,7 +565,7 @@ public partial class MainWindow : Window
                 listBoxItem.RenderTransformOrigin = new Point(0.5, 0.5);
                 listBoxItem.Opacity = 0;
                 
-                PlayAnimationOnListBoxItem(listBoxItem, "TaskAddAnimation", null);
+                PlayAnimationOnItemContainer(listBoxItem, "TaskAddAnimation", null);
             }
         }), DispatcherPriority.Render);
         
@@ -711,7 +769,7 @@ public partial class MainWindow : Window
             var listBoxItem = FindParent<ListBoxItem>(checkBox);
             if (listBoxItem != null)
             {
-                PlayAnimationOnListBoxItem(listBoxItem, "TaskActionAnimation", () =>
+                PlayAnimationOnItemContainer(listBoxItem, "TaskActionAnimation", () =>
                 {
                     RefreshTaskCollections();
                     UpdateTaskCount();
@@ -728,17 +786,17 @@ public partial class MainWindow : Window
     }
 
     // 播放动画的通用方法
-    private void PlayAnimationOnListBoxItem(ListBoxItem listBoxItem, string resourceKey, Action? onCompleted)
+    private void PlayAnimationOnItemContainer(FrameworkElement itemContainer, string resourceKey, Action? onCompleted)
     {
         if (Application.Current.TryFindResource(resourceKey) is Storyboard storyboard)
         {
             try
             {
                 // 确保 RenderTransform 已设置
-                if (listBoxItem.RenderTransform == null || listBoxItem.RenderTransform is not ScaleTransform)
+                if (itemContainer.RenderTransform == null || itemContainer.RenderTransform is not ScaleTransform)
                 {
-                    listBoxItem.RenderTransform = new ScaleTransform(1, 1);
-                    listBoxItem.RenderTransformOrigin = new Point(0.5, 0.5);
+                    itemContainer.RenderTransform = new ScaleTransform(1, 1);
+                    itemContainer.RenderTransformOrigin = new Point(0.5, 0.5);
                 }
 
                 // 克隆动画以避免冲突
@@ -747,7 +805,7 @@ public partial class MainWindow : Window
                 {
                     onCompleted?.Invoke();
                 };
-                clonedStoryboard.Begin(listBoxItem);
+                clonedStoryboard.Begin(itemContainer);
             }
             catch (Exception ex)
             {
@@ -777,10 +835,10 @@ public partial class MainWindow : Window
     // 执行操作并播放动画（通过按钮）
     private void ExecuteWithAnimation(Button button, Action action)
     {
-        var listBoxItem = FindParent<ListBoxItem>(button);
-        if (listBoxItem != null)
+        var itemContainer = FindAnimationContainer(button);
+        if (itemContainer != null)
         {
-            PlayAnimationOnListBoxItem(listBoxItem, "TaskActionAnimation", action);
+            PlayAnimationOnItemContainer(itemContainer, "TaskActionAnimation", action);
         }
         else
         {
@@ -794,12 +852,61 @@ public partial class MainWindow : Window
         var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(todoItem) as ListBoxItem;
         if (listBoxItem != null)
         {
-            PlayAnimationOnListBoxItem(listBoxItem, "TaskActionAnimation", action);
+            PlayAnimationOnItemContainer(listBoxItem, "TaskActionAnimation", action);
         }
         else
         {
             action();
         }
+    }
+
+    private void ExecuteWithAnimation(TreeView treeView, TodoItem todoItem, Action action)
+    {
+        treeView.UpdateLayout();
+        var treeViewItem = FindTreeViewItem(treeView, todoItem);
+        if (treeViewItem != null)
+        {
+            PlayAnimationOnItemContainer(treeViewItem, "TaskActionAnimation", action);
+        }
+        else
+        {
+            action();
+        }
+    }
+
+    private static FrameworkElement? FindAnimationContainer(DependencyObject child)
+    {
+        var listBoxItem = FindParent<ListBoxItem>(child);
+        if (listBoxItem != null)
+        {
+            return listBoxItem;
+        }
+
+        return FindParent<TreeViewItem>(child);
+    }
+
+    private static TreeViewItem? FindTreeViewItem(ItemsControl parent, object item)
+    {
+        if (parent.ItemContainerGenerator.ContainerFromItem(item) is TreeViewItem directItem)
+        {
+            return directItem;
+        }
+
+        foreach (var child in parent.Items)
+        {
+            if (parent.ItemContainerGenerator.ContainerFromItem(child) is not TreeViewItem treeViewItem)
+            {
+                continue;
+            }
+
+            var nestedItem = FindTreeViewItem(treeViewItem, item);
+            if (nestedItem != null)
+            {
+                return nestedItem;
+            }
+        }
+
+        return null;
     }
 
     // 批量执行动画（用于全部恢复/清空等操作）
@@ -1013,6 +1120,17 @@ public partial class MainWindow : Window
 
     private void UnarchiveTask_Click(object sender, RoutedEventArgs e)
     {
+        if (ArchivedGroupsListBox?.SelectedItem is TodoItem todoItem)
+        {
+            var title = todoItem.Title;
+            ExecuteWithAnimation(ArchivedGroupsListBox, todoItem, () =>
+            {
+                todoItem.IsArchived = false;
+                RefreshTaskCollections();
+                UpdateStatus($"已取消归档: {title}");
+                SaveData();
+            });
+        }
     }
 
     private void YearExpandButton_Click(object sender, RoutedEventArgs e)
@@ -1151,23 +1269,13 @@ public partial class MainWindow : Window
 
     private void ToggleWidgetMode()
     {
-        try
+        if (_isWidgetMode)
         {
-            _isWidgetMode = !_isWidgetMode;
-            _opacityManager.IsWidgetMode = _isWidgetMode;
-            
-            if (_isWidgetMode)
-            {
-                EnterWidgetModeInternal();
-            }
-            else
-            {
-                ExitWidgetModeInternal();
-            }
+            ExitWidgetMode();
         }
-        catch (Exception ex)
+        else
         {
-            System.Diagnostics.Debug.WriteLine($"切换小组件模式失败: {ex.Message}");
+            EnterWidgetMode();
         }
     }
     
@@ -1177,13 +1285,37 @@ public partial class MainWindow : Window
         
         try
         {
-            _isWidgetMode = true;
             _opacityManager.IsWidgetMode = true;
             EnterWidgetModeInternal();
+            _isWidgetMode = true;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"进入小组件模式失败: {ex.Message}");
+            _isWidgetMode = false;
+            _opacityManager.IsWidgetMode = false;
+            RestoreTaskbarIcon();
+            Opacity = 1.0;
+            Show();
+            Activate();
+        }
+    }
+
+    private void ExitWidgetMode()
+    {
+        if (!_isWidgetMode) return;
+
+        try
+        {
+            ExitWidgetModeInternal();
+            _isWidgetMode = false;
+            _opacityManager.IsWidgetMode = false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"退出小组件模式失败: {ex.Message}");
+            _isWidgetMode = true;
+            _opacityManager.IsWidgetMode = true;
         }
     }
     
@@ -1225,8 +1357,8 @@ public partial class MainWindow : Window
         
         _widgetWindow.Show();
         
+        HideTaskbarIcon();
         Hide();
-        ShowInTaskbar = false;
         
         UpdateStatus("已切换到小组件模式");
     }
@@ -1253,8 +1385,8 @@ public partial class MainWindow : Window
         Opacity = 1.0;
         IsHitTestVisible = true;
         
+        RestoreTaskbarIcon();
         Show();
-        ShowInTaskbar = true;
         WindowState = WindowState.Normal;
         Activate();
         
@@ -1338,6 +1470,91 @@ public partial class MainWindow : Window
     private void InitializeSystemTray()
     {
         _systemTrayService = new SystemTrayService(this);
+    }
+
+    public void ImportTodosFromJsonFile()
+    {
+        try
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Title = "导入待办事项",
+                Filter = "JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+                DefaultExt = ".json",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (openFileDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            var importedItems = _todoService.LoadTodosFromFile(openFileDialog.FileName);
+            if (importedItems.Count == 0)
+            {
+                const string emptyMessage = "导入文件中没有待办事项";
+                UpdateStatus(emptyMessage);
+                _systemTrayService?.ShowNotification("待办便签", emptyMessage);
+                return;
+            }
+
+            foreach (var item in importedItems)
+            {
+                _todoItems.Add(item);
+            }
+
+            RefreshTaskCollections();
+            UpdateTaskCount();
+            SaveData();
+
+            var message = $"已导入 {importedItems.Count} 个待办事项";
+            UpdateStatus(message);
+            _systemTrayService?.ShowNotification("待办便签", message);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"导入待办事项失败: {ex.Message}");
+            var message = $"导入失败：{ex.Message}";
+            UpdateStatus(message);
+            _systemTrayService?.ShowNotification("待办便签", message);
+        }
+    }
+
+    public void ExportTodosToJsonFile()
+    {
+        try
+        {
+            var exportItems = _todoItems.Where(t => !t.IsDeleted).ToList();
+
+            var saveFileDialog = new SaveFileDialog
+            {
+                Title = "导出待办事项",
+                Filter = "JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+                DefaultExt = ".json",
+                AddExtension = true,
+                FileName = $"todos-{DateTime.Now:yyyyMMdd-HHmmss}.json",
+                OverwritePrompt = true
+            };
+
+            if (saveFileDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            _todoService.ExportTodosToFile(exportItems, saveFileDialog.FileName);
+
+            var message = $"已导出 {exportItems.Count} 个待办事项";
+            UpdateStatus(message);
+            _systemTrayService?.ShowNotification("待办便签", message);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"导出待办事项失败: {ex.Message}");
+            var message = $"导出失败：{ex.Message}";
+            UpdateStatus(message);
+            _systemTrayService?.ShowNotification("待办便签", message);
+        }
     }
 
     private void InitializeGlobalHotKey()

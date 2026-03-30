@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using ToDoapp.Models;
 
@@ -77,5 +79,63 @@ public class TodoService
             // 记录错误日志
             System.Diagnostics.Debug.WriteLine($"保存待办事项失败: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 从指定文件加载待办事项列表
+    /// </summary>
+    public ObservableCollection<TodoItem> LoadTodosFromFile(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("导入文件路径不能为空。", nameof(filePath));
+        }
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("找不到要导入的文件。", filePath);
+        }
+
+        var json = File.ReadAllText(filePath);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new InvalidDataException("导入文件为空。");
+        }
+
+        try
+        {
+            var todos = JsonSerializer.Deserialize<ObservableCollection<TodoItem>>(json, _jsonOptions);
+            if (todos == null)
+            {
+                throw new InvalidDataException("导入文件中没有可用的待办数据。");
+            }
+
+            return todos;
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException("导入文件不是有效的待办 JSON 格式。", ex);
+        }
+    }
+
+    /// <summary>
+    /// 导出待办事项列表到指定文件
+    /// </summary>
+    public void ExportTodosToFile(IEnumerable<TodoItem> todos, string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("导出文件路径不能为空。", nameof(filePath));
+        }
+
+        var directory = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var exportItems = todos?.ToList() ?? new List<TodoItem>();
+        var json = JsonSerializer.Serialize(exportItems, _jsonOptions);
+        File.WriteAllText(filePath, json);
     }
 }

@@ -33,22 +33,31 @@ public partial class App : System.Windows.Application
         bool shouldStartInWidgetMode = isAutoStartLaunch && settings.StartInWidgetMode;
         
         var mainWindow = new MainWindow();
+        MainWindow = mainWindow;
         
         if (shouldStartInWidgetMode)
         {
-            mainWindow.Visibility = Visibility.Hidden;
             mainWindow.ShowInTaskbar = false;
+            mainWindow.ShowActivated = false;
+            mainWindow.Opacity = 0;
+            mainWindow.Loaded += OnStartupWidgetModeWindowLoaded;
         }
         
         mainWindow.Show();
-        
-        if (shouldStartInWidgetMode)
+    }
+
+    private void OnStartupWidgetModeWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MainWindow mainWindow)
         {
-            mainWindow.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                mainWindow.EnterWidgetMode();
-            }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            return;
         }
+
+        mainWindow.Loaded -= OnStartupWidgetModeWindowLoaded;
+        mainWindow.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            mainWindow.EnterWidgetMode();
+        }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
     
     protected override void OnExit(ExitEventArgs e)

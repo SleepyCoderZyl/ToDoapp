@@ -227,6 +227,7 @@ public class SystemTrayService : IDisposable
             
             // 创建菜单
             IntPtr hMenu = CreatePopupMenu();
+            IntPtr hImportExportMenu = CreatePopupMenu();
             
             // 获取当前小组件模式状态
             bool isWidgetMode = false;
@@ -261,18 +262,22 @@ public class SystemTrayService : IDisposable
             });
             
             // 添加菜单项
-            AppendMenu(hMenu, MF_STRING, 3, isWidgetMode ? "切换到主页面" : "切换到小组件");
+            AppendMenu(hMenu, MF_STRING, MenuToggleWidgetMode, isWidgetMode ? "切换到主页面" : "切换到小组件");
             
             if (isWidgetMode)
             {
-                AppendMenu(hMenu, MF_STRING, 7, isWidgetWindowVisible ? "隐藏小组件" : "显示小组件");
-                AppendMenu(hMenu, MF_STRING, 4, isMousePassThroughEnabled ? "退出沉浸模式" : "进入沉浸模式");
+                AppendMenu(hMenu, MF_STRING, MenuToggleWidgetVisibility, isWidgetWindowVisible ? "隐藏小组件" : "显示小组件");
+                AppendMenu(hMenu, MF_STRING, MenuToggleImmersionMode, isMousePassThroughEnabled ? "退出沉浸模式" : "进入沉浸模式");
             }
+
+            AppendMenu(hImportExportMenu, MF_STRING, MenuImportJson, "导入 JSON 文件");
+            AppendMenu(hImportExportMenu, MF_STRING, MenuExportJson, "导出 JSON 文件");
+            AppendMenu(hMenu, MF_POPUP, hImportExportMenu, "导入/导出");
             
-            AppendMenu(hMenu, MF_STRING, 6, "设置");
-            AppendMenu(hMenu, MF_STRING, 8, "关于");
+            AppendMenu(hMenu, MF_STRING, MenuSettings, "设置");
+            AppendMenu(hMenu, MF_STRING, MenuAbout, "关于");
             AppendMenu(hMenu, MF_SEPARATOR, 0, "");
-            AppendMenu(hMenu, MF_STRING, 5, "退出程序");
+            AppendMenu(hMenu, MF_STRING, MenuExit, "退出程序");
             
             // 显示菜单
             SetForegroundWindow(_windowHandle);
@@ -281,27 +286,34 @@ public class SystemTrayService : IDisposable
             // 处理菜单选择
             switch (result)
             {
-                case 3:
+                case MenuToggleWidgetMode:
                     ToggleWidgetMode_Click();
                     break;
-                case 4:
+                case MenuToggleImmersionMode:
                     ToggleMousePassThrough_Click();
                     break;
-                case 5:
+                case MenuExit:
                     Exit_Click();
                     break;
-                case 6:
+                case MenuSettings:
                     Settings_Click();
                     break;
-                case 7:
+                case MenuToggleWidgetVisibility:
                     ToggleWidgetVisibility();
                     break;
-                case 8:
+                case MenuAbout:
                     About_Click();
+                    break;
+                case MenuImportJson:
+                    ImportJson_Click();
+                    break;
+                case MenuExportJson:
+                    ExportJson_Click();
                     break;
             }
             
             // 销毁菜单
+            DestroyMenu(hImportExportMenu);
             DestroyMenu(hMenu);
         }
         catch (Exception ex)
@@ -394,6 +406,42 @@ public class SystemTrayService : IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"打开设置窗口失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 导入 JSON 文件
+    /// </summary>
+    private void ImportJson_Click()
+    {
+        try
+        {
+            _mainWindow.Dispatcher.Invoke(() =>
+            {
+                _mainWindow.ImportTodosFromJsonFile();
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"导入 JSON 文件失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 导出 JSON 文件
+    /// </summary>
+    private void ExportJson_Click()
+    {
+        try
+        {
+            _mainWindow.Dispatcher.Invoke(() =>
+            {
+                _mainWindow.ExportTodosToJsonFile();
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"导出 JSON 文件失败: {ex.Message}");
         }
     }
 
@@ -567,9 +615,19 @@ public class SystemTrayService : IDisposable
     // 菜单常量
     private const int MF_STRING = 0x00000000;
     private const int MF_SEPARATOR = 0x00000800;
+    private const int MF_POPUP = 0x00000010;
     private const int TPM_LEFTALIGN = 0x00000000;
     private const int TPM_TOPALIGN = 0x00000000;
     private const int TPM_RETURNCMD = 0x00000100;
+
+    private const int MenuToggleWidgetMode = 3;
+    private const int MenuToggleImmersionMode = 4;
+    private const int MenuExit = 5;
+    private const int MenuSettings = 6;
+    private const int MenuToggleWidgetVisibility = 7;
+    private const int MenuAbout = 8;
+    private const int MenuImportJson = 9;
+    private const int MenuExportJson = 10;
 
     // Windows API 函数
     [DllImport("shell32.dll", CharSet = CharSet.Auto)]
@@ -586,6 +644,9 @@ public class SystemTrayService : IDisposable
     
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern bool AppendMenu(IntPtr hMenu, int uFlags, int uIDNewItem, string lpNewItem);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, EntryPoint = "AppendMenu")]
+    private static extern bool AppendMenu(IntPtr hMenu, int uFlags, IntPtr uIDNewItem, string lpNewItem);
     
     [DllImport("user32.dll")]
     private static extern int TrackPopupMenu(IntPtr hMenu, int uFlags, int x, int y, int nReserved, IntPtr hWnd, IntPtr lprc);
