@@ -15,6 +15,7 @@ public class SystemTrayService : IDisposable
 {
     private MainWindow _mainWindow;
     private NotifyIconData _notifyIconData;
+    private Icon? _trayIcon;
     private IntPtr _windowHandle;
     private bool _isDisposed;
     private bool _isInitialized;
@@ -104,9 +105,24 @@ public class SystemTrayService : IDisposable
             string iconPath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "待办_16x16.ico");
             if (System.IO.File.Exists(iconPath))
             {
-                var icon = new Icon(iconPath);
-                return icon.Handle;
+                _trayIcon?.Dispose();
+                using var fileIcon = new Icon(iconPath);
+                _trayIcon = (Icon)fileIcon.Clone();
+                return _trayIcon.Handle;
             }
+
+            var processPath = Environment.ProcessPath;
+            if (!string.IsNullOrWhiteSpace(processPath) && System.IO.File.Exists(processPath))
+            {
+                using var extractedIcon = Icon.ExtractAssociatedIcon(processPath);
+                if (extractedIcon != null)
+                {
+                    _trayIcon?.Dispose();
+                    _trayIcon = (Icon)extractedIcon.Clone();
+                    return _trayIcon.Handle;
+                }
+            }
+
             return LoadIcon(IntPtr.Zero, IDI_APPLICATION);
         }
         catch (Exception ex)
@@ -593,6 +609,9 @@ public class SystemTrayService : IDisposable
                 Shell_NotifyIcon(NIM_DELETE, ref _notifyIconData);
                 _isDisposed = true;
             }
+
+            _trayIcon?.Dispose();
+            _trayIcon = null;
             GC.SuppressFinalize(this);
         }
         catch (Exception ex)
