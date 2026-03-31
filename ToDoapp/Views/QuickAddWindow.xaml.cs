@@ -59,8 +59,16 @@ public partial class QuickAddWindow : Window
             : parsedResult.Title;
         
         PreviewDateText.Text = parsedResult.DueDate.HasValue 
-            ? parsedResult.DueDate.Value.ToString("yyyy-MM-dd") 
+            ? FormatPreviewDateText(parsedResult)
             : "无";
+    }
+
+    private static string FormatPreviewDateText(SmartTodoParser.ParsedTodoResult parsedResult)
+    {
+        var dateText = parsedResult.DueDate?.ToString("yyyy-MM-dd") ?? "无";
+        return string.IsNullOrWhiteSpace(parsedResult.DateSourceHint)
+            ? dateText
+            : $"{dateText} · {parsedResult.DateSourceHint}";
     }
 
     private void InputTextBox_KeyDown(object sender, KeyEventArgs e)

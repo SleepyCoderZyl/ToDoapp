@@ -72,6 +72,7 @@
                                   Text="无" 
                                   Foreground="{StaticResource TextSecondaryBrush}" 
                                   FontSize="12"
+                                  TextWrapping="Wrap"
                                   Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>

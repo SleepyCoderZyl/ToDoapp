@@ -93,7 +93,13 @@ public partial class MainWindow : Window
         InitializeSystemTray();
         _opacityManager.OpacityChanged += OnOpacityChanged;
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+        HolidayCalendarService.Instance.WarmupStatusChanged += OnHolidayWarmupStatusChanged;
         _isLoaded = true;
+
+        if (!string.IsNullOrWhiteSpace(HolidayCalendarService.Instance.LastWarmupStatusMessage))
+        {
+            UpdateStatus(HolidayCalendarService.Instance.LastWarmupStatusMessage!);
+        }
         
         SourceInitialized += (s, e) =>
         {
@@ -509,6 +515,11 @@ public partial class MainWindow : Window
                 }
             });
         });
+    }
+
+    private void OnHolidayWarmupStatusChanged(object? sender, HolidayWarmupStatusChangedEventArgs e)
+    {
+        Dispatcher.Invoke(() => UpdateStatus(e.Message));
     }
 
     private void UpdateTaskCount()
@@ -1879,6 +1890,7 @@ public partial class MainWindow : Window
             _mainTimer.Stop();
             _systemTrayService?.Dispose();
             _globalHotKeyService?.Dispose();
+            HolidayCalendarService.Instance.WarmupStatusChanged -= OnHolidayWarmupStatusChanged;
         }
         base.OnClosed(e);
     }

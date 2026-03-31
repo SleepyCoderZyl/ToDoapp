@@ -6,13 +6,18 @@ namespace ToDoapp.Services;
 
 public class SmartTodoParser
 {
+    private static readonly Regex HolidayExpressionRegex = new(
+        $@"({HolidayCatalog.AliasRegexPattern})\s*(前|后)?",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     public class ParsedTodoResult
     {
         public string Title { get; set; } = string.Empty;
         public DateTime? DueDate { get; set; }
+        public string? DateSourceHint { get; set; }
     }
 
-    private readonly record struct DateExtractionResult(DateTime? DueDate, string MatchedText);
+    private readonly record struct DateExtractionResult(DateTime? DueDate, string MatchedText, string? SourceHint);
 
     private static readonly Regex GreatDayAfterTomorrowRegex = new(@"(大后天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex DayAfterTomorrowRegex = new(@"(后天|后日)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -67,26 +72,31 @@ public class SmartTodoParser
         ShortDateRegex,
         EndOfMonthRegex,
         StartOfMonthRegex,
-        DayOfMonthRegex
+        DayOfMonthRegex,
+        HolidayExpressionRegex
     ];
 
     public static ParsedTodoResult Parse(string input)
     {
+        return Parse(input, DateTime.Today, HolidayCalendarService.Instance);
+    }
+
+    public static ParsedTodoResult Parse(string input, DateTime referenceDate, IHolidayDateResolver holidayDateResolver)
+    {
         var cleanedInput = input.Trim();
-        var dateResult = ExtractDate(cleanedInput);
+        var dateResult = ExtractDate(cleanedInput, referenceDate.Date, holidayDateResolver);
 
         return new ParsedTodoResult
         {
             DueDate = dateResult.DueDate,
-            Title = ExtractTitle(cleanedInput, dateResult.MatchedText)
+            Title = ExtractTitle(cleanedInput, dateResult.MatchedText),
+            DateSourceHint = dateResult.SourceHint
         };
     }
 
-    private static DateExtractionResult ExtractDate(string input)
+    private static DateExtractionResult ExtractDate(string input, DateTime today, IHolidayDateResolver holidayDateResolver)
     {
-        var today = DateTime.Today;
-
-        foreach (var extractor in GetDateExtractors(today))
+        foreach (var extractor in GetDateExtractors(today, holidayDateResolver))
         {
             var result = extractor(input);
             if (result.DueDate.HasValue)
@@ -98,13 +108,14 @@ public class SmartTodoParser
         return default;
     }
 
-    private static IEnumerable<Func<string, DateExtractionResult>> GetDateExtractors(DateTime today)
+    private static IEnumerable<Func<string, DateExtractionResult>> GetDateExtractors(DateTime today, IHolidayDateResolver holidayDateResolver)
     {
         yield return input => TryExtractSimpleDate(input, GreatDayAfterTomorrowRegex, today.AddDays(3));
         yield return input => TryExtractSimpleDate(input, DayAfterTomorrowRegex, today.AddDays(2));
         yield return input => TryExtractSimpleDate(input, TomorrowRegex, today.AddDays(1));
         yield return input => TryExtractSimpleDate(input, TodayRegex, today);
         yield return input => TryExtractDaysLater(input, today);
+        yield return input => TryExtractHolidayExpression(input, today, holidayDateResolver);
 
         yield return input => TryExtractWeekday(input, NextNextWeekendRegex, today, offsetWeeks: 2, weekend: true, useCalendarWeekOffset: true);
         yield return input => TryExtractWeekday(input, NextWeekendRegex, today, offsetWeeks: 1, weekend: true, useCalendarWeekOffset: true);
@@ -128,7 +139,7 @@ public class SmartTodoParser
     {
         var match = regex.Match(input);
         return match.Success
-            ? new DateExtractionResult(date, match.Value)
+            ? new DateExtractionResult(date, match.Value, "相对日期")
             : default;
     }
 
@@ -140,7 +151,33 @@ public class SmartTodoParser
             return default;
         }
 
-        return new DateExtractionResult(today.AddDays(days), match.Value);
+        return new DateExtractionResult(today.AddDays(days), match.Value, "相对日期");
+    }
+
+    private static DateExtractionResult TryExtractHolidayExpression(string input, DateTime today, IHolidayDateResolver holidayDateResolver)
+    {
+        var match = HolidayExpressionRegex.Match(input);
+        if (!match.Success)
+        {
+            return default;
+        }
+
+        var relation = match.Groups[2].Value switch
+        {
+            "前" => HolidayDateRelation.BeforeHoliday,
+            "后" => HolidayDateRelation.AfterHoliday,
+            _ => HolidayDateRelation.OnHolidayStart
+        };
+
+        var resolution = holidayDateResolver.ResolveHolidayDate(match.Groups[1].Value, relation, today);
+        return resolution is not null
+            ? new DateExtractionResult(
+                resolution.DueDate,
+                match.Value,
+                resolution.UsesOfficialSchedule
+                    ? $"节假日：{resolution.CanonicalName}（放假安排）"
+                    : $"节假日：{resolution.CanonicalName}（锚点回退）")
+            : default;
     }
 
     private static DateExtractionResult TryExtractWeekday(
@@ -162,7 +199,7 @@ public class SmartTodoParser
             ? GetWeekendDate(today, offsetWeeks, useCalendarWeekOffset)
             : GetWeekdayDate(today, GetDayOfWeek(match.Groups[1].Value), offsetWeeks, allowToday, useCalendarWeekOffset);
 
-        return new DateExtractionResult(dueDate, match.Value);
+        return new DateExtractionResult(dueDate, match.Value, weekend ? "周末规则" : "星期规则");
     }
 
     private static DateExtractionResult TryExtractNextYearMonthDay(string input)
@@ -173,7 +210,7 @@ public class SmartTodoParser
             return default;
         }
 
-        return TryCreateResult(match, (DateTime.Today.Year + 1).ToString(), match.Groups[2].Value, match.Groups[3].Value);
+        return TryCreateResult(match, (DateTime.Today.Year + 1).ToString(), match.Groups[2].Value, match.Groups[3].Value, "绝对日期");
     }
 
     private static DateExtractionResult TryExtractFullDate(string input)
@@ -184,7 +221,7 @@ public class SmartTodoParser
             return default;
         }
 
-        return TryCreateResult(match, match.Groups[1].Value, match.Groups[2].Value, match.Groups[3].Value);
+        return TryCreateResult(match, match.Groups[1].Value, match.Groups[2].Value, match.Groups[3].Value, "绝对日期");
     }
 
     private static DateExtractionResult TryExtractNextMonthDay(string input, DateTime today)
@@ -196,7 +233,7 @@ public class SmartTodoParser
         }
 
         var firstDayOfNextMonth = new DateTime(today.Year, today.Month, 1).AddMonths(1);
-        return TryCreateResult(match, firstDayOfNextMonth.Year, firstDayOfNextMonth.Month, match.Groups[2].Value);
+        return TryCreateResult(match, firstDayOfNextMonth.Year, firstDayOfNextMonth.Month, match.Groups[2].Value, "绝对日期");
     }
 
     private static DateExtractionResult TryExtractMonthDay(string input, Regex regex, DateTime today, bool nextMonthWhenPast)
@@ -215,7 +252,7 @@ public class SmartTodoParser
 
         var dueDate = TryCreateFutureMonthDay(today, month, day, nextMonthWhenPast ? 1 : 1);
         return dueDate.HasValue
-            ? new DateExtractionResult(dueDate.Value, match.Value)
+            ? new DateExtractionResult(dueDate.Value, match.Value, "绝对日期")
             : default;
     }
 
@@ -239,7 +276,7 @@ public class SmartTodoParser
                 : nextMonth;
         }
 
-        return new DateExtractionResult(dueDate, match.Value);
+        return new DateExtractionResult(dueDate, match.Value, endOfMonth ? "月末规则" : "月初规则");
     }
 
     private static DateExtractionResult TryExtractDayOfMonth(string input, DateTime today)
@@ -252,11 +289,11 @@ public class SmartTodoParser
 
         var dueDate = TryCreateFutureDayOfMonth(today, day);
         return dueDate.HasValue
-            ? new DateExtractionResult(dueDate.Value, match.Value)
+            ? new DateExtractionResult(dueDate.Value, match.Value, "绝对日期")
             : default;
     }
 
-    private static DateExtractionResult TryCreateResult(Match match, string yearText, string monthText, string dayText)
+    private static DateExtractionResult TryCreateResult(Match match, string yearText, string monthText, string dayText, string sourceHint)
     {
         if (!int.TryParse(yearText, out var year) ||
             !int.TryParse(monthText, out var month) ||
@@ -265,21 +302,21 @@ public class SmartTodoParser
             return default;
         }
 
-        return TryCreateResult(match, year, month, day);
+        return TryCreateResult(match, year, month, day, sourceHint);
     }
 
-    private static DateExtractionResult TryCreateResult(Match match, int year, int month, string dayText)
+    private static DateExtractionResult TryCreateResult(Match match, int year, int month, string dayText, string sourceHint)
     {
         return int.TryParse(dayText, out var day)
-            ? TryCreateResult(match, year, month, day)
+            ? TryCreateResult(match, year, month, day, sourceHint)
             : default;
     }
 
-    private static DateExtractionResult TryCreateResult(Match match, int year, int month, int day)
+    private static DateExtractionResult TryCreateResult(Match match, int year, int month, int day, string sourceHint)
     {
         try
         {
-            return new DateExtractionResult(new DateTime(year, month, day), match.Value);
+            return new DateExtractionResult(new DateTime(year, month, day), match.Value, sourceHint);
         }
         catch
         {
