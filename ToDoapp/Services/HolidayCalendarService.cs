@@ -26,10 +26,13 @@ public enum HolidayScheduleFetchStatus
 
 public sealed record HolidayDateResolution(DateTime DueDate, string CanonicalName, bool UsesOfficialSchedule);
 
-public sealed class HolidayWarmupStatusChangedEventArgs(string message) : EventArgs
+public sealed class HolidayWarmupStatusChangedEventArgs(string shortMessage, string detailMessage) : EventArgs
 {
-    public string Message { get; } = message;
+    public string ShortMessage { get; } = shortMessage;
+    public string DetailMessage { get; } = detailMessage;
 }
+
+public sealed record HolidayWarmupStatusSummary(string ShortMessage, string DetailMessage);
 
 public sealed class HolidayCalendarService : IHolidayDateResolver
 {
@@ -43,7 +46,7 @@ public sealed class HolidayCalendarService : IHolidayDateResolver
 
     public static HolidayCalendarService Instance => LazyInstance.Value;
 
-    public string? LastWarmupStatusMessage { get; private set; }
+    public HolidayWarmupStatusSummary? LastWarmupStatus { get; private set; }
 
     public event EventHandler<HolidayWarmupStatusChangedEventArgs>? WarmupStatusChanged;
 
@@ -113,7 +116,7 @@ public sealed class HolidayCalendarService : IHolidayDateResolver
             }
         }
 
-        PublishWarmupStatus(BuildWarmupStatusMessage(
+        PublishWarmupStatus(BuildWarmupStatusSummary(
             refreshedYears,
             cachedYears,
             notPublishedWithCacheYears,
@@ -277,10 +280,10 @@ public sealed class HolidayCalendarService : IHolidayDateResolver
         return Path.Combine(appFolder, "holiday-calendar-cache.json");
     }
 
-    private void PublishWarmupStatus(string message)
+    private void PublishWarmupStatus(HolidayWarmupStatusSummary status)
     {
-        LastWarmupStatusMessage = message;
-        WarmupStatusChanged?.Invoke(this, new HolidayWarmupStatusChangedEventArgs(message));
+        LastWarmupStatus = status;
+        WarmupStatusChanged?.Invoke(this, new HolidayWarmupStatusChangedEventArgs(status.ShortMessage, status.DetailMessage));
     }
 
     private static void TrackFetchFailure(int year, bool hadCache, ICollection<int> failedWithCacheYears, ICollection<int> failedWithoutCacheYears)
@@ -294,7 +297,7 @@ public sealed class HolidayCalendarService : IHolidayDateResolver
         failedWithoutCacheYears.Add(year);
     }
 
-    private static string BuildWarmupStatusMessage(
+    private static HolidayWarmupStatusSummary BuildWarmupStatusSummary(
         IReadOnlyCollection<int> refreshedYears,
         IReadOnlyCollection<int> cachedYears,
         IReadOnlyCollection<int> notPublishedWithCacheYears,
@@ -302,42 +305,65 @@ public sealed class HolidayCalendarService : IHolidayDateResolver
         IReadOnlyCollection<int> failedWithCacheYears,
         IReadOnlyCollection<int> failedWithoutCacheYears)
     {
-        if (notPublishedWithoutCacheYears.Count > 0)
-        {
-            return $"节假日数据暂未发布（{FormatYears(notPublishedWithoutCacheYears)}），已回退节日锚点";
-        }
+        var parts = new List<string>();
 
-        if (notPublishedWithCacheYears.Count > 0)
-        {
-            return $"节假日数据暂未发布（{FormatYears(notPublishedWithCacheYears)}），已使用本地缓存";
-        }
+        AddStatusPart(parts, refreshedYears, "已联网更新");
+        AddStatusPart(parts, cachedYears, "已就绪（本地缓存）");
+        AddStatusPart(parts, notPublishedWithCacheYears, "暂未发布（已使用本地缓存）");
+        AddStatusPart(parts, notPublishedWithoutCacheYears, "暂未发布（已回退节日锚点）");
+        AddStatusPart(parts, failedWithCacheYears, "联网失败（已使用本地缓存）");
+        AddStatusPart(parts, failedWithoutCacheYears, "联网失败（已回退节日锚点）");
+
+        var detailMessage = parts.Count > 0
+            ? $"节假日数据：{string.Join("；", parts)}"
+            : "节假日数据已就绪";
 
         if (failedWithoutCacheYears.Count > 0)
         {
-            return $"节假日数据联网失败（{FormatYears(failedWithoutCacheYears)}），已回退节日锚点";
+            return new HolidayWarmupStatusSummary("节假日回退锚点", detailMessage);
         }
 
         if (failedWithCacheYears.Count > 0)
         {
-            return $"节假日数据联网失败（{FormatYears(failedWithCacheYears)}），已使用本地缓存";
+            return new HolidayWarmupStatusSummary("使用节假日缓存", detailMessage);
+        }
+
+        if (notPublishedWithoutCacheYears.Count > 0)
+        {
+            return new HolidayWarmupStatusSummary($"{FormatYears(notPublishedWithoutCacheYears)} 未发布", detailMessage);
+        }
+
+        if (notPublishedWithCacheYears.Count > 0)
+        {
+            return new HolidayWarmupStatusSummary($"{FormatYears(notPublishedWithCacheYears)} 未发布", detailMessage);
         }
 
         if (refreshedYears.Count > 0)
         {
-            return $"节假日数据已联网更新（{FormatYears(refreshedYears)}）";
+            return new HolidayWarmupStatusSummary("节假日已更新", detailMessage);
         }
 
         if (cachedYears.Count > 0)
         {
-            return $"节假日数据已就绪（本地缓存：{FormatYears(cachedYears)}）";
+            return new HolidayWarmupStatusSummary("使用节假日缓存", detailMessage);
         }
 
-        return "节假日数据已就绪";
+        return new HolidayWarmupStatusSummary("节假日已就绪", detailMessage);
     }
 
     private static string FormatYears(IEnumerable<int> years)
     {
         return string.Join("、", years.OrderBy(year => year));
+    }
+
+    private static void AddStatusPart(ICollection<string> parts, IReadOnlyCollection<int> years, string description)
+    {
+        if (years.Count == 0)
+        {
+            return;
+        }
+
+        parts.Add($"{FormatYears(years)} {description}");
     }
 
     private sealed class HolidayCacheDocument

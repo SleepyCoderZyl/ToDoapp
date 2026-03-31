@@ -63,7 +63,20 @@ public class HolidayCalendarServiceTests
 
         await service.WarmupAsync(new DateTime(2026, 4, 1));
 
-        Assert.Equal("节假日数据暂未发布（2026、2027），已回退节日锚点", service.LastWarmupStatusMessage);
+        Assert.Equal("2026、2027 未发布", service.LastWarmupStatus?.ShortMessage);
+        Assert.Equal("节假日数据：2026、2027 暂未发布（已回退节日锚点）", service.LastWarmupStatus?.DetailMessage);
+    }
+
+    [Fact]
+    public async Task WarmupAsync_ShowsMixedStatusWhenOnlySomeYearsArePublished()
+    {
+        using var context = new TemporaryHolidayCache();
+        var service = new HolidayCalendarService(new MixedHolidayScheduleProvider(), context.FilePath);
+
+        await service.WarmupAsync(new DateTime(2026, 4, 1));
+
+        Assert.Equal("2027 未发布", service.LastWarmupStatus?.ShortMessage);
+        Assert.Equal("节假日数据：2026 已联网更新；2027 暂未发布（已回退节日锚点）", service.LastWarmupStatus?.DetailMessage);
     }
 
     private sealed class StubHolidayScheduleProvider(IEnumerable<HolidayYearSchedule> schedules) : IHolidayScheduleProvider
@@ -93,6 +106,22 @@ public class HolidayCalendarServiceTests
         public Task<HolidayScheduleFetchResult> FetchYearAsync(int year, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new HolidayScheduleFetchResult(HolidayScheduleFetchStatus.NotPublished, null));
+        }
+    }
+
+    private sealed class MixedHolidayScheduleProvider : IHolidayScheduleProvider
+    {
+        public Task<HolidayScheduleFetchResult> FetchYearAsync(int year, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                year == 2026
+                    ? new HolidayScheduleFetchResult(
+                        HolidayScheduleFetchStatus.Success,
+                        new HolidayYearSchedule(2026,
+                        [
+                            new HolidayRange("劳动节", new DateTime(2026, 5, 1), new DateTime(2026, 5, 5), HolidayCatalog.GetAliases("劳动节"))
+                        ]))
+                    : new HolidayScheduleFetchResult(HolidayScheduleFetchStatus.NotPublished, null));
         }
     }
 

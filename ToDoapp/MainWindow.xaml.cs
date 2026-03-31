@@ -96,9 +96,9 @@ public partial class MainWindow : Window
         HolidayCalendarService.Instance.WarmupStatusChanged += OnHolidayWarmupStatusChanged;
         _isLoaded = true;
 
-        if (!string.IsNullOrWhiteSpace(HolidayCalendarService.Instance.LastWarmupStatusMessage))
+        if (HolidayCalendarService.Instance.LastWarmupStatus is { } warmupStatus)
         {
-            UpdateStatus(HolidayCalendarService.Instance.LastWarmupStatusMessage!);
+            UpdateStatus(warmupStatus.ShortMessage, warmupStatus.DetailMessage);
         }
         
         SourceInitialized += (s, e) =>
@@ -497,11 +497,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private void UpdateStatus(string message)
+    private void UpdateStatus(string message, string? detailMessage = null)
     {
         if (StatusTextBlock != null)
         {
             StatusTextBlock.Text = message;
+            StatusTextBlock.ToolTip = string.IsNullOrWhiteSpace(detailMessage) ? message : detailMessage;
         }
         
         // 5秒后自动清除状态
@@ -512,6 +513,7 @@ public partial class MainWindow : Window
                 if (StatusTextBlock != null)
                 {
                     StatusTextBlock.Text = "准备就绪";
+                    StatusTextBlock.ToolTip = "准备就绪";
                 }
             });
         });
@@ -519,7 +521,7 @@ public partial class MainWindow : Window
 
     private void OnHolidayWarmupStatusChanged(object? sender, HolidayWarmupStatusChangedEventArgs e)
     {
-        Dispatcher.Invoke(() => UpdateStatus(e.Message));
+        Dispatcher.Invoke(() => UpdateStatus(e.ShortMessage, e.DetailMessage));
     }
 
     private void UpdateTaskCount()

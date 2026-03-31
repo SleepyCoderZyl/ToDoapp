@@ -851,7 +851,8 @@
                     
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="300">
                         <Ellipse Width="6" Height="6" Fill="#6CCB5F" Margin="0,0,6,0"/>
-                        <TextBlock x:Name="StatusTextBlock" Text="就绪" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                        <TextBlock x:Name="StatusTextBlock" Text="就绪" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                  MaxWidth="180" TextTrimming="CharacterEllipsis"/>
                         <TextBlock x:Name="TaskCountTextBlock" Text="" Foreground="{StaticResource TextSecondaryBrush}" 
                                   FontSize="12" Margin="6,0,0,0" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
