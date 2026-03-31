@@ -23,6 +23,7 @@ public partial class App : System.Windows.Application
         base.OnStartup(e);
         
         StartupService.Instance.SyncWithSettings();
+        _ = WarmupHolidayCalendarAsync();
     }
 
     private void Application_Startup(object sender, StartupEventArgs e)
@@ -99,5 +100,17 @@ public partial class App : System.Windows.Application
         
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
+    }
+
+    private static async Task WarmupHolidayCalendarAsync()
+    {
+        try
+        {
+            await HolidayCalendarService.Instance.WarmupAsync(DateTime.Today);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"预热节假日日历失败: {ex.Message}");
+        }
     }
 }

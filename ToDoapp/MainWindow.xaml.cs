@@ -93,7 +93,13 @@ public partial class MainWindow : Window
         InitializeSystemTray();
         _opacityManager.OpacityChanged += OnOpacityChanged;
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+        HolidayCalendarService.Instance.WarmupStatusChanged += OnHolidayWarmupStatusChanged;
         _isLoaded = true;
+
+        if (HolidayCalendarService.Instance.LastWarmupStatus is { } warmupStatus)
+        {
+            UpdateStatus(warmupStatus.ShortMessage, warmupStatus.DetailMessage);
+        }
         
         SourceInitialized += (s, e) =>
         {
@@ -491,11 +497,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private void UpdateStatus(string message)
+    private void UpdateStatus(string message, string? detailMessage = null)
     {
         if (StatusTextBlock != null)
         {
             StatusTextBlock.Text = message;
+            StatusTextBlock.ToolTip = string.IsNullOrWhiteSpace(detailMessage) ? message : detailMessage;
         }
         
         // 5秒后自动清除状态
@@ -506,9 +513,15 @@ public partial class MainWindow : Window
                 if (StatusTextBlock != null)
                 {
                     StatusTextBlock.Text = "准备就绪";
+                    StatusTextBlock.ToolTip = "准备就绪";
                 }
             });
         });
+    }
+
+    private void OnHolidayWarmupStatusChanged(object? sender, HolidayWarmupStatusChangedEventArgs e)
+    {
+        Dispatcher.Invoke(() => UpdateStatus(e.ShortMessage, e.DetailMessage));
     }
 
     private void UpdateTaskCount()
@@ -1879,6 +1892,7 @@ public partial class MainWindow : Window
             _mainTimer.Stop();
             _systemTrayService?.Dispose();
             _globalHotKeyService?.Dispose();
+            HolidayCalendarService.Instance.WarmupStatusChanged -= OnHolidayWarmupStatusChanged;
         }
         base.OnClosed(e);
     }
