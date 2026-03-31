@@ -685,10 +685,14 @@
                                                         <Trigger Property="IsExpanded" Value="False">
                                                             <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
                                                         </Trigger>
-                                                        <Trigger Property="IsSelected" Value="True">
+                                                        <MultiTrigger>
+                                                            <MultiTrigger.Conditions>
+                                                                <Condition Property="IsSelected" Value="True"/>
+                                                                <Condition Property="HasItems" Value="False"/>
+                                                            </MultiTrigger.Conditions>
                                                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource BackgroundMediumBrush}"/>
-                                                        </Trigger>
-                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                        </MultiTrigger>
+                                                        <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
                                                             <Setter TargetName="Bd" Property="Background" Value="#2D2D2D"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
