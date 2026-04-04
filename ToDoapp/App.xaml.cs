@@ -2,6 +2,8 @@ using System.Windows;
 using System.Threading;
 using System;
 using ToDoapp.Services;
+using ToDoapp.Views;
+using System.Windows.Threading;
 
 namespace ToDoapp;
 
@@ -45,6 +47,7 @@ public partial class App : System.Windows.Application
         }
         
         mainWindow.Show();
+        ScheduleStartupReminder(mainWindow, isAutoStartLaunch);
     }
 
     private void OnStartupWidgetModeWindowLoaded(object sender, RoutedEventArgs e)
@@ -112,5 +115,31 @@ public partial class App : System.Windows.Application
         {
             System.Diagnostics.Debug.WriteLine($"预热节假日日历失败: {ex.Message}");
         }
+    }
+
+    private static void ScheduleStartupReminder(MainWindow mainWindow, bool isAutoStartLaunch)
+    {
+        if (!isAutoStartLaunch)
+        {
+            return;
+        }
+
+        mainWindow.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var settings = SettingsService.Instance.Settings;
+            if (!settings.ShowStartupReminderOnAutoStart)
+            {
+                return;
+            }
+
+            var snapshot = new StartupReminderService().CreateSnapshot(DateTime.Now);
+            if (!snapshot.HasContent)
+            {
+                return;
+            }
+
+            var reminderWindow = new StartupReminderWindow(mainWindow, snapshot);
+            reminderWindow.ShowDialog();
+        }), DispatcherPriority.ApplicationIdle);
     }
 }

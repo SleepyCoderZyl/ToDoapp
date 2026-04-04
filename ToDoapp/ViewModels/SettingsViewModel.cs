@@ -54,6 +54,7 @@ public class SettingsViewModel : INotifyPropertyChanged
     {
         var opacityContent = CreateOpacitySettingContent();
         var startupContent = CreateStartupSettingContent();
+        var startupReminderContent = CreateStartupReminderSettingContent();
         var hotkeyContent = CreateHotKeySettingContent();
         var alwaysOnTopContent = CreateAlwaysOnTopSettingContent();
         var startInWidgetModeContent = CreateStartInWidgetModeSettingContent();
@@ -106,6 +107,15 @@ public class SettingsViewModel : INotifyPropertyChanged
             ContentControl = hotkeyContent
         };
 
+        var startupReminderItem = new SettingItem
+        {
+            Id = "startupReminder",
+            Name = "开机提示",
+            Description = "配置开机自启时显示的自定义提醒",
+            Category = SettingCategory.General,
+            ContentControl = startupReminderContent
+        };
+
         var startInWidgetModeItem = new SettingItem
         {
             Id = "startInWidgetMode",
@@ -116,6 +126,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         };
 
         generalGroup.Items.Add(startupItem);
+        generalGroup.Items.Add(startupReminderItem);
         generalGroup.Items.Add(startInWidgetModeItem);
         generalGroup.Items.Add(hotkeyItem);
         appearanceGroup.Items.Add(opacityItem);
@@ -357,6 +368,255 @@ public class SettingsViewModel : INotifyPropertyChanged
         Grid.SetRow(togglePanel, 2);
         container.Children.Add(togglePanel);
 
+        return container;
+    }
+
+    private FrameworkElement CreateStartupReminderSettingContent()
+    {
+        var settings = SettingsService.Instance.Settings;
+        settings.StartupReminderItems ??= [];
+
+        var reminderItems = settings.StartupReminderItems;
+        var container = new Grid { Margin = new Thickness(20) };
+        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        container.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var titleText = new TextBlock
+        {
+            Text = "开机提示",
+            FontSize = 18,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Margin = new Thickness(0, 0, 0, 20)
+        };
+        Grid.SetRow(titleText, 0);
+        container.Children.Add(titleText);
+
+        var descriptionText = new TextBlock
+        {
+            Text = "仅在开机自启时弹出提示窗口，展示你配置的自定义提醒。",
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 20)
+        };
+        Grid.SetRow(descriptionText, 1);
+        container.Children.Add(descriptionText);
+
+        var togglePanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var toggleSwitch = new CheckBox
+        {
+            IsChecked = settings.ShowStartupReminderOnAutoStart,
+            FontSize = 14,
+            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+
+        var statusText = new TextBlock
+        {
+            Text = settings.ShowStartupReminderOnAutoStart ? "已启用" : "已禁用",
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        toggleSwitch.Checked += (s, e) =>
+        {
+            settings.ShowStartupReminderOnAutoStart = true;
+            statusText.Text = "已启用";
+            SettingsService.Instance.SaveSettings();
+        };
+
+        toggleSwitch.Unchecked += (s, e) =>
+        {
+            settings.ShowStartupReminderOnAutoStart = false;
+            statusText.Text = "已禁用";
+            SettingsService.Instance.SaveSettings();
+        };
+
+        togglePanel.Children.Add(toggleSwitch);
+        togglePanel.Children.Add(statusText);
+        Grid.SetRow(togglePanel, 2);
+        container.Children.Add(togglePanel);
+
+        var sectionTitle = new TextBlock
+        {
+            Text = "自定义提醒列表",
+            FontSize = 14,
+            FontWeight = FontWeights.Medium,
+            Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
+            Margin = new Thickness(0, 22, 0, 10)
+        };
+        Grid.SetRow(sectionTitle, 3);
+        container.Children.Add(sectionTitle);
+
+        var inputPanel = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var inputTextBox = new TextBox
+        {
+            Style = Application.Current.Resources["ModernTextBoxStyle"] as Style,
+            MinWidth = 220,
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var addButton = new Button
+        {
+            Content = "新增提醒",
+            Style = Application.Current.Resources["ModernButtonStyle"] as Style,
+            Padding = new Thickness(16, 10, 16, 10)
+        };
+
+        Grid.SetColumn(inputTextBox, 0);
+        Grid.SetColumn(addButton, 1);
+        inputPanel.Children.Add(inputTextBox);
+        inputPanel.Children.Add(addButton);
+
+        Grid.SetRow(inputPanel, 4);
+        container.Children.Add(inputPanel);
+
+        var listScrollViewer = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            MaxHeight = 220
+        };
+
+        var reminderListPanel = new StackPanel();
+        listScrollViewer.Content = reminderListPanel;
+        Grid.SetRow(listScrollViewer, 5);
+        container.Children.Add(listScrollViewer);
+
+        var hintText = new TextBlock
+        {
+            Text = "提示窗口会按这里的顺序展示已启用的提醒项，例如：上班打卡、写日报、带工牌。",
+            FontSize = 12,
+            Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128)),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 12, 0, 0)
+        };
+        Grid.SetRow(hintText, 6);
+        container.Children.Add(hintText);
+
+        void SaveReminderSettings()
+        {
+            settings.StartupReminderItems = reminderItems;
+            SettingsService.Instance.SaveSettings();
+        }
+
+        void RefreshReminderList()
+        {
+            reminderListPanel.Children.Clear();
+
+            if (reminderItems.Count == 0)
+            {
+                reminderListPanel.Children.Add(new TextBlock
+                {
+                    Text = "还没有自定义提醒，新增一条试试。",
+                    FontSize = 13,
+                    Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+                    Margin = new Thickness(0, 8, 0, 0)
+                });
+                return;
+            }
+
+            foreach (var item in reminderItems)
+            {
+                var row = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var enabledBox = new CheckBox
+                {
+                    IsChecked = item.IsEnabled,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 12, 0)
+                };
+
+                var textBlock = new TextBlock
+                {
+                    Text = item.Text,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+                    TextWrapping = TextWrapping.Wrap
+                };
+
+                var deleteButton = new Button
+                {
+                    Content = "删除",
+                    Style = Application.Current.Resources["SecondaryButtonStyle"] as Style,
+                    Padding = new Thickness(12, 6, 12, 6),
+                    Margin = new Thickness(12, 0, 0, 0)
+                };
+
+                enabledBox.Checked += (s, e) =>
+                {
+                    item.IsEnabled = true;
+                    SaveReminderSettings();
+                };
+
+                enabledBox.Unchecked += (s, e) =>
+                {
+                    item.IsEnabled = false;
+                    SaveReminderSettings();
+                };
+
+                deleteButton.Click += (s, e) =>
+                {
+                    reminderItems.Remove(item);
+                    SaveReminderSettings();
+                    RefreshReminderList();
+                };
+
+                Grid.SetColumn(enabledBox, 0);
+                Grid.SetColumn(textBlock, 1);
+                Grid.SetColumn(deleteButton, 2);
+                row.Children.Add(enabledBox);
+                row.Children.Add(textBlock);
+                row.Children.Add(deleteButton);
+
+                reminderListPanel.Children.Add(row);
+            }
+        }
+
+        void AddReminder()
+        {
+            var text = inputTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+
+            reminderItems.Add(new StartupReminderEntry
+            {
+                Text = text,
+                IsEnabled = true
+            });
+
+            inputTextBox.Clear();
+            SaveReminderSettings();
+            RefreshReminderList();
+        }
+
+        addButton.Click += (s, e) => AddReminder();
+        inputTextBox.KeyDown += (s, e) =>
+        {
+            if (e.Key == Key.Enter)
+            {
+                AddReminder();
+                e.Handled = true;
+            }
+        };
+
+        RefreshReminderList();
         return container;
     }
 

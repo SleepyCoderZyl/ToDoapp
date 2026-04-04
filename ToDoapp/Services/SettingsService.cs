@@ -44,6 +44,7 @@ public class SettingsService
                 var settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
                 if (settings != null)
                 {
+                    settings.StartupReminderItems ??= [];
                     return settings;
                 }
             }

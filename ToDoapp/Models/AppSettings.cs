@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace ToDoapp.Models;
@@ -58,4 +59,10 @@ public class AppSettings
 
     [JsonPropertyName("autoArchiveDays")]
     public int AutoArchiveDays { get; set; } = 7;
+
+    [JsonPropertyName("showStartupReminderOnAutoStart")]
+    public bool ShowStartupReminderOnAutoStart { get; set; } = true;
+
+    [JsonPropertyName("startupReminderItems")]
+    public List<StartupReminderEntry> StartupReminderItems { get; set; } = [];
 }
