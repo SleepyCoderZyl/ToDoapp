@@ -19,6 +19,7 @@ public class SystemTrayService : IDisposable
     private IntPtr _windowHandle;
     private bool _isDisposed;
     private bool _isInitialized;
+    private uint _taskbarCreatedMessage;
 
     // 消息常量
     private const int WM_USER = 0x0400;
@@ -58,6 +59,7 @@ public class SystemTrayService : IDisposable
             _windowHandle = new WindowInteropHelper(_mainWindow).Handle;
             if (_windowHandle != IntPtr.Zero)
             {
+                _taskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
                 InitializeNotifyIcon();
                 RegisterWindowMessageHandler();
                 _isInitialized = true;
@@ -92,6 +94,25 @@ public class SystemTrayService : IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"初始化托盘图标失败: {ex.Message}");
+        }
+    }
+
+    private void RecreateNotifyIcon()
+    {
+        try
+        {
+            if (_isDisposed || _windowHandle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            _notifyIconData.hIcon = LoadDefaultIcon();
+            Shell_NotifyIcon(NIM_ADD, ref _notifyIconData);
+            System.Diagnostics.Debug.WriteLine("托盘图标已重新创建");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"重新创建托盘图标失败: {ex.Message}");
         }
     }
 
@@ -153,6 +174,13 @@ public class SystemTrayService : IDisposable
     /// </summary>
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (msg == _taskbarCreatedMessage && _taskbarCreatedMessage != 0)
+        {
+            RecreateNotifyIcon();
+            handled = true;
+            return IntPtr.Zero;
+        }
+
         if (msg == WM_TRAYICON)
         {
             int mouseMessage = lParam.ToInt32();
@@ -651,7 +679,10 @@ public class SystemTrayService : IDisposable
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern IntPtr LoadIcon(IntPtr hInstance, int lpIconName);
-    
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern uint RegisterWindowMessage(string lpString);
+
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out POINT lpPoint);
     

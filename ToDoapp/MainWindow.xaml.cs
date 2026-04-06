@@ -1431,11 +1431,26 @@ public partial class MainWindow : Window
     {
         if (_widgetWindow != null)
         {
-            _widgetWindowLeft = _widgetWindow.Left;
-            _widgetWindowTop = _widgetWindow.Top;
-            _widgetWindowWidth = _widgetWindow.Width;
-            _widgetWindowHeight = _widgetWindow.Height;
-            _widgetWindow.Hide();
+            try
+            {
+                if (_widgetWindow.IsLoaded)
+                {
+                    _widgetWindowLeft = _widgetWindow.Left;
+                    _widgetWindowTop = _widgetWindow.Top;
+                    _widgetWindowWidth = _widgetWindow.Width;
+                    _widgetWindowHeight = _widgetWindow.Height;
+                }
+                _widgetWindow.TaskChecked -= OnWidgetTaskChecked;
+                _widgetWindow.Close();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"关闭小组件窗口失败: {ex.Message}");
+            }
+            finally
+            {
+                _widgetWindow = null;
+            }
         }
         
         var helper = new WindowInteropHelper(this);
