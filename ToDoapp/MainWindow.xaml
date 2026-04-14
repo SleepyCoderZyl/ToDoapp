@@ -121,8 +121,9 @@
                     </Grid.RowDefinitions>
                     
                     <Grid Grid.Row="0" Margin="0,0,0,12">
-                        <TextBox x:Name="NewTaskTextBox" 
+                        <TextBox x:Name="NewTaskTextBox"
                                 ToolTip="输入新的待办事项..."
+                                MaxLength="200"
                                 KeyDown="NewTaskTextBox_KeyDown"
                                 GotFocus="NewTaskTextBox_GotFocus"
                                 LostFocus="NewTaskTextBox_LostFocus"

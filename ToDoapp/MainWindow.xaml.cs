@@ -250,48 +250,31 @@ public partial class MainWindow : Window
 
     private void RefreshTaskCollections()
     {
-        _pendingTasks.Clear();
-        _completedTasks.Clear();
-        _deletedTasks.Clear();
-        _archivedTasks.Clear();
-        
         var pendingItems = _todoItems.Where(t => !t.IsDeleted && !t.IsArchived && !t.IsCompleted)
             .OrderBy(t => t.DueDate.HasValue ? 0 : 1)
             .ThenBy(t => t.DueDate ?? DateTime.MaxValue)
             .ThenByDescending(t => t.CreatedDate)
             .ToList();
-        
-        foreach (var item in pendingItems)
-        {
-            _pendingTasks.Add(item);
-        }
-        
-        foreach (var item in _todoItems.Where(t => !t.IsDeleted && !t.IsArchived && t.IsCompleted).OrderByDescending(t => t.CompletedDate))
-        {
-            _completedTasks.Add(item);
-        }
-        
-        foreach (var item in _todoItems.Where(t => t.IsDeleted).OrderByDescending(t => t.DeletedDate))
-        {
-            _deletedTasks.Add(item);
-        }
-        
-        foreach (var item in _todoItems.Where(t => t.IsArchived).OrderByDescending(t => t.ArchivedDate))
-        {
-            _archivedTasks.Add(item);
-        }
-        
-        if (TasksListBox != null)
+        var completedItems = _todoItems.Where(t => !t.IsDeleted && !t.IsArchived && t.IsCompleted).OrderByDescending(t => t.CompletedDate).ToList();
+        var deletedItems = _todoItems.Where(t => t.IsDeleted).OrderByDescending(t => t.DeletedDate).ToList();
+        var archivedItems = _todoItems.Where(t => t.IsArchived).OrderByDescending(t => t.ArchivedDate).ToList();
+
+        UpdateCollection(_pendingTasks, pendingItems);
+        UpdateCollection(_completedTasks, completedItems);
+        UpdateCollection(_deletedTasks, deletedItems);
+        UpdateCollection(_archivedTasks, archivedItems);
+
+        if (TasksListBox != null && TasksListBox.ItemsSource != _pendingTasks)
         {
             TasksListBox.ItemsSource = _pendingTasks;
         }
-        
-        if (CompletedTasksListBox != null)
+
+        if (CompletedTasksListBox != null && CompletedTasksListBox.ItemsSource != _completedTasks)
         {
             CompletedTasksListBox.ItemsSource = _completedTasks;
         }
-        
-        if (DeletedTasksListBox != null)
+
+        if (DeletedTasksListBox != null && DeletedTasksListBox.ItemsSource != _deletedTasks)
         {
             DeletedTasksListBox.ItemsSource = _deletedTasks;
         }
@@ -305,19 +288,43 @@ public partial class MainWindow : Window
         {
             WidgetView.SetTasks(pendingItems);
         }
-        
+
         if (_widgetWindow != null && _widgetWindow.IsVisible)
         {
             _widgetWindow.SetTasks(pendingItems);
         }
     }
 
+    private void UpdateCollection<T>(ObservableCollection<T> collection, List<T> newItems) where T : class
+    {
+        var toRemove = collection.Where(item => !newItems.Contains(item)).ToList();
+        foreach (var item in toRemove)
+        {
+            collection.Remove(item);
+        }
+
+        for (int i = 0; i < newItems.Count; i++)
+        {
+            var item = newItems[i];
+            var existingIndex = collection.IndexOf(item);
+
+            if (existingIndex == -1)
+            {
+                collection.Insert(i, item);
+            }
+            else if (existingIndex != i)
+            {
+                collection.Move(existingIndex, i);
+            }
+        }
+    }
+
     private void InitializeTimer()
     {
-        _mainTimer.Interval = TimeSpan.FromSeconds(5);
+        _mainTimer.Interval = TimeSpan.FromSeconds(30);
         _mainTimer.Tick += MainTimer_Tick;
         _mainTimer.Start();
-        
+
         CheckOverdueTasks();
         CleanupExpiredTrashItems();
     }
@@ -755,7 +762,8 @@ public partial class MainWindow : Window
             Text = selectedItem.Title,
             FontSize = 14,
             Padding = new Thickness(10, 8, 10, 8),
-            Margin = new Thickness(0, 0, 0, 16)
+            Margin = new Thickness(0, 0, 0, 16),
+            MaxLength = Constants.AppConstants.MaxTitleLength
         };
         
         var titleStyle = Application.Current.Resources["ModernTextBoxStyle"] as Style;
@@ -1514,7 +1522,7 @@ public partial class MainWindow : Window
 
     private void CheckOverdueTasks()
     {
-        var overdueTasks = _todoItems.Where(t => t.IsOverdue).ToList();
+        var overdueTasks = _todoItems.Where(t => !t.IsDeleted && !t.IsArchived && t.IsOverdue).ToList();
         
         if (overdueTasks.Any())
         {

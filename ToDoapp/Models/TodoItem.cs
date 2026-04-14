@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ToDoapp.Constants;
 
 namespace ToDoapp.Models;
 
@@ -22,7 +23,12 @@ public class TodoItem : INotifyPropertyChanged
         get => _title;
         set
         {
-            _title = value;
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("标题不能为空", nameof(value));
+            if (value.Length > AppConstants.MaxTitleLength)
+                throw new ArgumentException($"标题长度不能超过{AppConstants.MaxTitleLength}个字符", nameof(value));
+
+            _title = value.Trim();
             OnPropertyChanged();
         }
     }
@@ -70,6 +76,14 @@ public class TodoItem : INotifyPropertyChanged
         get => _dueDate;
         set
         {
+            if (value.HasValue)
+            {
+                if (value.Value < DateTime.Now.AddYears(-1))
+                    throw new ArgumentException("截止日期不能早于一年前", nameof(value));
+                if (value.Value > DateTime.Now.AddYears(10))
+                    throw new ArgumentException("截止日期不能晚于十年后", nameof(value));
+            }
+
             _dueDate = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(DueDateDisplay));

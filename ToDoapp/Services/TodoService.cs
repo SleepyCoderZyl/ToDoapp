@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Text.Json;
 using ToDoapp.Models;
 
@@ -29,9 +30,18 @@ public class TodoService
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var appFolder = Path.Combine(appDataPath, "ToDoApp");
+
+        // 验证路径安全性，防止路径遍历攻击
+        var fullPath = Path.GetFullPath(appFolder);
+        var fullAppDataPath = Path.GetFullPath(appDataPath);
+        if (!fullPath.StartsWith(fullAppDataPath, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new SecurityException("检测到非法路径访问");
+        }
+
         Directory.CreateDirectory(appFolder);
         _dataFilePath = Path.Combine(appFolder, "todos.json");
-        
+
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
