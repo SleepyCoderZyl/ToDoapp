@@ -1,0 +1,89 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+publish/
+dist/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.cache
+
+# VS Code
+.vscode/
+*.vsix
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.assets.json
+
+# WPF 特定
+*.baml
+GeneratedFiles/
+
+# 本地配置文件
+appsettings.Development.json
+appsettings.Local.json
+*.local.json
+
+# 测试相关
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+# 发布和打包
+*.publish.xml
+*.pubxml
+*.pubxml.user
+
+# 日志
+*.log
+logs/
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# User-specific files
+*.rsuser
+*.userprefs
+
+# Build logs
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# 其他
+*.svclog
+*.scc
+_ReSharper*/
+[Tt]humbs.db
