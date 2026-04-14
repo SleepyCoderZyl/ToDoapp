@@ -22,6 +22,7 @@ public partial class WidgetWindow : Window
     private MainWindow? _mainWindow;
 
     public event EventHandler<TodoItem>? TaskChecked;
+    public WidgetOpacityManager OpacityManager => _opacityManager;
 
     [DllImport("user32.dll")]
     private static extern int GetWindowLong(IntPtr hwnd, int index);
@@ -127,6 +128,7 @@ public partial class WidgetWindow : Window
         UpdateOpacity();
         UpdateContentOpacity();
         UpdateMousePassThrough();
+        UpdateResizeMode();
         UpdateTopmost();
         UpdateImmersionModeMenuItem();
 
@@ -178,6 +180,7 @@ public partial class WidgetWindow : Window
         if (e.PropertyName == nameof(WidgetOpacityManager.IsMousePassThroughEnabled))
         {
             UpdateMousePassThrough();
+            UpdateResizeMode();
             UpdateImmersionModeMenuItem();
         }
     }
@@ -262,6 +265,13 @@ public partial class WidgetWindow : Window
         {
             SetWindowLong(helper.Handle, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
         }
+    }
+
+    private void UpdateResizeMode()
+    {
+        ResizeMode = _opacityManager.IsMousePassThroughEnabled
+            ? ResizeMode.NoResize
+            : ResizeMode.CanResizeWithGrip;
     }
 
     public void SetTasks(IEnumerable<TodoItem> tasks)

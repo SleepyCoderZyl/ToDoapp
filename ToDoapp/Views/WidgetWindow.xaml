@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ToDoapp.Views"
         xmlns:app="clr-namespace:ToDoapp"
+        x:Name="WidgetWindowRoot"
         mc:Ignorable="d"
         Title="待办便签" Height="360" Width="280"
         MinHeight="200" MinWidth="200"
@@ -30,6 +31,111 @@
 
     <Window.Resources>
         <app:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <Style x:Key="WidgetTaskCheckBoxHostStyle" TargetType="Border">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Panel.ZIndex" Value="1"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform X="-6"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Source={x:Reference WidgetWindowRoot}, Path=OpacityManager.IsMousePassThroughEnabled}" Value="False"/>
+                        <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="IsHitTestVisible" Value="True"/>
+                    <MultiDataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 To="1"
+                                                 Duration="0:0:0.12">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                 To="0"
+                                                 Duration="0:0:0.14">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.EnterActions>
+                    <MultiDataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 To="0"
+                                                 Duration="0:0:0.1">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                 To="-6"
+                                                 Duration="0:0:0.12">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.ExitActions>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="WidgetTaskContentHostStyle" TargetType="StackPanel">
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform X="0"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Source={x:Reference WidgetWindowRoot}, Path=OpacityManager.IsMousePassThroughEnabled}" Value="False"/>
+                        <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                 To="24"
+                                                 Duration="0:0:0.14">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.EnterActions>
+                    <MultiDataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                 To="0"
+                                                 Duration="0:0:0.12">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.ExitActions>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
 
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="Transparent"/>
@@ -104,18 +210,19 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid MinHeight="40">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                        <Grid MinHeight="40"
+                              ClipToBounds="True">
+                            <Border
+                                    Style="{StaticResource WidgetTaskCheckBoxHostStyle}">
+                                <CheckBox IsChecked="{Binding IsCompleted}"
+                                          VerticalAlignment="Center"
+                                          Checked="TaskCheckBox_Checked"
+                                          Unchecked="TaskCheckBox_Checked"
+                                          Style="{StaticResource ModernCheckBoxStyle}"/>
+                            </Border>
 
-                            <CheckBox Grid.Column="0" IsChecked="{Binding IsCompleted}"
-                                     Margin="0,0,8,0" VerticalAlignment="Center"
-                                     Checked="TaskCheckBox_Checked" Unchecked="TaskCheckBox_Checked"
-                                     Style="{StaticResource ModernCheckBoxStyle}"/>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel VerticalAlignment="Center"
+                                        Style="{StaticResource WidgetTaskContentHostStyle}">
                                 <TextBlock Text="{Binding Title}"
                                           TextTrimming="CharacterEllipsis"
                                           FontSize="13"
