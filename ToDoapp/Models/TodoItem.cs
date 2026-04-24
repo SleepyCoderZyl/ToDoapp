@@ -48,6 +48,7 @@ public class TodoItem : INotifyPropertyChanged
                 CompletedDate = null;
             }
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsOverdue));
         }
     }
 
