@@ -28,7 +28,13 @@ public static class DialogService
 {
     public static Func<FrameworkElement, bool>? OnDialogConfirmed { get; set; }
 
-    public static DialogResult ShowCustomDialog(string title, DialogType dialogType, FrameworkElement customContent, string primaryButtonText = "确定", string? secondaryButtonText = "取消")
+    public static DialogResult ShowCustomDialog(
+        string title,
+        DialogType dialogType,
+        FrameworkElement customContent,
+        string primaryButtonText = "确定",
+        string? secondaryButtonText = "取消",
+        Action<Button, Button>? configureButtons = null)
     {
         var dialog = new Window
         {
@@ -153,6 +159,8 @@ public static class DialogService
         {
             secondaryButton.Style = secondaryStyle;
         }
+
+        configureButtons?.Invoke(primaryButton, secondaryButton);
 
         bool? dialogCloseResult = null;
 

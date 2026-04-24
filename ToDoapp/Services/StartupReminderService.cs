@@ -18,7 +18,8 @@ public class StartupReminderService
 
     public StartupReminderSnapshot CreateSnapshot(DateTime now)
     {
-        return BuildSnapshot(_todoService.LoadTodos(), _settingsAccessor(), now);
+        var loadResult = _todoService.LoadTodos();
+        return BuildSnapshot(loadResult.IsSuccess ? loadResult.Todos : [], _settingsAccessor(), now);
     }
 
     public static StartupReminderSnapshot BuildSnapshot(IEnumerable<TodoItem> todos, AppSettings settings, DateTime now)

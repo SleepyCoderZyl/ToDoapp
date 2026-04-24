@@ -81,6 +81,9 @@ public partial class MainWindow : Window
     private bool _isLoaded = false;
     private WidgetWindow? _widgetWindow;
     private QuickAddWindow? _quickAddWindow;
+    private bool _canPersistData = true;
+    private string? _startupPersistenceMessage;
+    private string? _startupPersistenceDetail;
 
     public MainWindow()
     {
@@ -91,6 +94,7 @@ public partial class MainWindow : Window
         InitializeData();
         InitializeTimer();
         InitializeSystemTray();
+        ShowStartupPersistenceNotificationIfNeeded();
         _opacityManager.OpacityChanged += OnOpacityChanged;
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
         HolidayCalendarService.Instance.WarmupStatusChanged += OnHolidayWarmupStatusChanged;
@@ -155,10 +159,21 @@ public partial class MainWindow : Window
 
     private void InitializeData()
     {
-        var items = _todoService.LoadTodos() ?? new ObservableCollection<TodoItem>();
-        foreach (var item in items)
+        var loadResult = _todoService.LoadTodos();
+        _canPersistData = loadResult.IsSuccess;
+        ReplaceTodoItems(loadResult.Todos);
+
+        if (!loadResult.IsSuccess)
         {
-            _todoItems.Add(item);
+            QueueStartupPersistenceStatus(
+                "待办数据加载失败，已阻止覆盖原文件",
+                loadResult.ErrorMessage);
+        }
+        else if (loadResult.IsRecoveredFromBackup)
+        {
+            QueueStartupPersistenceStatus(
+                "已从最近备份恢复待办数据",
+                loadResult.ErrorMessage);
         }
 
         RefreshTaskCollections();
@@ -174,7 +189,6 @@ public partial class MainWindow : Window
         SetupPlaceholderText();
 
         CheckAndAutoArchiveCompletedTasks();
-        UpdateArchivedGroups();
     }
 
     private void SetupPlaceholderText()
@@ -333,8 +347,8 @@ public partial class MainWindow : Window
     {
         var now = DateTime.Now;
 
-        // 自动保存（每60秒）
-        if ((now - _lastAutoSaveTime).TotalSeconds >= 60)
+        // 自动保存（每5分钟）
+        if (_canPersistData && (now - _lastAutoSaveTime).TotalMinutes >= 5)
         {
             SaveData();
             _lastAutoSaveTime = now;
@@ -498,10 +512,49 @@ public partial class MainWindow : Window
 
     private void SaveData()
     {
+        if (!_canPersistData)
+        {
+            UpdateStatus("待办数据加载失败，已阻止覆盖原文件", _startupPersistenceDetail);
+            return;
+        }
+
         if (_todoItems != null)
         {
-            _todoService.SaveTodos(_todoItems);
+            var saveResult = _todoService.SaveTodos(_todoItems);
+            if (!saveResult.IsSuccess)
+            {
+                UpdateStatus("保存待办事项失败", saveResult.ErrorMessage);
+            }
         }
+    }
+
+    private void ReplaceTodoItems(IEnumerable<TodoItem> items)
+    {
+        _todoItems.Clear();
+        foreach (var item in items)
+        {
+            _todoItems.Add(item);
+        }
+
+        RefreshTaskCollections();
+        UpdateTaskCount();
+    }
+
+    private void QueueStartupPersistenceStatus(string message, string? detailMessage)
+    {
+        _startupPersistenceMessage = message;
+        _startupPersistenceDetail = detailMessage;
+        UpdateStatus(message, detailMessage);
+    }
+
+    private void ShowStartupPersistenceNotificationIfNeeded()
+    {
+        if (string.IsNullOrWhiteSpace(_startupPersistenceMessage))
+        {
+            return;
+        }
+
+        _systemTrayService?.ShowNotification("待办便签", _startupPersistenceMessage);
     }
 
     private void UpdateStatus(string message, string? detailMessage = null)
@@ -1491,7 +1544,7 @@ public partial class MainWindow : Window
             {
                 item.IsCompleted = todoItem.IsCompleted;
                 RefreshTaskCollections();
-                _todoService.SaveTodos(_todoItems);
+                SaveData();
             }
         });
     }
@@ -1644,6 +1697,118 @@ public partial class MainWindow : Window
         }
     }
 
+    public void ShowBackupRecoveryDialog()
+    {
+        var backupInfos = _todoService.GetBackupInfos();
+
+        var rootPanel = new StackPanel
+        {
+            Width = 480
+        };
+
+        rootPanel.Children.Add(new TextBlock
+        {
+            Text = "选择一个备份恢复点。恢复后将立即刷新当前待办列表。",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
+            Margin = new Thickness(0, 0, 0, 12)
+        });
+
+        var emptyStateText = new TextBlock
+        {
+            Text = "暂无可用备份。",
+            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
+            Margin = new Thickness(0, 0, 0, 12),
+            Visibility = backupInfos.Count == 0 ? Visibility.Visible : Visibility.Collapsed
+        };
+        rootPanel.Children.Add(emptyStateText);
+
+        var backupListView = new ListView
+        {
+            Height = 280,
+            ItemsSource = backupInfos,
+            Visibility = backupInfos.Count > 0 ? Visibility.Visible : Visibility.Collapsed
+        };
+
+        var gridView = new GridView();
+        gridView.Columns.Add(new GridViewColumn
+        {
+            Header = "备份时间",
+            DisplayMemberBinding = new Binding(nameof(TodoBackupInfo.BackupTimeDisplay)),
+            Width = 260
+        });
+        gridView.Columns.Add(new GridViewColumn
+        {
+            Header = "文件大小",
+            DisplayMemberBinding = new Binding(nameof(TodoBackupInfo.FileSizeDisplay)),
+            Width = 120
+        });
+        backupListView.View = gridView;
+        backupListView.SelectedIndex = backupInfos.Count > 0 ? 0 : -1;
+        rootPanel.Children.Add(backupListView);
+
+        var statusTextBlock = new TextBlock
+        {
+            Foreground = Brushes.OrangeRed,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 12, 0, 0),
+            Visibility = Visibility.Collapsed
+        };
+        rootPanel.Children.Add(statusTextBlock);
+
+        DialogService.OnDialogConfirmed = content =>
+        {
+            if (backupListView.SelectedItem is not TodoBackupInfo selectedBackup)
+            {
+                statusTextBlock.Text = "请选择一个备份文件。";
+                statusTextBlock.Visibility = Visibility.Visible;
+                return false;
+            }
+
+            var restoreResult = _todoService.RestoreFromBackup(selectedBackup.FilePath);
+            if (!restoreResult.IsSuccess)
+            {
+                statusTextBlock.Text = restoreResult.ErrorMessage ?? "恢复失败，请稍后重试。";
+                statusTextBlock.Visibility = Visibility.Visible;
+                return false;
+            }
+
+            _canPersistData = true;
+            _startupPersistenceMessage = null;
+            _startupPersistenceDetail = null;
+            ReplaceTodoItems(restoreResult.Todos);
+
+            var restoredBackup = restoreResult.BackupInfo ?? selectedBackup;
+            var message = $"已恢复备份：{restoredBackup.BackupTimeDisplay}";
+            UpdateStatus(message);
+            _systemTrayService?.ShowNotification("待办便签", message);
+            return true;
+        };
+
+        try
+        {
+            DialogService.ShowCustomDialog(
+                "恢复备份",
+                DialogType.Information,
+                rootPanel,
+                "恢复",
+                "取消",
+                (primaryButton, _) =>
+                {
+                    primaryButton.IsEnabled = backupInfos.Count > 0 && backupListView.SelectedItem != null;
+                    backupListView.SelectionChanged += (_, _) =>
+                    {
+                        primaryButton.IsEnabled = backupListView.SelectedItem != null;
+                        statusTextBlock.Visibility = Visibility.Collapsed;
+                    };
+                });
+        }
+        finally
+        {
+            DialogService.OnDialogConfirmed = null;
+        }
+    }
+
     private void InitializeGlobalHotKey()
     {
         try
@@ -1683,6 +1848,12 @@ public partial class MainWindow : Window
                 {
                     _quickAddWindow.Activate();
                     _quickAddWindow.Focus();
+                    return;
+                }
+
+                if (!_canPersistData)
+                {
+                    UpdateStatus("待办数据加载失败，暂不可使用快速添加", _startupPersistenceDetail);
                     return;
                 }
 

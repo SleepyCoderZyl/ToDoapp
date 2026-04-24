@@ -313,6 +313,7 @@ public class SystemTrayService : IDisposable
 
             AppendMenu(hImportExportMenu, MF_STRING, MenuImportJson, "导入 JSON 文件");
             AppendMenu(hImportExportMenu, MF_STRING, MenuExportJson, "导出 JSON 文件");
+            AppendMenu(hImportExportMenu, MF_STRING, MenuRestoreBackup, "恢复备份");
             AppendMenu(hMenu, MF_POPUP, hImportExportMenu, "导入/导出");
             
             AppendMenu(hMenu, MF_STRING, MenuSettings, "设置");
@@ -350,6 +351,9 @@ public class SystemTrayService : IDisposable
                     break;
                 case MenuExportJson:
                     ExportJson_Click();
+                    break;
+                case MenuRestoreBackup:
+                    RestoreBackup_Click();
                     break;
             }
             
@@ -483,6 +487,24 @@ public class SystemTrayService : IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"导出 JSON 文件失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 恢复备份
+    /// </summary>
+    private void RestoreBackup_Click()
+    {
+        try
+        {
+            _mainWindow.Dispatcher.Invoke(() =>
+            {
+                _mainWindow.ShowBackupRecoveryDialog();
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"打开备份恢复失败: {ex.Message}");
         }
     }
 
@@ -672,6 +694,7 @@ public class SystemTrayService : IDisposable
     private const int MenuAbout = 8;
     private const int MenuImportJson = 9;
     private const int MenuExportJson = 10;
+    private const int MenuRestoreBackup = 11;
 
     // Windows API 函数
     [DllImport("shell32.dll", CharSet = CharSet.Auto)]

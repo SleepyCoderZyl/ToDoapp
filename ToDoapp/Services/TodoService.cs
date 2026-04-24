@@ -13,10 +13,15 @@ namespace ToDoapp.Services;
 /// </summary>
 public class TodoService
 {
+    private const int DefaultBackupLimit = 10;
+    private const string BackupSearchPattern = "todos-*.json";
+
     /// <summary>
     /// 数据文件路径
     /// </summary>
     private readonly string _dataFilePath;
+    private readonly string _backupDirectoryPath;
+    private readonly int _maxBackupFiles;
     
     /// <summary>
     /// JSON序列化选项
@@ -26,21 +31,37 @@ public class TodoService
     /// <summary>
     /// 初始化TodoService实例
     /// </summary>
-    public TodoService()
+    public TodoService(string? dataDirectoryOverride = null, int maxBackupFiles = DefaultBackupLimit)
     {
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appFolder = Path.Combine(appDataPath, "ToDoApp");
-
-        // 验证路径安全性，防止路径遍历攻击
-        var fullPath = Path.GetFullPath(appFolder);
-        var fullAppDataPath = Path.GetFullPath(appDataPath);
-        if (!fullPath.StartsWith(fullAppDataPath, StringComparison.OrdinalIgnoreCase))
+        if (maxBackupFiles <= 0)
         {
-            throw new SecurityException("检测到非法路径访问");
+            throw new ArgumentOutOfRangeException(nameof(maxBackupFiles), "备份文件数量上限必须大于 0。");
+        }
+
+        string appFolder;
+        if (string.IsNullOrWhiteSpace(dataDirectoryOverride))
+        {
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            appFolder = Path.Combine(appDataPath, "ToDoApp");
+
+            // 验证路径安全性，防止路径遍历攻击
+            var fullPath = Path.GetFullPath(appFolder);
+            var fullAppDataPath = Path.GetFullPath(appDataPath);
+            if (!fullPath.StartsWith(fullAppDataPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new SecurityException("检测到非法路径访问");
+            }
+        }
+        else
+        {
+            appFolder = Path.GetFullPath(dataDirectoryOverride);
         }
 
         Directory.CreateDirectory(appFolder);
         _dataFilePath = Path.Combine(appFolder, "todos.json");
+        _backupDirectoryPath = Path.Combine(appFolder, "backups");
+        Directory.CreateDirectory(_backupDirectoryPath);
+        _maxBackupFiles = maxBackupFiles;
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -53,41 +74,101 @@ public class TodoService
     /// 加载待办事项列表
     /// </summary>
     /// <returns>待办事项集合</returns>
-    public ObservableCollection<TodoItem> LoadTodos()
+    public TodoLoadResult LoadTodos()
     {
         try
         {
-            if (File.Exists(_dataFilePath))
+            if (!File.Exists(_dataFilePath))
             {
-                var json = File.ReadAllText(_dataFilePath);
-                var todos = JsonSerializer.Deserialize<ObservableCollection<TodoItem>>(json, _jsonOptions);
-                return todos ?? new ObservableCollection<TodoItem>();
+                return TodoLoadResult.Success(new ObservableCollection<TodoItem>());
             }
+
+            var readResult = TryReadTodosFromFile(_dataFilePath);
+            if (readResult.IsSuccess)
+            {
+                return TodoLoadResult.Success(readResult.Todos);
+            }
+
+            var recoveryResult = TryRecoverFromBackups(readResult.ErrorMessage);
+            if (recoveryResult != null)
+            {
+                return recoveryResult;
+            }
+
+            return TodoLoadResult.Failure(readResult.ErrorMessage ?? "主待办数据文件损坏，且没有可用备份。");
         }
         catch (Exception ex)
         {
             // 记录错误日志
             System.Diagnostics.Debug.WriteLine($"加载待办事项失败: {ex.Message}");
+            return TodoLoadResult.Failure($"加载待办事项失败：{ex.Message}");
         }
-        
-        return new ObservableCollection<TodoItem>();
     }
 
     /// <summary>
     /// 保存待办事项列表
     /// </summary>
     /// <param name="todos">待办事项集合</param>
-    public void SaveTodos(ObservableCollection<TodoItem> todos)
+    public TodoSaveResult SaveTodos(IEnumerable<TodoItem> todos)
     {
+        var tempFilePath = $"{_dataFilePath}.tmp";
+
         try
         {
-            var json = JsonSerializer.Serialize(todos, _jsonOptions);
-            File.WriteAllText(_dataFilePath, json);
+            var storageItems = (todos ?? Enumerable.Empty<TodoItem>())
+                .Select(TodoStorageItem.FromTodoItem)
+                .ToList();
+            var json = JsonSerializer.Serialize(storageItems, _jsonOptions);
+
+            if (File.Exists(_dataFilePath))
+            {
+                var currentJson = File.ReadAllText(_dataFilePath);
+                if (string.Equals(currentJson, json, StringComparison.Ordinal))
+                {
+                    return TodoSaveResult.Success(null);
+                }
+            }
+
+            File.WriteAllText(tempFilePath, json);
+
+            var validationResult = TryReadTodosFromFile(tempFilePath);
+            if (!validationResult.IsSuccess)
+            {
+                throw new InvalidDataException(validationResult.ErrorMessage ?? "保存校验失败。");
+            }
+
+            string? backupPath = null;
+            if (File.Exists(_dataFilePath))
+            {
+                backupPath = CreateBackup();
+                File.Replace(tempFilePath, _dataFilePath, null, true);
+            }
+            else
+            {
+                File.Move(tempFilePath, _dataFilePath);
+            }
+
+            CleanupOldBackups();
+            return TodoSaveResult.Success(backupPath);
         }
         catch (Exception ex)
         {
             // 记录错误日志
             System.Diagnostics.Debug.WriteLine($"保存待办事项失败: {ex.Message}");
+            return TodoSaveResult.Failure($"保存待办事项失败：{ex.Message}");
+        }
+        finally
+        {
+            if (File.Exists(tempFilePath))
+            {
+                try
+                {
+                    File.Delete(tempFilePath);
+                }
+                catch
+                {
+                }
+            }
         }
     }
 
@@ -106,25 +187,81 @@ public class TodoService
             throw new FileNotFoundException("找不到要导入的文件。", filePath);
         }
 
-        var json = File.ReadAllText(filePath);
-        if (string.IsNullOrWhiteSpace(json))
+        var result = TryReadTodosFromFile(filePath);
+        if (!result.IsSuccess)
         {
-            throw new InvalidDataException("导入文件为空。");
+            throw new InvalidDataException(result.ErrorMessage ?? "导入文件中没有可用的待办数据。");
+        }
+
+        return result.Todos;
+    }
+
+    public IReadOnlyList<TodoBackupInfo> GetBackupInfos()
+    {
+        var backupFiles = GetBackupFilesDescending();
+        var backupInfos = new List<TodoBackupInfo>();
+        var isLatest = true;
+
+        foreach (var backupPath in backupFiles)
+        {
+            var fileInfo = new FileInfo(backupPath);
+            if (!fileInfo.Exists)
+            {
+                continue;
+            }
+
+            backupInfos.Add(new TodoBackupInfo(
+                fileInfo.FullName,
+                fileInfo.LastWriteTime,
+                fileInfo.Length,
+                isLatest));
+            isLatest = false;
+        }
+
+        return backupInfos;
+    }
+
+    public TodoRestoreResult RestoreFromBackup(string backupPath)
+    {
+        if (string.IsNullOrWhiteSpace(backupPath))
+        {
+            return TodoRestoreResult.Failure("请选择要恢复的备份。");
         }
 
         try
         {
-            var todos = JsonSerializer.Deserialize<ObservableCollection<TodoItem>>(json, _jsonOptions);
-            if (todos == null)
+            var fullBackupPath = Path.GetFullPath(backupPath);
+            var fullBackupDirectoryPath = Path.GetFullPath(_backupDirectoryPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+
+            if (!fullBackupPath.StartsWith(fullBackupDirectoryPath, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidDataException("导入文件中没有可用的待办数据。");
+                return TodoRestoreResult.Failure("只能恢复应用备份目录中的文件。");
             }
 
-            return todos;
+            if (!File.Exists(fullBackupPath))
+            {
+                return TodoRestoreResult.Failure("选中的备份文件不存在。");
+            }
+
+            var readResult = TryReadTodosFromFile(fullBackupPath);
+            if (!readResult.IsSuccess)
+            {
+                return TodoRestoreResult.Failure(readResult.ErrorMessage ?? "备份文件无法读取。");
+            }
+
+            RestoreBackupToPrimary(fullBackupPath);
+
+            var backupInfo = new FileInfo(fullBackupPath);
+            return TodoRestoreResult.Success(
+                readResult.Todos,
+                new TodoBackupInfo(fullBackupPath, backupInfo.LastWriteTime, backupInfo.Length, false));
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
-            throw new InvalidDataException("导入文件不是有效的待办 JSON 格式。", ex);
+            System.Diagnostics.Debug.WriteLine($"手动恢复备份失败: {ex.Message}");
+            return TodoRestoreResult.Failure($"恢复备份失败：{ex.Message}");
         }
     }
 
@@ -144,8 +281,283 @@ public class TodoService
             Directory.CreateDirectory(directory);
         }
 
-        var exportItems = todos?.ToList() ?? new List<TodoItem>();
+        var exportItems = (todos ?? Enumerable.Empty<TodoItem>())
+            .Select(TodoStorageItem.FromTodoItem)
+            .ToList();
         var json = JsonSerializer.Serialize(exportItems, _jsonOptions);
         File.WriteAllText(filePath, json);
+    }
+
+    private TodoFileReadResult TryReadTodosFromFile(string filePath)
+    {
+        try
+        {
+            var json = File.ReadAllText(filePath);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return TodoFileReadResult.Failure("待办数据文件为空。");
+            }
+
+            var storageItems = JsonSerializer.Deserialize<List<TodoStorageItem>>(json, _jsonOptions);
+            if (storageItems == null)
+            {
+                return TodoFileReadResult.Failure("待办数据文件中没有可用的待办数据。");
+            }
+
+            var todos = new ObservableCollection<TodoItem>(storageItems.Select(TodoItem.FromStorage));
+            return TodoFileReadResult.Success(todos);
+        }
+        catch (Exception ex)
+        {
+            return TodoFileReadResult.Failure($"待办数据解析失败：{ex.Message}");
+        }
+    }
+
+    private TodoLoadResult? TryRecoverFromBackups(string? primaryReadError)
+    {
+        foreach (var backupPath in GetBackupFilesDescending())
+        {
+            var backupReadResult = TryReadTodosFromFile(backupPath);
+            if (!backupReadResult.IsSuccess)
+            {
+                continue;
+            }
+
+            try
+            {
+                RestoreBackupToPrimary(backupPath);
+                return TodoLoadResult.Recovered(
+                    backupReadResult.Todos,
+                    $"主待办数据文件损坏，已从最近备份恢复。原始错误：{primaryReadError}",
+                    backupPath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"恢复备份失败: {ex.Message}");
+            }
+        }
+
+        return null;
+    }
+
+    private void RestoreBackupToPrimary(string backupPath)
+    {
+        var tempFilePath = $"{_dataFilePath}.restore";
+        File.Copy(backupPath, tempFilePath, true);
+
+        try
+        {
+            var validationResult = TryReadTodosFromFile(tempFilePath);
+            if (!validationResult.IsSuccess)
+            {
+                throw new InvalidDataException(validationResult.ErrorMessage ?? "恢复备份校验失败。");
+            }
+
+            if (File.Exists(_dataFilePath))
+            {
+                File.Replace(tempFilePath, _dataFilePath, null, true);
+            }
+            else
+            {
+                File.Move(tempFilePath, _dataFilePath);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempFilePath))
+            {
+                try
+                {
+                    File.Delete(tempFilePath);
+                }
+                catch
+                {
+                }
+            }
+        }
+    }
+
+    private string CreateBackup()
+    {
+        var backupPath = Path.Combine(_backupDirectoryPath, $"todos-{DateTime.Now:yyyyMMdd-HHmmssfff}.json");
+        File.Copy(_dataFilePath, backupPath, true);
+        return backupPath;
+    }
+
+    private IEnumerable<string> GetBackupFilesDescending()
+    {
+        if (!Directory.Exists(_backupDirectoryPath))
+        {
+            return Enumerable.Empty<string>();
+        }
+
+        return Directory.GetFiles(_backupDirectoryPath, BackupSearchPattern)
+            .OrderByDescending(path => File.GetLastWriteTime(path))
+            .ThenByDescending(Path.GetFileName);
+    }
+
+    private void CleanupOldBackups()
+    {
+        var backupFiles = GetBackupFilesDescending().ToList();
+        if (backupFiles.Count <= _maxBackupFiles)
+        {
+            return;
+        }
+
+        foreach (var backupPath in backupFiles.Skip(_maxBackupFiles))
+        {
+            try
+            {
+                File.Delete(backupPath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"删除旧备份失败: {ex.Message}");
+            }
+        }
+    }
+}
+
+public sealed class TodoLoadResult
+{
+    public bool IsSuccess { get; }
+    public bool IsRecoveredFromBackup { get; }
+    public ObservableCollection<TodoItem> Todos { get; }
+    public string? ErrorMessage { get; }
+    public string? RecoverySourcePath { get; }
+
+    private TodoLoadResult(bool isSuccess, bool isRecoveredFromBackup, ObservableCollection<TodoItem> todos, string? errorMessage, string? recoverySourcePath)
+    {
+        IsSuccess = isSuccess;
+        IsRecoveredFromBackup = isRecoveredFromBackup;
+        Todos = todos;
+        ErrorMessage = errorMessage;
+        RecoverySourcePath = recoverySourcePath;
+    }
+
+    public static TodoLoadResult Success(ObservableCollection<TodoItem> todos)
+    {
+        return new TodoLoadResult(true, false, todos, null, null);
+    }
+
+    public static TodoLoadResult Recovered(ObservableCollection<TodoItem> todos, string? message, string? recoverySourcePath)
+    {
+        return new TodoLoadResult(true, true, todos, message, recoverySourcePath);
+    }
+
+    public static TodoLoadResult Failure(string? errorMessage)
+    {
+        return new TodoLoadResult(false, false, new ObservableCollection<TodoItem>(), errorMessage, null);
+    }
+}
+
+public sealed class TodoSaveResult
+{
+    public bool IsSuccess { get; }
+    public string? ErrorMessage { get; }
+    public string? BackupPath { get; }
+
+    private TodoSaveResult(bool isSuccess, string? errorMessage, string? backupPath)
+    {
+        IsSuccess = isSuccess;
+        ErrorMessage = errorMessage;
+        BackupPath = backupPath;
+    }
+
+    public static TodoSaveResult Success(string? backupPath)
+    {
+        return new TodoSaveResult(true, null, backupPath);
+    }
+
+    public static TodoSaveResult Failure(string? errorMessage)
+    {
+        return new TodoSaveResult(false, errorMessage, null);
+    }
+}
+
+public sealed class TodoRestoreResult
+{
+    public bool IsSuccess { get; }
+    public ObservableCollection<TodoItem> Todos { get; }
+    public string? ErrorMessage { get; }
+    public TodoBackupInfo? BackupInfo { get; }
+
+    private TodoRestoreResult(bool isSuccess, ObservableCollection<TodoItem> todos, string? errorMessage, TodoBackupInfo? backupInfo)
+    {
+        IsSuccess = isSuccess;
+        Todos = todos;
+        ErrorMessage = errorMessage;
+        BackupInfo = backupInfo;
+    }
+
+    public static TodoRestoreResult Success(ObservableCollection<TodoItem> todos, TodoBackupInfo backupInfo)
+    {
+        return new TodoRestoreResult(true, todos, null, backupInfo);
+    }
+
+    public static TodoRestoreResult Failure(string? errorMessage)
+    {
+        return new TodoRestoreResult(false, new ObservableCollection<TodoItem>(), errorMessage, null);
+    }
+}
+
+public sealed class TodoBackupInfo
+{
+    public string FilePath { get; }
+    public DateTime BackupTime { get; }
+    public long FileSizeBytes { get; }
+    public bool IsLatest { get; }
+    public string BackupTimeDisplay => IsLatest
+        ? $"{BackupTime:yyyy-MM-dd HH:mm:ss}（最新）"
+        : $"{BackupTime:yyyy-MM-dd HH:mm:ss}";
+    public string FileSizeDisplay => FormatFileSize(FileSizeBytes);
+
+    public TodoBackupInfo(string filePath, DateTime backupTime, long fileSizeBytes, bool isLatest)
+    {
+        FilePath = filePath;
+        BackupTime = backupTime;
+        FileSizeBytes = fileSizeBytes;
+        IsLatest = isLatest;
+    }
+
+    private static string FormatFileSize(long fileSizeBytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double size = fileSizeBytes;
+        var unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.Length - 1)
+        {
+            size /= 1024;
+            unitIndex++;
+        }
+
+        return unitIndex == 0
+            ? $"{fileSizeBytes} {units[unitIndex]}"
+            : $"{size:0.##} {units[unitIndex]}";
+    }
+}
+
+internal sealed class TodoFileReadResult
+{
+    public bool IsSuccess { get; }
+    public ObservableCollection<TodoItem> Todos { get; }
+    public string? ErrorMessage { get; }
+
+    private TodoFileReadResult(bool isSuccess, ObservableCollection<TodoItem> todos, string? errorMessage)
+    {
+        IsSuccess = isSuccess;
+        Todos = todos;
+        ErrorMessage = errorMessage;
+    }
+
+    public static TodoFileReadResult Success(ObservableCollection<TodoItem> todos)
+    {
+        return new TodoFileReadResult(true, todos, null);
+    }
+
+    public static TodoFileReadResult Failure(string? errorMessage)
+    {
+        return new TodoFileReadResult(false, new ObservableCollection<TodoItem>(), errorMessage);
     }
 }

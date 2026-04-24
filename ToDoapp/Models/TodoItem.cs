@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using ToDoapp.Constants;
 
@@ -233,6 +234,36 @@ public class TodoItem : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    internal static TodoItem FromStorage(TodoStorageItem storageItem)
+    {
+        ArgumentNullException.ThrowIfNull(storageItem);
+
+        var title = storageItem.Title?.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new InvalidDataException("待办事项标题不能为空。");
+        }
+
+        if (title.Length > AppConstants.MaxTitleLength)
+        {
+            throw new InvalidDataException($"待办事项标题长度不能超过{AppConstants.MaxTitleLength}个字符。");
+        }
+
+        return new TodoItem
+        {
+            _title = title,
+            _isCompleted = storageItem.IsCompleted,
+            _createdDate = storageItem.CreatedDate,
+            _completedDate = storageItem.CompletedDate,
+            _dueDate = storageItem.DueDate,
+            _hasReminder = storageItem.HasReminder,
+            _isDeleted = storageItem.IsDeleted,
+            _deletedDate = storageItem.DeletedDate,
+            _isArchived = storageItem.IsArchived,
+            _archivedDate = storageItem.ArchivedDate
+        };
+    }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
