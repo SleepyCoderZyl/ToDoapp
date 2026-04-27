@@ -190,6 +190,27 @@ public class TodoServiceTests : IDisposable
     }
 
     [Fact]
+    public void GetBackupInfos_PrefersFileNameTimestampOverLastWriteTime()
+    {
+        Directory.CreateDirectory(_backupDirectory);
+        var olderByName = Path.Combine(_backupDirectory, "todos-20260424-080000000.json");
+        var newerByName = Path.Combine(_backupDirectory, "todos-20260424-100000000.json");
+
+        File.WriteAllText(olderByName, "older");
+        File.WriteAllText(newerByName, "newer");
+        File.SetLastWriteTime(olderByName, new DateTime(2026, 4, 24, 12, 0, 0));
+        File.SetLastWriteTime(newerByName, new DateTime(2026, 4, 24, 7, 0, 0));
+
+        var backupInfos = _todoService.GetBackupInfos();
+
+        Assert.Equal(2, backupInfos.Count);
+        Assert.Equal(newerByName, backupInfos[0].FilePath);
+        Assert.Equal(new DateTime(2026, 4, 24, 10, 0, 0), backupInfos[0].BackupTime);
+        Assert.Equal(olderByName, backupInfos[1].FilePath);
+        Assert.Equal(new DateTime(2026, 4, 24, 8, 0, 0), backupInfos[1].BackupTime);
+    }
+
+    [Fact]
     public void RestoreFromBackup_ValidBackup_ReplacesPrimaryFile()
     {
         var original = new ObservableCollection<TodoItem>
@@ -266,9 +287,11 @@ public class TodoServiceTests : IDisposable
     }
 
     [Fact]
-    public void SaveTodos_WhenBackupCountExceedsTen_KeepsLatestTenBackups()
+    public void SaveTodos_WhenBackupCountExceedsThirty_KeepsLatestThirtyBackups()
     {
-        for (var index = 0; index < 12; index++)
+        var todoService = new TodoService(_testDirectory, backupInterval: TimeSpan.Zero);
+
+        for (var index = 0; index < 32; index++)
         {
             var items = new ObservableCollection<TodoItem>
             {
@@ -279,12 +302,88 @@ public class TodoServiceTests : IDisposable
                 }
             };
 
-            Assert.True(_todoService.SaveTodos(items).IsSuccess);
+            Assert.True(todoService.SaveTodos(items).IsSuccess);
             Thread.Sleep(5);
         }
 
         var backupFiles = Directory.GetFiles(_backupDirectory, "todos-*.json");
-        Assert.Equal(10, backupFiles.Length);
+        Assert.Equal(30, backupFiles.Length);
+    }
+
+    [Fact]
+    public void SaveTodos_WhenBackupIntervalHasNotElapsed_DoesNotCreateAdditionalBackup()
+    {
+        var todoService = new TodoService(_testDirectory, backupInterval: TimeSpan.FromMinutes(10));
+        var firstItems = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "第一版",
+                CreatedDate = new DateTime(2026, 4, 24, 9, 0, 0)
+            }
+        };
+        var secondItems = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "第二版",
+                CreatedDate = new DateTime(2026, 4, 24, 9, 1, 0)
+            }
+        };
+        var thirdItems = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "第三版",
+                CreatedDate = new DateTime(2026, 4, 24, 9, 2, 0)
+            }
+        };
+
+        Assert.True(todoService.SaveTodos(firstItems).IsSuccess);
+
+        var secondSave = todoService.SaveTodos(secondItems);
+        Assert.True(secondSave.IsSuccess);
+        Assert.False(string.IsNullOrWhiteSpace(secondSave.BackupPath));
+
+        var thirdSave = todoService.SaveTodos(thirdItems);
+        Assert.True(thirdSave.IsSuccess);
+        Assert.Null(thirdSave.BackupPath);
+        Assert.Single(Directory.GetFiles(_backupDirectory, "todos-*.json"));
+    }
+
+    [Fact]
+    public void SaveTodos_WhenLatestBackupFileNameTimestampIsRecent_SkipsBackupEvenIfLastWriteTimeIsOld()
+    {
+        var todoService = new TodoService(_testDirectory, backupInterval: TimeSpan.FromHours(1));
+        var firstItems = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "第一版",
+                CreatedDate = DateTime.Now.AddMinutes(-5)
+            }
+        };
+        var secondItems = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "第二版",
+                CreatedDate = DateTime.Now
+            }
+        };
+
+        Assert.True(todoService.SaveTodos(firstItems).IsSuccess);
+
+        var recentTimestamp = DateTime.Now.AddMinutes(-10).ToString("yyyyMMdd-HHmmssfff");
+        var backupPath = Path.Combine(_backupDirectory, $"todos-{recentTimestamp}.json");
+        File.WriteAllText(backupPath, "seed");
+        File.SetLastWriteTime(backupPath, DateTime.Now.AddDays(-2));
+
+        var saveResult = todoService.SaveTodos(secondItems);
+
+        Assert.True(saveResult.IsSuccess);
+        Assert.Null(saveResult.BackupPath);
+        Assert.Single(Directory.GetFiles(_backupDirectory, "todos-*.json"));
     }
 
     public void Dispose()
