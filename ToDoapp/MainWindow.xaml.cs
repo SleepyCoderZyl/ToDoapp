@@ -1701,10 +1701,7 @@ public partial class MainWindow : Window
     {
         var backupInfos = _todoService.GetBackupInfos();
 
-        var rootPanel = new StackPanel
-        {
-            Width = 480
-        };
+        var rootPanel = new StackPanel();
 
         rootPanel.Children.Add(new TextBlock
         {
@@ -1727,21 +1724,23 @@ public partial class MainWindow : Window
         {
             Height = 280,
             ItemsSource = backupInfos,
-            Visibility = backupInfos.Count > 0 ? Visibility.Visible : Visibility.Collapsed
+            Visibility = backupInfos.Count > 0 ? Visibility.Visible : Visibility.Collapsed,
+            Background = (Brush)Application.Current.Resources["SurfaceBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["BackgroundLightBrush"],
+            BorderThickness = new Thickness(1)
         };
 
         var gridView = new GridView();
         gridView.Columns.Add(new GridViewColumn
         {
             Header = "备份时间",
-            DisplayMemberBinding = new Binding(nameof(TodoBackupInfo.BackupTimeDisplay)),
-            Width = 260
+            DisplayMemberBinding = new Binding(nameof(TodoBackupInfo.BackupTimeDisplay))
         });
         gridView.Columns.Add(new GridViewColumn
         {
             Header = "文件大小",
             DisplayMemberBinding = new Binding(nameof(TodoBackupInfo.FileSizeDisplay)),
-            Width = 120
+            Width = 80
         });
         backupListView.View = gridView;
         backupListView.SelectedIndex = backupInfos.Count > 0 ? 0 : -1;
@@ -1789,7 +1788,7 @@ public partial class MainWindow : Window
         {
             DialogService.ShowCustomDialog(
                 "恢复备份",
-                DialogType.Information,
+                DialogType.None,
                 rootPanel,
                 "恢复",
                 "取消",
