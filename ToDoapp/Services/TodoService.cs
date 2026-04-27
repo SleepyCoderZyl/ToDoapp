@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security;
@@ -13,8 +14,11 @@ namespace ToDoapp.Services;
 /// </summary>
 public class TodoService
 {
-    private const int DefaultBackupLimit = 10;
+    private const int DefaultBackupLimit = 30;
     private const string BackupSearchPattern = "todos-*.json";
+    private const string BackupFilePrefix = "todos-";
+    private const string BackupFileTimestampFormat = "yyyyMMdd-HHmmssfff";
+    private static readonly TimeSpan DefaultBackupInterval = TimeSpan.FromMinutes(10);
 
     /// <summary>
     /// 数据文件路径
@@ -22,6 +26,7 @@ public class TodoService
     private readonly string _dataFilePath;
     private readonly string _backupDirectoryPath;
     private readonly int _maxBackupFiles;
+    private readonly TimeSpan _backupInterval;
     
     /// <summary>
     /// JSON序列化选项
@@ -31,11 +36,20 @@ public class TodoService
     /// <summary>
     /// 初始化TodoService实例
     /// </summary>
-    public TodoService(string? dataDirectoryOverride = null, int maxBackupFiles = DefaultBackupLimit)
+    public TodoService(
+        string? dataDirectoryOverride = null,
+        int maxBackupFiles = DefaultBackupLimit,
+        TimeSpan? backupInterval = null)
     {
         if (maxBackupFiles <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(maxBackupFiles), "备份文件数量上限必须大于 0。");
+        }
+
+        var resolvedBackupInterval = backupInterval ?? DefaultBackupInterval;
+        if (resolvedBackupInterval < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(backupInterval), "备份时间间隔不能小于 0。");
         }
 
         string appFolder;
@@ -44,7 +58,6 @@ public class TodoService
             var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             appFolder = Path.Combine(appDataPath, "ToDoApp");
 
-            // 验证路径安全性，防止路径遍历攻击
             var fullPath = Path.GetFullPath(appFolder);
             var fullAppDataPath = Path.GetFullPath(appDataPath);
             if (!fullPath.StartsWith(fullAppDataPath, StringComparison.OrdinalIgnoreCase))
@@ -62,6 +75,7 @@ public class TodoService
         _backupDirectoryPath = Path.Combine(appFolder, "backups");
         Directory.CreateDirectory(_backupDirectoryPath);
         _maxBackupFiles = maxBackupFiles;
+        _backupInterval = resolvedBackupInterval;
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -99,7 +113,6 @@ public class TodoService
         }
         catch (Exception ex)
         {
-            // 记录错误日志
             System.Diagnostics.Debug.WriteLine($"加载待办事项失败: {ex.Message}");
             return TodoLoadResult.Failure($"加载待办事项失败：{ex.Message}");
         }
@@ -140,7 +153,7 @@ public class TodoService
             string? backupPath = null;
             if (File.Exists(_dataFilePath))
             {
-                backupPath = CreateBackup();
+                backupPath = CreateBackupIfNeeded();
                 File.Replace(tempFilePath, _dataFilePath, null, true);
             }
             else
@@ -153,7 +166,6 @@ public class TodoService
         }
         catch (Exception ex)
         {
-            // 记录错误日志
             System.Diagnostics.Debug.WriteLine($"保存待办事项失败: {ex.Message}");
             return TodoSaveResult.Failure($"保存待办事项失败：{ex.Message}");
         }
@@ -212,7 +224,7 @@ public class TodoService
 
             backupInfos.Add(new TodoBackupInfo(
                 fileInfo.FullName,
-                fileInfo.LastWriteTime,
+                GetBackupTimestamp(backupPath) ?? fileInfo.LastWriteTime,
                 fileInfo.Length,
                 isLatest));
             isLatest = false;
@@ -256,7 +268,7 @@ public class TodoService
             var backupInfo = new FileInfo(fullBackupPath);
             return TodoRestoreResult.Success(
                 readResult.Todos,
-                new TodoBackupInfo(fullBackupPath, backupInfo.LastWriteTime, backupInfo.Length, false));
+                new TodoBackupInfo(fullBackupPath, GetBackupTimestamp(fullBackupPath) ?? backupInfo.LastWriteTime, backupInfo.Length, false));
         }
         catch (Exception ex)
         {
@@ -377,9 +389,23 @@ public class TodoService
         }
     }
 
-    private string CreateBackup()
+    private string? CreateBackupIfNeeded()
     {
-        var backupPath = Path.Combine(_backupDirectoryPath, $"todos-{DateTime.Now:yyyyMMdd-HHmmssfff}.json");
+        var latestBackupPath = GetBackupFilesDescending().FirstOrDefault();
+        if (latestBackupPath != null)
+        {
+            var latestBackupTime = GetBackupTimestamp(latestBackupPath);
+            if (latestBackupTime.HasValue)
+            {
+                var elapsed = DateTime.Now - latestBackupTime.Value;
+                if (elapsed < _backupInterval)
+                {
+                    return null;
+                }
+            }
+        }
+
+        var backupPath = Path.Combine(_backupDirectoryPath, $"{BackupFilePrefix}{DateTime.Now.ToString(BackupFileTimestampFormat, CultureInfo.InvariantCulture)}.json");
         File.Copy(_dataFilePath, backupPath, true);
         return backupPath;
     }
@@ -392,8 +418,29 @@ public class TodoService
         }
 
         return Directory.GetFiles(_backupDirectoryPath, BackupSearchPattern)
-            .OrderByDescending(path => File.GetLastWriteTime(path))
-            .ThenByDescending(Path.GetFileName);
+            .Select(path => new BackupFileEntry(path, GetBackupTimestamp(path), File.GetLastWriteTime(path)))
+            .OrderByDescending(entry => entry.TimestampFromFileName ?? entry.LastWriteTime)
+            .ThenByDescending(entry => Path.GetFileName(entry.Path))
+            .Select(entry => entry.Path);
+    }
+
+    private static DateTime? GetBackupTimestamp(string backupPath)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(backupPath);
+        if (string.IsNullOrWhiteSpace(fileName) || !fileName.StartsWith(BackupFilePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var timestampText = fileName[BackupFilePrefix.Length..];
+        return DateTime.TryParseExact(
+            timestampText,
+            BackupFileTimestampFormat,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var backupTime)
+            ? backupTime
+            : null;
     }
 
     private void CleanupOldBackups()
@@ -416,6 +463,8 @@ public class TodoService
             }
         }
     }
+
+    private sealed record BackupFileEntry(string Path, DateTime? TimestampFromFileName, DateTime LastWriteTime);
 }
 
 public sealed class TodoLoadResult
@@ -507,9 +556,8 @@ public sealed class TodoBackupInfo
     public DateTime BackupTime { get; }
     public long FileSizeBytes { get; }
     public bool IsLatest { get; }
-    public string BackupTimeDisplay => IsLatest
-        ? $"{BackupTime:yyyy-MM-dd HH:mm:ss}（最新）"
-        : $"{BackupTime:yyyy-MM-dd HH:mm:ss}";
+    public string FileName => Path.GetFileName(FilePath);
+    public string BackupTimeDisplay => BackupTime.ToString("yyyy-MM-dd HH:mm:ss");
     public string FileSizeDisplay => FormatFileSize(FileSizeBytes);
 
     public TodoBackupInfo(string filePath, DateTime backupTime, long fileSizeBytes, bool isLatest)
@@ -522,19 +570,20 @@ public sealed class TodoBackupInfo
 
     private static string FormatFileSize(long fileSizeBytes)
     {
-        string[] units = ["B", "KB", "MB", "GB"];
-        double size = fileSizeBytes;
-        var unitIndex = 0;
+        const long kb = 1024;
+        const long mb = kb * 1024;
 
-        while (size >= 1024 && unitIndex < units.Length - 1)
+        if (fileSizeBytes >= mb)
         {
-            size /= 1024;
-            unitIndex++;
+            return $"{fileSizeBytes / (double)mb:0.##} MB";
         }
 
-        return unitIndex == 0
-            ? $"{fileSizeBytes} {units[unitIndex]}"
-            : $"{size:0.##} {units[unitIndex]}";
+        if (fileSizeBytes >= kb)
+        {
+            return $"{fileSizeBytes / (double)kb:0.##} KB";
+        }
+
+        return $"{fileSizeBytes} B";
     }
 }
 
