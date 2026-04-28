@@ -1459,8 +1459,17 @@ public partial class MainWindow : Window
             .ThenByDescending(t => t.CreatedDate)
             .ToList();
         _widgetWindow.SetTasks(pendingItems);
-        
-        if (_widgetWindowLeft > 0 && _widgetWindowTop > 0)
+
+        var settings = SettingsService.Instance.Settings;
+        var hasSavedWidgetBounds = settings.WidgetModeLeft > 0 || settings.WidgetModeTop > 0;
+        if (hasSavedWidgetBounds)
+        {
+            _widgetWindow.Left = settings.WidgetModeLeft;
+            _widgetWindow.Top = settings.WidgetModeTop;
+            _widgetWindow.Width = settings.WidgetModeWidth;
+            _widgetWindow.Height = settings.WidgetModeHeight;
+        }
+        else if (_widgetWindowLeft > 0 && _widgetWindowTop > 0)
         {
             _widgetWindow.Left = _widgetWindowLeft;
             _widgetWindow.Top = _widgetWindowTop;
