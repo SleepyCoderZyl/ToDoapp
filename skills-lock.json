@@ -5,6 +5,12 @@
       "source": "jeffallan/claude-skills",
       "sourceType": "github",
       "computedHash": "4f5879f8ab6f0a8b767b7a362ed188650d072bc929eeda1d8692578acf4a876e"
+    },
+    "karpathy-guidelines": {
+      "source": "forrestchang/andrej-karpathy-skills",
+      "sourceType": "github",
+      "skillPath": "skills/karpathy-guidelines/SKILL.md",
+      "computedHash": "0ec1641120accbb458780e0bd19a50a4182f2b97863e90851b91307f29802c9f"
     }
   }
 }
