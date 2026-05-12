@@ -26,6 +26,12 @@ public partial class MainWindow
     {
         var now = DateTime.Now;
 
+        if (now.Date != _lastTimeSensitiveRefreshDate)
+        {
+            RefreshTimeSensitiveTaskProperties();
+            _lastTimeSensitiveRefreshDate = now.Date;
+        }
+
         if (_canPersistData && (now - _lastAutoSaveTime).TotalMinutes >= 5)
         {
             SaveData();
@@ -48,6 +54,14 @@ public partial class MainWindow
         {
             CheckAndAutoArchiveCompletedTasks();
             _lastAutoArchiveCheckTime = now;
+        }
+    }
+
+    private void RefreshTimeSensitiveTaskProperties()
+    {
+        foreach (var task in _todoItems)
+        {
+            task.RefreshTimeSensitiveProperties();
         }
     }
 

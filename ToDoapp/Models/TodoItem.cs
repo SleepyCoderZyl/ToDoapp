@@ -134,6 +134,15 @@ public class TodoItem : INotifyPropertyChanged
             return (DueDate.Value.Date - DateTime.Now.Date).Days;
         }
     }
+
+    public void RefreshTimeSensitiveProperties()
+    {
+        OnPropertyChanged(nameof(IsOverdue));
+        OnPropertyChanged(nameof(DueDateDisplay));
+        OnPropertyChanged(nameof(DaysUntilDue));
+        OnPropertyChanged(nameof(DaysUntilPermanentDelete));
+        OnPropertyChanged(nameof(DeleteTimeDisplay));
+    }
     
     public string CompletedDateDisplay
     {

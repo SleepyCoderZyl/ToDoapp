@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private DateTime _lastOverdueCheckTime = DateTime.Now;
     private DateTime _lastTrashCleanupTime = DateTime.Now;
     private DateTime _lastAutoArchiveCheckTime = DateTime.Now;
+    private DateTime _lastTimeSensitiveRefreshDate = DateTime.Now.Date;
     private SystemTrayService? _systemTrayService;
     private GlobalHotKeyService? _globalHotKeyService;
     private bool _isWidgetMode;
