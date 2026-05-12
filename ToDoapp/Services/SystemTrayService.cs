@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using System.Drawing;
-using ToDoapp;
 using ToDoapp.Views;
 
 namespace ToDoapp.Services;
@@ -206,10 +205,7 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            var method = _mainWindow.GetType().GetMethod("IsWidgetMode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            bool isWidgetMode = method != null && (bool)method.Invoke(_mainWindow, null)!;
-            
-            if (isWidgetMode)
+            if (_mainWindow.IsWidgetMode())
             {
                 ToggleWidgetVisibility();
             }
@@ -231,22 +227,10 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            var field = _mainWindow.GetType().GetField("_widgetWindow", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var widgetWindow = field?.GetValue(_mainWindow) as Window;
-            
-            if (widgetWindow != null)
+            var isVisible = _mainWindow.ToggleWidgetWindowVisibility();
+            if (_mainWindow.IsWidgetMode())
             {
-                if (widgetWindow.IsVisible)
-                {
-                    widgetWindow.Hide();
-                    ShowNotification("待办便签", "小组件已隐藏");
-                }
-                else
-                {
-                    widgetWindow.Show();
-                    widgetWindow.Activate();
-                    ShowNotification("待办便签", "小组件已显示");
-                }
+                ShowNotification("待办便签", isVisible ? "小组件已显示" : "小组件已隐藏");
             }
         }
         catch (Exception ex)
@@ -279,26 +263,12 @@ public class SystemTrayService : IDisposable
             
             _mainWindow.Dispatcher.Invoke(() =>
             {
-                // 通过反射调用主窗口的IsWidgetMode方法
-                var method2 = _mainWindow.GetType().GetMethod("IsWidgetMode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (method2 != null)
-                {
-                    isWidgetMode = (bool)method2.Invoke(_mainWindow, null)!;
-                }
-                
-                // 获取小组件窗口可见状态和鼠标穿透状态（仅在小组件模式下）
+                isWidgetMode = _mainWindow.IsWidgetMode();
+
                 if (isWidgetMode)
                 {
-                    var field = _mainWindow.GetType().GetField("_widgetWindow", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    var widgetWindow = field?.GetValue(_mainWindow) as Window;
-                    isWidgetWindowVisible = widgetWindow?.IsVisible ?? false;
-                    
-                    // 通过反射调用主窗口的IsMousePassThroughEnabled方法
-                    var method1 = _mainWindow.GetType().GetMethod("IsMousePassThroughEnabled", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    if (method1 != null)
-                    {
-                        isMousePassThroughEnabled = (bool)method1.Invoke(_mainWindow, null)!;
-                    }
+                    isWidgetWindowVisible = _mainWindow.IsWidgetWindowVisible;
+                    isMousePassThroughEnabled = _mainWindow.IsMousePassThroughEnabled();
                 }
             });
             
@@ -404,8 +374,7 @@ public class SystemTrayService : IDisposable
         {
             _mainWindow.Dispatcher.Invoke(() =>
             {
-                var method = _mainWindow.GetType().GetMethod("ToggleWidgetMode", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method?.Invoke(_mainWindow, null);
+                _mainWindow.ToggleWidgetMode();
             });
         }
         catch (Exception ex)

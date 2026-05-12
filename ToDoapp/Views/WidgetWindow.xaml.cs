@@ -420,8 +420,7 @@ public partial class WidgetWindow : Window
                 {
                     try
                     {
-                        var method = _mainWindow.GetType().GetMethod("ToggleWidgetMode", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        method?.Invoke(_mainWindow, null);
+                        _mainWindow.ToggleWidgetMode();
                     }
                     catch (Exception ex)
                     {

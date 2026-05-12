@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ToDoapp.Views"
-        xmlns:app="clr-namespace:ToDoapp"
+        xmlns:converters="clr-namespace:ToDoapp.Converters"
         x:Name="WidgetWindowRoot"
         mc:Ignorable="d"
         Title="待办便签" Height="360" Width="280"
@@ -30,7 +30,7 @@
     </Window.ContextMenu>
 
     <Window.Resources>
-        <app:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <Style x:Key="WidgetTaskCheckBoxHostStyle" TargetType="Border">
             <Setter Property="Width" Value="30"/>
             <Setter Property="Opacity" Value="0"/>

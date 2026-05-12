@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:ToDoapp"
+             xmlns:converters="clr-namespace:ToDoapp.Converters"
              mc:Ignorable="d"
              d:DesignHeight="360" d:DesignWidth="280"
              PreviewMouseLeftButtonDown="WidgetView_MouseLeftButtonDown"
@@ -11,7 +11,7 @@
              MouseLeftButtonDown="WidgetView_MouseLeftButtonDownForResize"
              MouseLeftButtonUp="WidgetView_MouseLeftButtonUp">
     <UserControl.Resources>
-        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="Transparent"/>

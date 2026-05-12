@@ -1,9 +1,9 @@
-<Window x:Class="ToDoapp.MainWindow"
+<Window x:Class="ToDoapp.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ToDoapp"
+        xmlns:converters="clr-namespace:ToDoapp.Converters"
         xmlns:widgets="clr-namespace:ToDoapp.Widgets"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
@@ -25,7 +25,7 @@
     </shell:WindowChrome.WindowChrome>
     
     <Window.Resources>
-        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         
         <Storyboard x:Key="FadeInAnimation">
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
@@ -243,7 +243,7 @@
                                                 <TextBlock.Width>
                                                     <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=ListBox}">
                                                         <Binding.Converter>
-                                                            <local:WidthAdjustConverter />
+                                                            <converters:WidthAdjustConverter />
                                                         </Binding.Converter>
                                                     </Binding>
                                                 </TextBlock.Width>
@@ -374,7 +374,7 @@
                                                 <TextBlock.Width>
                                                     <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=ListBox}">
                                                         <Binding.Converter>
-                                                            <local:WidthAdjustConverter />
+                                                            <converters:WidthAdjustConverter />
                                                         </Binding.Converter>
                                                     </Binding>
                                                 </TextBlock.Width>
@@ -781,7 +781,7 @@
                                                     <TextBlock.Width>
                                                         <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=ListBox}">
                                                             <Binding.Converter>
-                                                                <local:WidthAdjustConverter />
+                                                                <converters:WidthAdjustConverter />
                                                             </Binding.Converter>
                                                         </Binding>
                                                     </TextBlock.Width>
