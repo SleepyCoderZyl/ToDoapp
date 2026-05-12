@@ -65,4 +65,16 @@ public class AppSettings
 
     [JsonPropertyName("startupReminderItems")]
     public List<StartupReminderEntry> StartupReminderItems { get; set; } = [];
+
+    [JsonPropertyName("showScheduledReminderDaily")]
+    public bool ShowScheduledReminderDaily { get; set; } = false;
+
+    [JsonPropertyName("scheduledReminderTime")]
+    public string ScheduledReminderTime { get; set; } = "09:00";
+
+    [JsonPropertyName("scheduledReminderItems")]
+    public List<StartupReminderEntry> ScheduledReminderItems { get; set; } = [];
+
+    [JsonPropertyName("lastScheduledReminderDate")]
+    public string? LastScheduledReminderDate { get; set; }
 }

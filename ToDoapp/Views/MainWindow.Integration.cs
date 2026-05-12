@@ -20,6 +20,7 @@ public partial class MainWindow
 
         CheckOverdueTasks();
         CleanupExpiredTrashItems();
+        CheckScheduledReminder();
     }
 
     private void MainTimer_Tick(object? sender, EventArgs e)
@@ -55,6 +56,8 @@ public partial class MainWindow
             CheckAndAutoArchiveCompletedTasks();
             _lastAutoArchiveCheckTime = now;
         }
+
+        CheckScheduledReminder();
     }
 
     private void RefreshTimeSensitiveTaskProperties()
@@ -130,6 +133,28 @@ public partial class MainWindow
 
         UpdateStatus(message);
         _systemTrayService?.ShowNotification("待办事项提醒", message);
+    }
+
+    private void CheckScheduledReminder()
+    {
+        var settings = SettingsService.Instance.Settings;
+        var now = DateTime.Now;
+        if (!StartupReminderService.ShouldShowScheduledReminder(settings, now))
+        {
+            return;
+        }
+
+        var snapshot = new StartupReminderService(_todoService, () => settings).CreateScheduledSnapshot(now);
+        if (!snapshot.HasContent)
+        {
+            return;
+        }
+
+        settings.LastScheduledReminderDate = StartupReminderService.GetScheduledReminderDateToken(now);
+        SettingsService.Instance.SaveSettings();
+
+        var reminderWindow = new StartupReminderWindow(this, snapshot);
+        reminderWindow.ShowDialog();
     }
 
     private void InitializeSystemTray()

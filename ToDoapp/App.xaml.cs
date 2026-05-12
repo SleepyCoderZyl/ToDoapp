@@ -132,7 +132,7 @@ public partial class App : System.Windows.Application
                 return;
             }
 
-            var snapshot = new StartupReminderService().CreateSnapshot(DateTime.Now);
+            var snapshot = new StartupReminderService().CreateStartupSnapshot(DateTime.Now);
             if (!snapshot.HasContent)
             {
                 return;

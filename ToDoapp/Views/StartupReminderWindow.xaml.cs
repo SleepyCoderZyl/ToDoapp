@@ -8,27 +8,11 @@ public partial class StartupReminderWindow : Window
 {
     private readonly MainWindow _mainWindow;
 
-    public StartupReminderWindow(MainWindow mainWindow, StartupReminderSnapshot snapshot)
+    public StartupReminderWindow(MainWindow mainWindow, ReminderSnapshot snapshot)
     {
         InitializeComponent();
         _mainWindow = mainWindow;
         DataContext = snapshot;
-    }
-
-    public string GreetingText
-    {
-        get
-        {
-            var hour = DateTime.Now.Hour;
-            var greeting = hour switch
-            {
-                >= 5 and < 12 => "早安",
-                >= 12 and < 18 => "午安",
-                _ => "晚上好"
-            };
-
-            return $"{greeting}，今天先看这几件事";
-        }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -110,8 +110,8 @@ public class SettingsViewModel : INotifyPropertyChanged
         var startupReminderItem = new SettingItem
         {
             Id = "startupReminder",
-            Name = "开机提示",
-            Description = "配置开机自启时显示的自定义提醒",
+            Name = "弹窗提示",
+            Description = "配置启动与定时弹出的提醒内容",
             Category = SettingCategory.General,
             ContentControl = startupReminderContent
         };
@@ -375,20 +375,20 @@ public class SettingsViewModel : INotifyPropertyChanged
     {
         var settings = SettingsService.Instance.Settings;
         settings.StartupReminderItems ??= [];
+        settings.ScheduledReminderItems ??= [];
+        if (string.IsNullOrWhiteSpace(settings.ScheduledReminderTime))
+        {
+            settings.ScheduledReminderTime = "09:00";
+        }
 
-        var reminderItems = settings.StartupReminderItems;
         var container = new Grid { Margin = new Thickness(20) };
         container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         container.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var titleText = new TextBlock
         {
-            Text = "开机提示",
+            Text = "弹窗提示",
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
@@ -399,7 +399,7 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         var descriptionText = new TextBlock
         {
-            Text = "仅在开机自启时弹出提示窗口，展示你配置的自定义提醒。",
+            Text = "统一管理应用启动和每日定时弹出的提醒内容。",
             FontSize = 13,
             Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
             TextWrapping = TextWrapping.Wrap,
@@ -408,10 +408,110 @@ public class SettingsViewModel : INotifyPropertyChanged
         Grid.SetRow(descriptionText, 1);
         container.Children.Add(descriptionText);
 
-        var togglePanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var tabControl = new TabControl
+        {
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Style = Application.Current.Resources["ModernTabControlStyle"] as Style
+        };
+
+        var tabItemStyle = Application.Current.Resources["ModernTabItemStyle"] as Style;
+        if (tabItemStyle != null)
+        {
+            tabControl.Resources.Add(typeof(TabItem), new Style(typeof(TabItem), tabItemStyle));
+        }
+
+        tabControl.Items.Add(new TabItem
+        {
+            Header = "启动弹窗",
+            Content = CreateReminderTabContent(
+                description: "应用通过开机自启拉起时弹出提示窗口，展示你配置的提醒内容。",
+                isEnabled: settings.ShowStartupReminderOnAutoStart,
+                onEnabledChanged: isEnabled =>
+                {
+                    settings.ShowStartupReminderOnAutoStart = isEnabled;
+                    SettingsService.Instance.SaveSettings();
+                },
+                reminderItems: settings.StartupReminderItems,
+                onSaveItems: () =>
+                {
+                    settings.StartupReminderItems = settings.StartupReminderItems;
+                    SettingsService.Instance.SaveSettings();
+                },
+                emptyStateText: "还没有启动弹窗内容，新增一条试试。",
+                hintText: "提示窗口会按这里的顺序展示已启用的提醒项，例如：上班打卡、写日报、带工牌。")
+        });
+
+        tabControl.Items.Add(new TabItem
+        {
+            Header = "定时弹窗",
+            Content = CreateReminderTabContent(
+                description: "应用运行或驻留托盘时，每天在指定时间弹出一次提醒窗口。",
+                isEnabled: settings.ShowScheduledReminderDaily,
+                onEnabledChanged: isEnabled =>
+                {
+                    settings.ShowScheduledReminderDaily = isEnabled;
+                    SettingsService.Instance.SaveSettings();
+                },
+                reminderItems: settings.ScheduledReminderItems,
+                onSaveItems: () =>
+                {
+                    settings.ScheduledReminderItems = settings.ScheduledReminderItems;
+                    SettingsService.Instance.SaveSettings();
+                },
+                emptyStateText: "还没有定时提示内容，新增一条试试。",
+                hintText: "每天只会在设定时间弹出一次，内容按这里的顺序展示已启用的提醒项。",
+                extraSettingsContent: CreateScheduledReminderTimeContent(settings))
+        });
+
+        Grid.SetRow(tabControl, 2);
+        container.Children.Add(tabControl);
+
+        return container;
+    }
+
+    private FrameworkElement CreateReminderTabContent(
+        string description,
+        bool isEnabled,
+        Action<bool> onEnabledChanged,
+        System.Collections.Generic.List<StartupReminderEntry> reminderItems,
+        Action onSaveItems,
+        string emptyStateText,
+        string hintText,
+        FrameworkElement? extraSettingsContent = null)
+    {
+        var scrollViewer = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+        };
+
+        var container = new StackPanel
+        {
+            Margin = new Thickness(0, 12, 0, 0)
+        };
+        scrollViewer.Content = container;
+
+        var descriptionText = new TextBlock
+        {
+            Text = description,
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 18)
+        };
+        container.Children.Add(descriptionText);
+
+        var togglePanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 20)
+        };
+
         var toggleSwitch = new CheckBox
         {
-            IsChecked = settings.ShowStartupReminderOnAutoStart,
+            IsChecked = isEnabled,
             FontSize = 14,
             Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
             VerticalContentAlignment = VerticalAlignment.Center
@@ -419,7 +519,7 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         var statusText = new TextBlock
         {
-            Text = settings.ShowStartupReminderOnAutoStart ? "已启用" : "已禁用",
+            Text = isEnabled ? "已启用" : "已禁用",
             FontSize = 13,
             Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
             Margin = new Thickness(10, 0, 0, 0),
@@ -428,22 +528,24 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         toggleSwitch.Checked += (s, e) =>
         {
-            settings.ShowStartupReminderOnAutoStart = true;
             statusText.Text = "已启用";
-            SettingsService.Instance.SaveSettings();
+            onEnabledChanged(true);
         };
 
         toggleSwitch.Unchecked += (s, e) =>
         {
-            settings.ShowStartupReminderOnAutoStart = false;
             statusText.Text = "已禁用";
-            SettingsService.Instance.SaveSettings();
+            onEnabledChanged(false);
         };
 
         togglePanel.Children.Add(toggleSwitch);
         togglePanel.Children.Add(statusText);
-        Grid.SetRow(togglePanel, 2);
         container.Children.Add(togglePanel);
+
+        if (extraSettingsContent != null)
+        {
+            container.Children.Add(extraSettingsContent);
+        }
 
         var sectionTitle = new TextBlock
         {
@@ -451,9 +553,8 @@ public class SettingsViewModel : INotifyPropertyChanged
             FontSize = 14,
             FontWeight = FontWeights.Medium,
             Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
-            Margin = new Thickness(0, 22, 0, 10)
+            Margin = new Thickness(0, 4, 0, 10)
         };
-        Grid.SetRow(sectionTitle, 3);
         container.Children.Add(sectionTitle);
 
         var inputPanel = new Grid { Margin = new Thickness(0, 0, 0, 12) };
@@ -479,8 +580,6 @@ public class SettingsViewModel : INotifyPropertyChanged
         Grid.SetColumn(addButton, 1);
         inputPanel.Children.Add(inputTextBox);
         inputPanel.Children.Add(addButton);
-
-        Grid.SetRow(inputPanel, 4);
         container.Children.Add(inputPanel);
 
         var listScrollViewer = new ScrollViewer
@@ -491,24 +590,21 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         var reminderListPanel = new StackPanel();
         listScrollViewer.Content = reminderListPanel;
-        Grid.SetRow(listScrollViewer, 5);
         container.Children.Add(listScrollViewer);
 
-        var hintText = new TextBlock
+        var hintTextBlock = new TextBlock
         {
-            Text = "提示窗口会按这里的顺序展示已启用的提醒项，例如：上班打卡、写日报、带工牌。",
+            Text = hintText,
             FontSize = 12,
             Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128)),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 12, 0, 0)
         };
-        Grid.SetRow(hintText, 6);
-        container.Children.Add(hintText);
+        container.Children.Add(hintTextBlock);
 
         void SaveReminderSettings()
         {
-            settings.StartupReminderItems = reminderItems;
-            SettingsService.Instance.SaveSettings();
+            onSaveItems();
         }
 
         void RefreshReminderList()
@@ -519,7 +615,7 @@ public class SettingsViewModel : INotifyPropertyChanged
             {
                 reminderListPanel.Children.Add(new TextBlock
                 {
-                    Text = "还没有自定义提醒，新增一条试试。",
+                    Text = emptyStateText,
                     FontSize = 13,
                     Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
                     Margin = new Thickness(0, 8, 0, 0)
@@ -617,6 +713,113 @@ public class SettingsViewModel : INotifyPropertyChanged
         };
 
         RefreshReminderList();
+        return scrollViewer;
+    }
+
+    private FrameworkElement CreateScheduledReminderTimeContent(AppSettings settings)
+    {
+        if (!StartupReminderService.TryParseScheduledReminderTime(settings.ScheduledReminderTime, out var scheduledTime))
+        {
+            scheduledTime = new TimeOnly(9, 0);
+            settings.ScheduledReminderTime = "09:00";
+        }
+
+        var container = new StackPanel
+        {
+            Margin = new Thickness(0, 0, 0, 20)
+        };
+
+        container.Children.Add(new TextBlock
+        {
+            Text = "每日提醒时间",
+            FontSize = 14,
+            FontWeight = FontWeights.Medium,
+            Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
+            Margin = new Thickness(0, 0, 0, 10)
+        });
+
+        var inputRow = new Grid
+        {
+            Margin = new Thickness(0, 0, 0, 10)
+        };
+        inputRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        inputRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        inputRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var timeInputBox = new TextBox
+        {
+            Width = 168,
+            Text = scheduledTime.ToString("HH:mm"),
+            MaxLength = 5,
+            Style = Application.Current.Resources["ModernTextBoxStyle"] as Style,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var formatHintText = new TextBlock
+        {
+            Text = "格式 HH:mm",
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Margin = new Thickness(12, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var timeHintText = new TextBlock
+        {
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        void ShowTimeHint(string text, Brush? foreground = null)
+        {
+            timeHintText.Text = text;
+            timeHintText.Foreground = foreground ?? new SolidColorBrush(Color.FromRgb(156, 163, 175));
+        }
+
+        void CommitScheduledTime()
+        {
+            var input = timeInputBox.Text.Trim();
+            if (!StartupReminderService.TryParseScheduledReminderTime(input, out var parsedTime))
+            {
+                ShowTimeHint("请输入有效时间，例如 09:00。", new SolidColorBrush(Color.FromRgb(248, 81, 73)));
+                return;
+            }
+
+            settings.ScheduledReminderTime = parsedTime.ToString("HH:mm");
+            timeInputBox.Text = settings.ScheduledReminderTime;
+            SettingsService.Instance.SaveSettings();
+            ShowTimeHint($"每天 {settings.ScheduledReminderTime} 弹出一次");
+        }
+
+        timeInputBox.KeyDown += (s, e) =>
+        {
+            if (e.Key == Key.Enter)
+            {
+                CommitScheduledTime();
+                e.Handled = true;
+            }
+        };
+        timeInputBox.LostFocus += (s, e) => CommitScheduledTime();
+
+        Grid.SetColumn(timeInputBox, 0);
+        Grid.SetColumn(formatHintText, 1);
+        inputRow.Children.Add(timeInputBox);
+        inputRow.Children.Add(formatHintText);
+
+        ShowTimeHint($"每天 {settings.ScheduledReminderTime} 弹出一次");
+
+        container.Children.Add(inputRow);
+        container.Children.Add(timeHintText);
+        container.Children.Add(new TextBlock
+        {
+            Text = "仅在应用运行或驻留托盘时生效；如果错过当天时间点，不会补发。",
+            FontSize = 12,
+            Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128)),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 10, 0, 0)
+        });
+
         return container;
     }
 

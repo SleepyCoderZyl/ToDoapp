@@ -45,6 +45,12 @@ public class SettingsService
                 if (settings != null)
                 {
                     settings.StartupReminderItems ??= [];
+                    settings.ScheduledReminderItems ??= [];
+                    if (string.IsNullOrWhiteSpace(settings.ScheduledReminderTime))
+                    {
+                        settings.ScheduledReminderTime = "09:00";
+                    }
+
                     return settings;
                 }
             }
@@ -54,7 +60,10 @@ public class SettingsService
             System.Diagnostics.Debug.WriteLine($"加载设置失败: {ex.Message}");
         }
         
-        return new AppSettings();
+        var defaultSettings = new AppSettings();
+        defaultSettings.StartupReminderItems ??= [];
+        defaultSettings.ScheduledReminderItems ??= [];
+        return defaultSettings;
     }
 
     public void SaveSettings()

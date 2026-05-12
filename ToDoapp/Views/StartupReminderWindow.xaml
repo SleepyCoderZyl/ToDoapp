@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="开机提示"
+        Title="提醒"
         Width="560"
         MinWidth="520"
         MinHeight="280"
@@ -41,11 +41,11 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="{Binding GreetingText, RelativeSource={RelativeSource AncestorType=Window}}"
+                        <TextBlock Text="{Binding TitleText}"
                                    FontSize="20"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <TextBlock Text="展示你设置好的提醒内容。"
+                        <TextBlock Text="{Binding DescriptionText}"
                                    Margin="0,6,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"/>
@@ -132,7 +132,7 @@
                                VerticalAlignment="Center"
                                TextWrapping="Wrap"
                                MaxWidth="320"
-                               Text="仅在开机自启时显示，可在设置中关闭。"/>
+                               Text="{Binding FooterHintText}"/>
 
                     <Button Grid.Column="1"
                             Margin="0,0,10,0"
