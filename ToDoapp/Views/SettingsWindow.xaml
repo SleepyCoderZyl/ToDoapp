@@ -74,12 +74,15 @@
                               FontSize="16" FontWeight="SemiBold" 
                               VerticalAlignment="Center"/>
                     
-                    <Button Grid.Column="1" Content="&#xE711;" 
-                           FontFamily="Segoe Fluent Icons" FontSize="12" 
+                    <Button Grid.Column="1"
                            Width="32" Height="32" 
                            Click="CloseButton_Click" 
                            Style="{StaticResource IconButtonStyle}" 
-                           Foreground="{StaticResource DangerBrush}"/>
+                           Foreground="{StaticResource DangerBrush}">
+                        <Viewbox Width="{StaticResource DialogTitleBarIconSize}" Height="{StaticResource DialogTitleBarIconSize}">
+                            <Path Data="{StaticResource CloseIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                        </Viewbox>
+                    </Button>
                 </Grid>
             </Border>
             

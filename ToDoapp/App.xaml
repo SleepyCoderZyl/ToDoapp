@@ -9,6 +9,7 @@
                 <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/SkinDark.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/Theme.xaml"/>
                 <ResourceDictionary Source="Styles/ModernStyles.xaml"/>
+                <ResourceDictionary Source="Resources/IconGeometries.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             
             <SolidColorBrush x:Key="DialogBackgroundBrush" Color="#FF202020"/>

@@ -88,26 +88,36 @@
                     <Button Grid.Column="1" x:Name="SettingsButton" Width="32" Height="32"
                            Click="SettingsButton_Click" ToolTip="设置" Style="{StaticResource IconButtonStyle}"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                        <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                        <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
+                            <Path Data="{StaticResource SettingsIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                        </Viewbox>
                     </Button>
                     
                     <Button Grid.Column="2" x:Name="WidgetModeButton" Width="32" Height="32"
                            Click="WidgetModeButton_Click" ToolTip="切换小组件模式" 
                            Style="{StaticResource IconButtonStyle}"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                        <TextBlock x:Name="WidgetModeButtonIcon" Text="&#xE8A7;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                        <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
+                            <Path x:Name="WidgetModeButtonIcon" Data="{StaticResource WidgetModeIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                        </Viewbox>
                     </Button>
                     
                     <Button Grid.Column="3" x:Name="MinimizeButton" Width="32" Height="32"
                            Click="MinimizeButton_Click" ToolTip="最小化" Style="{StaticResource IconButtonStyle}"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                        <TextBlock Text="&#xE738;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                        <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
+                            <Path Data="{StaticResource MinimizeIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                        </Viewbox>
                     </Button>
                     
-                    <Button Grid.Column="4" Content="&#xE711;" Width="32" Height="32"
-                           Click="ExitButton_Click" FontFamily="Segoe Fluent Icons" FontSize="14" 
+                    <Button Grid.Column="4" Width="32" Height="32"
+                           Click="ExitButton_Click"
                            Style="{StaticResource IconButtonStyle}" Foreground="{StaticResource DangerBrush}"
-                           shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                           shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                        <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
+                            <Path Data="{StaticResource CloseIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                        </Viewbox>
+                    </Button>
                 </Grid>
             </Border>
             
@@ -153,11 +163,14 @@
                                        FontSize="14"
                                        Margin="10,0,0,0"/>
                         
-                        <Button Grid.Column="2" x:Name="ClearDateButton" Content="&#xE711;" Width="28" Height="28" 
+                        <Button Grid.Column="2" x:Name="ClearDateButton" Width="28" Height="28" 
                                Margin="6,0,0,0" ToolTip="清除日期"
                                Click="ClearDateButton_Click" 
-                               Style="{StaticResource IconButtonStyle}"
-                               FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                               Style="{StaticResource IconButtonStyle}">
+                            <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                <Path Data="{StaticResource CloseIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                            </Viewbox>
+                        </Button>
                         
                         <Button Grid.Column="4" Height="36" Width="100"
                                Click="SmartReadButton_Click" Margin="0,0,0,0"
@@ -301,7 +314,9 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Button.Style>
-                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                                <Path Data="{StaticResource DeleteIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                                            </Viewbox>
                                         </Button>
                                     </Grid>
                                 </DataTemplate>
@@ -421,7 +436,9 @@
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Button.Style>
-                                                <TextBlock Text="&#xE7B5;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                                                <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                                    <Path Data="{StaticResource ArchiveIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                                                </Viewbox>
                                             </Button>
                                             <Button Width="28" Height="28"
                                                    Tag="{Binding}" Click="DeleteTaskButton_Click"
@@ -436,7 +453,9 @@
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Button.Style>
-                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                                    <Path Data="{StaticResource DeleteIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                                                </Viewbox>
                                             </Button>
                                         </StackPanel>
                                     </Grid>
@@ -502,17 +521,19 @@
                                                                 <Setter.Value>
                                                                     <ControlTemplate TargetType="ToggleButton">
                                                                         <Border Background="Transparent" CornerRadius="4">
-                                                                            <TextBlock x:Name="Icon" Text="&#xE72A;" 
-                                                                                      FontFamily="Segoe Fluent Icons" FontSize="12"
-                                                                                      Foreground="{StaticResource TextSecondaryBrush}"
-                                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                            <Viewbox Width="{StaticResource ChevronIconSize}" Height="{StaticResource ChevronIconSize}">
+                                                                                <Path x:Name="Icon"
+                                                                                      Data="{StaticResource ChevronRightIconGeometry}"
+                                                                                      Fill="{StaticResource TextSecondaryBrush}"
+                                                                                      Stretch="Uniform"/>
+                                                                            </Viewbox>
                                                                         </Border>
                                                                         <ControlTemplate.Triggers>
                                                                             <Trigger Property="IsChecked" Value="True">
-                                                                                <Setter TargetName="Icon" Property="Text" Value="&#xE74B;"/>
+                                                                                <Setter TargetName="Icon" Property="Data" Value="{StaticResource ChevronDownIconGeometry}"/>
                                                                             </Trigger>
                                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                                <Setter TargetName="Icon" Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                                                <Setter TargetName="Icon" Property="Fill" Value="{StaticResource TextPrimaryBrush}"/>
                                                                             </Trigger>
                                                                         </ControlTemplate.Triggers>
                                                                     </ControlTemplate>
@@ -592,7 +613,9 @@
                                                                                     </Style.Triggers>
                                                                                 </Style>
                                                                             </Button.Style>
-                                                                            <TextBlock Text="&#xE777;" FontFamily="Segoe Fluent Icons" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                            <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                                                                <Path Data="{StaticResource RestoreIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                                                                            </Viewbox>
                                                                         </Button>
                                                                         <Button Width="28" Height="28"
                                                                                Tag="{Binding}" Click="PermanentDeleteTaskButton_Click"
@@ -607,7 +630,9 @@
                                                                                     </Style.Triggers>
                                                                                 </Style>
                                                                             </Button.Style>
-                                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                            <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                                                                <Path Data="{StaticResource DeleteIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                                                                            </Viewbox>
                                                                         </Button>
                                                                     </StackPanel>
                                                                 </Grid>
@@ -653,17 +678,19 @@
                                                                                 <Setter.Value>
                                                                                     <ControlTemplate TargetType="ToggleButton">
                                                                                         <Border Background="Transparent">
-                                                                                            <TextBlock x:Name="ExpanderIcon" Text="&#xE76C;"
-                                                                                                      FontFamily="Segoe Fluent Icons" FontSize="10"
-                                                                                                      Foreground="{StaticResource TextSecondaryBrush}"
-                                                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                                            <Viewbox Width="{StaticResource ChevronIconSize}" Height="{StaticResource ChevronIconSize}">
+                                                                                                <Path x:Name="ExpanderIcon"
+                                                                                                      Data="{StaticResource ChevronRightIconGeometry}"
+                                                                                                      Fill="{StaticResource TextSecondaryBrush}"
+                                                                                                      Stretch="Uniform"/>
+                                                                                            </Viewbox>
                                                                                         </Border>
                                                                                         <ControlTemplate.Triggers>
                                                                                             <Trigger Property="IsChecked" Value="True">
-                                                                <Setter TargetName="ExpanderIcon" Property="Text" Value="&#xE70D;"/>
+                                                                <Setter TargetName="ExpanderIcon" Property="Data" Value="{StaticResource ChevronDownIconGeometry}"/>
                                                             </Trigger>
                                                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                                                <Setter TargetName="ExpanderIcon" Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                                                                <Setter TargetName="ExpanderIcon" Property="Fill" Value="{StaticResource TextPrimaryBrush}"/>
                                                                                             </Trigger>
                                                                                         </ControlTemplate.Triggers>
                                                                                     </ControlTemplate>
@@ -809,7 +836,9 @@
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Button.Style>
-                                                    <TextBlock Text="&#xE777;" FontFamily="Segoe Fluent Icons" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                                        <Path Data="{StaticResource RestoreIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                                                    </Viewbox>
                                                 </Button>
                                                 <Button Width="28" Height="28"
                                                        Tag="{Binding}" Click="PermanentDeleteTaskButton_Click"
@@ -824,7 +853,9 @@
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Button.Style>
-                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Viewbox Width="{StaticResource ContentActionIconSize}" Height="{StaticResource ContentActionIconSize}">
+                                                        <Path Data="{StaticResource DeleteIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                                                    </Viewbox>
                                                 </Button>
                                             </StackPanel>
                                         </Grid>
