@@ -1,15 +1,15 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using System.Drawing;
+using System.Diagnostics;
+using ToDoapp.Constants;
 using ToDoapp.Views;
 
 namespace ToDoapp.Services;
 
-/// <summary>
-/// 系统托盘服务，提供完整的托盘图标和菜单功能
-/// </summary>
 public class SystemTrayService : IDisposable
 {
     private MainWindow _mainWindow;
@@ -19,19 +19,17 @@ public class SystemTrayService : IDisposable
     private bool _isDisposed;
     private bool _isInitialized;
     private uint _taskbarCreatedMessage;
+    private readonly UpdateService _updateService = new();
 
-    // 消息常量
     private const int WM_USER = 0x0400;
     private const int WM_TRAYICON = WM_USER + 1;
     private const int WM_TRAYICON_MESSAGE = WM_USER + 2;
 
-    // 托盘图标消息
     private const int NIM_ADD = 0x00000000;
     private const int NIM_MODIFY = 0x00000001;
     private const int NIM_DELETE = 0x00000002;
     private const int NIM_SETVERSION = 0x00000004;
 
-    // 托盘图标事件
     private const int WM_LBUTTONDOWN = 0x0201;
     private const int WM_LBUTTONUP = 0x0202;
     private const int WM_LBUTTONDBLCLK = 0x0203;
@@ -43,14 +41,9 @@ public class SystemTrayService : IDisposable
     {
         _mainWindow = mainWindow;
         _isInitialized = false;
-        
-        // 监听窗口的SourceInitialized事件，确保窗口句柄已创建
         _mainWindow.SourceInitialized += MainWindow_SourceInitialized;
     }
 
-    /// <summary>
-    /// 窗口初始化完成事件处理
-    /// </summary>
     private void MainWindow_SourceInitialized(object? sender, EventArgs e)
     {
         try
@@ -70,9 +63,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 初始化系统托盘图标
-    /// </summary>
     private void InitializeNotifyIcon()
     {
         try
@@ -115,9 +105,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 加载默认图标
-    /// </summary>
     private IntPtr LoadDefaultIcon()
     {
         try
@@ -152,9 +139,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 注册窗口消息处理器
-    /// </summary>
     private void RegisterWindowMessageHandler()
     {
         try
@@ -168,9 +152,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 窗口消息处理
-    /// </summary>
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == _taskbarCreatedMessage && _taskbarCreatedMessage != 0)
@@ -198,9 +179,6 @@ public class SystemTrayService : IDisposable
         return IntPtr.Zero;
     }
 
-    /// <summary>
-    /// 显示窗口（根据当前模式显示主窗口或小组件）
-    /// </summary>
     private void ShowWindow_Click()
     {
         try
@@ -220,9 +198,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 切换小组件的显示/隐藏状态
-    /// </summary>
     private void ToggleWidgetVisibility()
     {
         try
@@ -239,28 +214,20 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 显示上下文菜单
-    /// </summary>
     private void ShowContextMenu()
     {
         try
         {
-            // 获取当前鼠标位置
             POINT mousePos;
             GetCursorPos(out mousePos);
-            
-            // 创建菜单
+
             IntPtr hMenu = CreatePopupMenu();
             IntPtr hImportExportMenu = CreatePopupMenu();
-            
-            // 获取当前小组件模式状态
+
             bool isWidgetMode = false;
-            // 获取小组件窗口可见状态
             bool isWidgetWindowVisible = false;
-            // 获取当前鼠标穿透状态
             bool isMousePassThroughEnabled = false;
-            
+
             _mainWindow.Dispatcher.Invoke(() =>
             {
                 isWidgetMode = _mainWindow.IsWidgetMode();
@@ -271,10 +238,9 @@ public class SystemTrayService : IDisposable
                     isMousePassThroughEnabled = _mainWindow.IsMousePassThroughEnabled();
                 }
             });
-            
-            // 添加菜单项
+
             AppendMenu(hMenu, MF_STRING, MenuToggleWidgetMode, isWidgetMode ? "切换到主页面" : "切换到小组件");
-            
+
             if (isWidgetMode)
             {
                 AppendMenu(hMenu, MF_STRING, MenuToggleWidgetVisibility, isWidgetWindowVisible ? "隐藏小组件" : "显示小组件");
@@ -285,17 +251,15 @@ public class SystemTrayService : IDisposable
             AppendMenu(hImportExportMenu, MF_STRING, MenuExportJson, "导出 JSON 文件");
             AppendMenu(hImportExportMenu, MF_STRING, MenuRestoreBackup, "恢复备份");
             AppendMenu(hMenu, MF_POPUP, hImportExportMenu, "导入/导出");
-            
+
             AppendMenu(hMenu, MF_STRING, MenuSettings, "设置");
             AppendMenu(hMenu, MF_STRING, MenuAbout, "关于");
             AppendMenu(hMenu, MF_SEPARATOR, 0, "");
             AppendMenu(hMenu, MF_STRING, MenuExit, "退出程序");
-            
-            // 显示菜单
+
             SetForegroundWindow(_windowHandle);
             int result = TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD, mousePos.X, mousePos.Y, 0, _windowHandle, IntPtr.Zero);
-            
-            // 处理菜单选择
+
             switch (result)
             {
                 case MenuToggleWidgetMode:
@@ -326,8 +290,7 @@ public class SystemTrayService : IDisposable
                     RestoreBackup_Click();
                     break;
             }
-            
-            // 销毁菜单
+
             DestroyMenu(hImportExportMenu);
             DestroyMenu(hMenu);
         }
@@ -337,37 +300,28 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 创建Win11风格的菜单项
-    /// </summary>
     private System.Windows.Controls.MenuItem CreateMenuItem(string header, System.Windows.RoutedEventHandler clickHandler)
     {
         var menuItem = new System.Windows.Controls.MenuItem { Header = header };
         menuItem.Click += clickHandler;
-        
-        // 设置菜单项样式
+
         menuItem.Background = System.Windows.Media.Brushes.Transparent;
         menuItem.Foreground = System.Windows.Media.Brushes.White;
         menuItem.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
         menuItem.FontSize = 12;
         menuItem.Padding = new System.Windows.Thickness(8, 4, 8, 4);
-        
-        // 添加鼠标悬停效果
+
         menuItem.Style = new System.Windows.Style(typeof(System.Windows.Controls.MenuItem));
         menuItem.Style.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.BackgroundProperty, System.Windows.Media.Brushes.Transparent));
         menuItem.Style.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.ForegroundProperty, System.Windows.Media.Brushes.White));
-        
-        // 添加触发器
+
         var mouseOverTrigger = new System.Windows.Trigger { Property = System.Windows.UIElement.IsMouseOverProperty, Value = true };
         mouseOverTrigger.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.BackgroundProperty, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 44, 44, 44))));
         menuItem.Style.Triggers.Add(mouseOverTrigger);
-        
+
         return menuItem;
     }
 
-    /// <summary>
-    /// 切换小组件模式
-    /// </summary>
     private void ToggleWidgetMode_Click()
     {
         try
@@ -383,9 +337,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 切换鼠标穿透状态
-    /// </summary>
     private void ToggleMousePassThrough_Click()
     {
         try
@@ -401,9 +352,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 打开设置窗口
-    /// </summary>
     private void Settings_Click()
     {
         try
@@ -423,9 +371,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 导入 JSON 文件
-    /// </summary>
     private void ImportJson_Click()
     {
         try
@@ -441,9 +386,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 导出 JSON 文件
-    /// </summary>
     private void ExportJson_Click()
     {
         try
@@ -459,9 +401,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 恢复备份
-    /// </summary>
     private void RestoreBackup_Click()
     {
         try
@@ -477,82 +416,89 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 显示关于对话框
-    /// </summary>
     private void About_Click()
     {
         try
         {
             _mainWindow.Dispatcher.Invoke(() =>
             {
-                var version = System.Reflection.Assembly.GetExecutingAssembly()
-                    .GetName().Version?.ToString() ?? "1.1.0";
-                
-                var aboutPanel = new System.Windows.Controls.StackPanel
+                var currentVersion = _updateService.GetCurrentVersion();
+                var statusText = CreateAboutStatusText("点击检查更新获取最新版本。", GetResourceBrush("TextSecondaryBrush"));
+                var detailText = CreateAboutStatusText(string.Empty, GetResourceBrush("TextMutedBrush"));
+                detailText.Visibility = Visibility.Collapsed;
+
+                var checkUpdateButton = CreateActionButton("检查更新", "DialogButtonStyle");
+                var openDownloadButton = CreateActionButton("前往下载", "DialogButtonStyle");
+                openDownloadButton.Visibility = Visibility.Collapsed;
+
+                checkUpdateButton.Click += async (_, _) =>
                 {
-                    Margin = new Thickness(20)
+                    checkUpdateButton.IsEnabled = false;
+                    openDownloadButton.Visibility = Visibility.Collapsed;
+                    statusText.Text = "正在检查更新…";
+                    statusText.Foreground = GetResourceBrush("TextPrimaryBrush");
+                    detailText.Text = "正在连接 GitHub Releases 获取最新版本信息。";
+                    detailText.Visibility = Visibility.Visible;
+
+                    try
+                    {
+                        var result = await _updateService.CheckForUpdatesAsync();
+                        statusText.Text = result.StatusText;
+                        statusText.Foreground = result.IsSuccess
+                            ? GetResourceBrush("TextPrimaryBrush")
+                            : GetResourceBrush("DangerBrush");
+
+                        detailText.Text = result.DetailText;
+                        detailText.Visibility = string.IsNullOrWhiteSpace(result.DetailText)
+                            ? Visibility.Collapsed
+                            : Visibility.Visible;
+
+                        if (result.IsSuccess && result.HasUpdate && !string.IsNullOrWhiteSpace(result.DownloadUrl))
+                        {
+                            openDownloadButton.Tag = result.DownloadUrl;
+                            openDownloadButton.Visibility = Visibility.Visible;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        statusText.Text = "检查更新失败";
+                        statusText.Foreground = GetResourceBrush("DangerBrush");
+                        detailText.Text = $"发生未预期错误：{ex.Message}";
+                        detailText.Visibility = Visibility.Visible;
+                    }
+                    finally
+                    {
+                        checkUpdateButton.IsEnabled = true;
+                    }
                 };
 
-                var appName = new System.Windows.Controls.TextBlock
+                openDownloadButton.Click += (_, _) =>
                 {
-                    Text = "待办便签",
-                    FontSize = 24,
-                    FontWeight = System.Windows.FontWeights.Bold,
-                    Foreground = System.Windows.Media.Brushes.White,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 10)
-                };
-                aboutPanel.Children.Add(appName);
+                    try
+                    {
+                        var targetUrl = openDownloadButton.Tag as string;
+                        if (string.IsNullOrWhiteSpace(targetUrl))
+                        {
+                            targetUrl = AppConstants.UpdateDownloadUrl;
+                        }
 
-                var versionText = new System.Windows.Controls.TextBlock
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = targetUrl,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        HandyControl.Controls.MessageBox.Error($"无法打开下载页面：{ex.Message}", "打开失败");
+                    }
+                };
+
+                var aboutPanel = BuildAboutPanel(currentVersion, statusText, detailText, checkUpdateButton, openDownloadButton);
+                DialogService.ShowCustomDialog("关于", DialogType.None, aboutPanel, "关闭", null, (_, secondaryButton) =>
                 {
-                    Text = $"版本 {version}",
-                    FontSize = 14,
-                    Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(156, 163, 175)),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 20)
-                };
-                aboutPanel.Children.Add(versionText);
-
-                var descText = new System.Windows.Controls.TextBlock
-                {
-                    Text = "一个简洁的待办事项管理工具",
-                    FontSize = 13,
-                    Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(209, 213, 219)),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(0, 0, 0, 15)
-                };
-                aboutPanel.Children.Add(descText);
-
-                var separator = new System.Windows.Controls.Separator
-                {
-                    Margin = new Thickness(0, 10, 0, 15),
-                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(61, 61, 61))
-                };
-                aboutPanel.Children.Add(separator);
-
-                var authorText = new System.Windows.Controls.TextBlock
-                {
-                    Text = "作者: zylin",
-                    FontSize = 13,
-                    Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(156, 163, 175)),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 8)
-                };
-                aboutPanel.Children.Add(authorText);
-
-                var techText = new System.Windows.Controls.TextBlock
-                {
-                    Text = "技术栈: C# / WPF / .NET 10",
-                    FontSize = 12,
-                    Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(107, 114, 128)),
-                    HorizontalAlignment = HorizontalAlignment.Center
-                };
-                aboutPanel.Children.Add(techText);
-
-                DialogService.ShowCustomDialog("关于", DialogType.None, aboutPanel, "确定");
+                    secondaryButton.Visibility = Visibility.Collapsed;
+                });
             });
         }
         catch (Exception ex)
@@ -561,9 +507,157 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 完全退出应用
-    /// </summary>
+    private FrameworkElement BuildAboutPanel(
+        string currentVersion,
+        TextBlock statusText,
+        TextBlock detailText,
+        Button checkUpdateButton,
+        Button openDownloadButton)
+    {
+        var panel = new StackPanel
+        {
+            Width = 420,
+            MaxWidth = 420,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        panel.Children.Add(new TextBlock
+        {
+            Text = "待办便签",
+            FontSize = 24,
+            FontWeight = FontWeights.Bold,
+            Foreground = GetResourceBrush("TextPrimaryBrush"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"版本 {currentVersion}",
+            FontSize = 13,
+            Foreground = GetResourceBrush("TextSecondaryBrush"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 6, 0, 0)
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = "一个简洁的待办事项管理工具",
+            FontSize = 13,
+            Foreground = GetResourceBrush("TextSecondaryBrush"),
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 10, 0, 14)
+        });
+
+        panel.Children.Add(CreateAboutSeparator());
+
+        var updateTitle = new TextBlock
+        {
+            Text = "检查更新",
+            FontSize = 15,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = GetResourceBrush("TextPrimaryBrush"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 10)
+        };
+        panel.Children.Add(updateTitle);
+        panel.Children.Add(checkUpdateButton);
+        panel.Children.Add(statusText);
+        panel.Children.Add(detailText);
+
+        openDownloadButton.HorizontalAlignment = HorizontalAlignment.Center;
+        openDownloadButton.Margin = new Thickness(0, 8, 0, 0);
+        panel.Children.Add(openDownloadButton);
+
+        panel.Children.Add(CreateAboutSeparator(new Thickness(0, 14, 0, 14)));
+        panel.Children.Add(CreateInfoRow("产品名称", "待办便签"));
+        panel.Children.Add(CreateInfoRow("技术栈", "C# / WPF / .NET 10"));
+        panel.Children.Add(CreateInfoRow("更新来源", "GitHub Releases"));
+        panel.Children.Add(CreateInfoRow("作者", "zylin", false));
+
+        return panel;
+    }
+
+    private Border CreateAboutSeparator(Thickness? margin = null)
+    {
+        return new Border
+        {
+            Height = 1,
+            Background = GetResourceBrush("BackgroundLightBrush"),
+            Margin = margin ?? new Thickness(0, 0, 0, 14)
+        };
+    }
+
+    private Grid CreateInfoRow(string labelText, string valueText, bool hasBottomMargin = true)
+    {
+        var row = new Grid
+        {
+            Margin = hasBottomMargin ? new Thickness(0, 0, 0, 8) : new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Width = 280
+        };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(88) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var label = new TextBlock
+        {
+            Text = labelText,
+            FontSize = 12,
+            Foreground = GetResourceBrush("TextMutedBrush"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var value = new TextBlock
+        {
+            Text = valueText,
+            FontSize = 12,
+            Foreground = GetResourceBrush("TextSecondaryBrush"),
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        Grid.SetColumn(label, 0);
+        Grid.SetColumn(value, 1);
+        row.Children.Add(label);
+        row.Children.Add(value);
+        return row;
+    }
+
+    private TextBlock CreateAboutStatusText(string text, System.Windows.Media.Brush foreground)
+    {
+        return new TextBlock
+        {
+            Text = text,
+            FontSize = 13,
+            Foreground = foreground,
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 8, 0, 0),
+            MaxWidth = 320
+        };
+    }
+
+    private Button CreateActionButton(string text, string styleKey)
+    {
+        return new Button
+        {
+            Content = text,
+            Style = Application.Current.Resources[styleKey] as Style,
+            MinWidth = 110,
+            Margin = new Thickness(0),
+            Padding = new Thickness(16, 8, 16, 8),
+            Foreground = GetResourceBrush("TextPrimaryBrush"),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+    }
+
+    private System.Windows.Media.Brush GetResourceBrush(string key)
+    {
+        return Application.Current.Resources[key] as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.White;
+    }
+
     private void Exit_Click()
     {
         try
@@ -577,9 +671,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 最小化到托盘
-    /// </summary>
     public void MinimizeToTray()
     {
         try
@@ -593,9 +684,6 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    /// <summary>
-    /// 显示托盘通知
-    /// </summary>
     public void ShowNotification(string title, string message)
     {
         try
@@ -606,10 +694,9 @@ public class SystemTrayService : IDisposable
                 _notifyIconData.szInfo = message + "\0";
                 _notifyIconData.szInfoTitle = title + "\0";
                 _notifyIconData.dwInfoFlags = NIIF_INFO;
-                
+
                 Shell_NotifyIcon(NIM_MODIFY, ref _notifyIconData);
-                
-                // 恢复原始标志
+
                 _notifyIconData.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
             }
         }
@@ -639,15 +726,13 @@ public class SystemTrayService : IDisposable
         }
     }
 
-    // 常量定义
     private const int NIF_ICON = 0x00000002;
     private const int NIF_TIP = 0x00000004;
     private const int NIF_MESSAGE = 0x00000001;
     private const int NIF_INFO = 0x00000010;
     private const int NIIF_INFO = 0x00000001;
     private const int IDI_APPLICATION = 32512;
-    
-    // 菜单常量
+
     private const int MF_STRING = 0x00000000;
     private const int MF_SEPARATOR = 0x00000800;
     private const int MF_POPUP = 0x00000010;
@@ -665,7 +750,6 @@ public class SystemTrayService : IDisposable
     private const int MenuExportJson = 10;
     private const int MenuRestoreBackup = 11;
 
-    // Windows API 函数
     [DllImport("shell32.dll", CharSet = CharSet.Auto)]
     private static extern bool Shell_NotifyIcon(int dwMessage, ref NotifyIconData pnid);
 
@@ -677,26 +761,25 @@ public class SystemTrayService : IDisposable
 
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out POINT lpPoint);
-    
+
     [DllImport("user32.dll")]
     private static extern IntPtr CreatePopupMenu();
-    
+
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern bool AppendMenu(IntPtr hMenu, int uFlags, int uIDNewItem, string lpNewItem);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, EntryPoint = "AppendMenu")]
     private static extern bool AppendMenu(IntPtr hMenu, int uFlags, IntPtr uIDNewItem, string lpNewItem);
-    
+
     [DllImport("user32.dll")]
     private static extern int TrackPopupMenu(IntPtr hMenu, int uFlags, int x, int y, int nReserved, IntPtr hWnd, IntPtr lprc);
-    
+
     [DllImport("user32.dll")]
     private static extern bool DestroyMenu(IntPtr hMenu);
-    
+
     [DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
-    
-    // 结构体
+
     [StructLayout(LayoutKind.Sequential)]
     private struct POINT
     {
@@ -704,7 +787,6 @@ public class SystemTrayService : IDisposable
         public int Y;
     }
 
-    // 托盘图标数据结构
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
     private struct NotifyIconData
     {
