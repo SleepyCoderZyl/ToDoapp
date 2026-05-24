@@ -12,7 +12,7 @@ namespace ToDoapp.Views;
 
 public partial class MainWindow
 {
-    internal bool IsWidgetWindowVisible => _widgetWindow?.IsVisible == true;
+    public bool IsWidgetWindowVisible => _widgetWindow?.IsVisible == true;
 
     private void ApplyNativeWindowAppearance()
     {
@@ -85,7 +85,7 @@ public partial class MainWindow
         ToggleWidgetMode();
     }
 
-    internal void ToggleWidgetMode()
+    public void ToggleWidgetMode()
     {
         if (_isWidgetMode)
         {
@@ -236,7 +236,7 @@ public partial class MainWindow
         UpdateStatus("已切换到主页面");
     }
 
-    internal bool ToggleWidgetWindowVisibility()
+    public bool ToggleWidgetWindowVisibility()
     {
         if (_widgetWindow == null)
         {

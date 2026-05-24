@@ -10,10 +10,10 @@ namespace ToDoapp.Views;
 
 public partial class QuickAddWindow : Window
 {
-    private readonly TodoService _todoService;
+    private readonly ITodoService _todoService;
     private readonly ObservableCollection<TodoItem> _todoItems;
 
-    public QuickAddWindow(TodoService todoService, ObservableCollection<TodoItem> todoItems)
+    public QuickAddWindow(ITodoService todoService, ObservableCollection<TodoItem> todoItems)
     {
         InitializeComponent();
         _todoService = todoService;

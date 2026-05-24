@@ -14,10 +14,10 @@ public enum ReminderKind
 
 public class StartupReminderService
 {
-    private readonly TodoService _todoService;
+    private readonly ITodoService _todoService;
     private readonly Func<AppSettings> _settingsAccessor;
 
-    public StartupReminderService(TodoService? todoService = null, Func<AppSettings>? settingsAccessor = null)
+    public StartupReminderService(ITodoService? todoService = null, Func<AppSettings>? settingsAccessor = null)
     {
         _todoService = todoService ?? new TodoService();
         _settingsAccessor = settingsAccessor ?? (() => SettingsService.Instance.Settings);

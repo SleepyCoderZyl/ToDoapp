@@ -62,65 +62,37 @@ public partial class MainWindow
 
     private void RefreshTimeSensitiveTaskProperties()
     {
-        foreach (var task in _todoItems)
-        {
-            task.RefreshTimeSensitiveProperties();
-        }
+        _viewModel.RefreshTimeSensitiveTaskProperties();
     }
 
     private void CleanupExpiredTrashItems()
     {
-        var itemsToRemove = _todoItems
-            .Where(t => t.IsDeleted && t.DeletedDate.HasValue && (DateTime.Now - t.DeletedDate.Value).Days >= 7)
-            .ToList();
-
-        if (!itemsToRemove.Any())
+        var removedCount = _viewModel.CleanupExpiredTrashItems(DateTime.Now);
+        if (removedCount == 0)
         {
             return;
         }
 
-        foreach (var item in itemsToRemove)
-        {
-            _todoItems.Remove(item);
-        }
-
         RefreshTaskCollections();
-        UpdateTaskCount();
-        SaveData();
-        UpdateStatus($"已自动清理 {itemsToRemove.Count} 个过期垃圾箱任务");
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void CheckAndAutoArchiveCompletedTasks()
     {
         var autoArchiveDays = SettingsService.Instance.Settings.AutoArchiveDays;
-        var tasksToArchive = _todoItems
-            .Where(t =>
-                !t.IsDeleted &&
-                !t.IsArchived &&
-                t.IsCompleted &&
-                t.CompletedDate.HasValue &&
-                (DateTime.Now - t.CompletedDate.Value).Days >= autoArchiveDays)
-            .ToList();
-
-        if (!tasksToArchive.Any())
+        var archivedCount = _viewModel.CheckAndAutoArchiveCompletedTasks(autoArchiveDays);
+        if (archivedCount == 0)
         {
             return;
         }
 
-        foreach (var task in tasksToArchive)
-        {
-            task.IsArchived = true;
-        }
-
         RefreshTaskCollections();
-        UpdateTaskCount();
-        SaveData();
-        UpdateStatus($"已自动归档 {tasksToArchive.Count} 个已完成任务");
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void CheckOverdueTasks()
     {
-        var overdueTasks = _todoItems.Where(t => !t.IsDeleted && !t.IsArchived && t.IsOverdue).ToList();
+        var overdueTasks = _viewModel.GetOverdueTasks();
         if (!overdueTasks.Any())
         {
             return;
@@ -459,5 +431,16 @@ public partial class MainWindow
             _systemTrayService?.Dispose();
             System.Windows.Application.Current.Shutdown();
         }
+    }
+
+    public void MinimizeHostWindow()
+    {
+        Hide();
+    }
+
+    public void ExitApplication()
+    {
+        _systemTrayService?.Dispose();
+        System.Windows.Application.Current.Shutdown();
     }
 }

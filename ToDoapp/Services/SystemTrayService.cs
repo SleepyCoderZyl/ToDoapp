@@ -12,7 +12,8 @@ namespace ToDoapp.Services;
 
 public class SystemTrayService : IDisposable
 {
-    private MainWindow _mainWindow;
+    private readonly ITrayActionHandler _actionHandler;
+    private readonly Window _hostWindow;
     private NotifyIconData _notifyIconData;
     private Icon? _trayIcon;
     private IntPtr _windowHandle;
@@ -37,18 +38,19 @@ public class SystemTrayService : IDisposable
     private const int WM_RBUTTONUP = 0x0205;
     private const int WM_RBUTTONDBLCLK = 0x0206;
 
-    public SystemTrayService(MainWindow mainWindow)
+    public SystemTrayService(ITrayActionHandler actionHandler)
     {
-        _mainWindow = mainWindow;
+        _actionHandler = actionHandler;
+        _hostWindow = actionHandler.TrayHostWindow;
         _isInitialized = false;
-        _mainWindow.SourceInitialized += MainWindow_SourceInitialized;
+        _hostWindow.SourceInitialized += MainWindow_SourceInitialized;
     }
 
     private void MainWindow_SourceInitialized(object? sender, EventArgs e)
     {
         try
         {
-            _windowHandle = new WindowInteropHelper(_mainWindow).Handle;
+            _windowHandle = new WindowInteropHelper(_hostWindow).Handle;
             if (_windowHandle != IntPtr.Zero)
             {
                 _taskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
@@ -183,13 +185,13 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            if (_mainWindow.IsWidgetMode())
+            if (_actionHandler.IsWidgetMode())
             {
                 ToggleWidgetVisibility();
             }
             else
             {
-                _mainWindow.RestoreMainWindow();
+                _actionHandler.RestoreMainWindow();
             }
         }
         catch (Exception ex)
@@ -202,8 +204,8 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            var isVisible = _mainWindow.ToggleWidgetWindowVisibility();
-            if (_mainWindow.IsWidgetMode())
+            var isVisible = _actionHandler.ToggleWidgetWindowVisibility();
+            if (_actionHandler.IsWidgetMode())
             {
                 ShowNotification("待办便签", isVisible ? "小组件已显示" : "小组件已隐藏");
             }
@@ -228,14 +230,14 @@ public class SystemTrayService : IDisposable
             bool isWidgetWindowVisible = false;
             bool isMousePassThroughEnabled = false;
 
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
-                isWidgetMode = _mainWindow.IsWidgetMode();
+                isWidgetMode = _actionHandler.IsWidgetMode();
 
                 if (isWidgetMode)
                 {
-                    isWidgetWindowVisible = _mainWindow.IsWidgetWindowVisible;
-                    isMousePassThroughEnabled = _mainWindow.IsMousePassThroughEnabled();
+                    isWidgetWindowVisible = _actionHandler.IsWidgetWindowVisible;
+                    isMousePassThroughEnabled = _actionHandler.IsMousePassThroughEnabled();
                 }
             });
 
@@ -326,9 +328,9 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
-                _mainWindow.ToggleWidgetMode();
+                _actionHandler.ToggleWidgetMode();
             });
         }
         catch (Exception ex)
@@ -341,9 +343,9 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
-                _mainWindow.ToggleMousePassThrough();
+                _actionHandler.ToggleMousePassThrough();
             });
         }
         catch (Exception ex)
@@ -356,13 +358,9 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
-                var settingsWindow = new SettingsWindow
-                {
-                    Owner = _mainWindow
-                };
-                settingsWindow.ShowDialog();
+                _actionHandler.ShowSettingsWindow();
             });
         }
         catch (Exception ex)
@@ -375,9 +373,9 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
-                _mainWindow.ImportTodosFromJsonFile();
+                _actionHandler.ImportTodosFromJsonFile();
             });
         }
         catch (Exception ex)
@@ -390,9 +388,9 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
-                _mainWindow.ExportTodosToJsonFile();
+                _actionHandler.ExportTodosToJsonFile();
             });
         }
         catch (Exception ex)
@@ -405,9 +403,9 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
-                _mainWindow.ShowBackupRecoveryDialog();
+                _actionHandler.ShowBackupRecoveryDialog();
             });
         }
         catch (Exception ex)
@@ -420,7 +418,7 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Dispatcher.Invoke(() =>
+            _hostWindow.Dispatcher.Invoke(() =>
             {
                 var currentVersion = _updateService.GetCurrentVersion();
                 var statusText = CreateAboutStatusText("点击检查更新获取最新版本。", GetResourceBrush("TextSecondaryBrush"));
@@ -672,7 +670,7 @@ public class SystemTrayService : IDisposable
         try
         {
             Dispose();
-            System.Windows.Application.Current.Shutdown();
+            _actionHandler.ExitApplication();
         }
         catch (Exception ex)
         {
@@ -684,7 +682,7 @@ public class SystemTrayService : IDisposable
     {
         try
         {
-            _mainWindow.Hide();
+            _actionHandler.MinimizeHostWindow();
             ShowNotification("待办便签", "应用已最小化到系统托盘");
         }
         catch (Exception ex)

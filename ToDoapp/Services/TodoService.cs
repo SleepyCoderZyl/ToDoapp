@@ -12,7 +12,7 @@ namespace ToDoapp.Services;
 /// <summary>
 /// 待办事项服务类，负责待办事项的持久化存储和加载
 /// </summary>
-public class TodoService
+public class TodoService : ITodoService
 {
     private const int DefaultBackupLimit = 30;
     private const string BackupSearchPattern = "todos-*.json";

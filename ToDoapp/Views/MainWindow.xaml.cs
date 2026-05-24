@@ -5,22 +5,23 @@ using System.Windows;
 using System.Windows.Threading;
 using ToDoapp.Models;
 using ToDoapp.Services;
+using ToDoapp.ViewModels;
 using ToDoapp.Views;
 using ToDoapp.Widgets;
 
 namespace ToDoapp.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, ITrayActionHandler
 {
-    private readonly TodoService _todoService;
+    private readonly MainWindowViewModel _viewModel;
+    private readonly ITodoService _todoService;
     private readonly WidgetOpacityManager _opacityManager;
-    private ObservableCollection<TodoItem> _todoItems = new();
-    private ObservableCollection<TodoItem> _pendingTasks = new();
-    private ObservableCollection<TodoItem> _completedTasks = new();
-    private ObservableCollection<TodoItem> _deletedTasks = new();
-    private ObservableCollection<TodoItem> _archivedTasks = new();
-    private ObservableCollection<ArchivedGroup> _archivedGroups = new();
-    private Dictionary<string, bool> _archivedExpansionStates = new();
+    private ObservableCollection<TodoItem> _todoItems => _viewModel.TodoItems;
+    private ObservableCollection<TodoItem> _pendingTasks => _viewModel.PendingTasks;
+    private ObservableCollection<TodoItem> _completedTasks => _viewModel.CompletedTasks;
+    private ObservableCollection<TodoItem> _deletedTasks => _viewModel.DeletedTasks;
+    private ObservableCollection<TodoItem> _archivedTasks => _viewModel.ArchivedTasks;
+    private ObservableCollection<ArchivedGroup> _archivedGroups => _viewModel.ArchivedGroups;
     private DispatcherTimer _mainTimer = new();
     private DateTime _lastAutoSaveTime = DateTime.Now;
     private DateTime _lastOverdueCheckTime = DateTime.Now;
@@ -37,15 +38,31 @@ public partial class MainWindow : Window
     private bool _isLoaded;
     private WidgetWindow? _widgetWindow;
     private QuickAddWindow? _quickAddWindow;
-    private bool _canPersistData = true;
-    private string? _startupPersistenceMessage;
-    private string? _startupPersistenceDetail;
+    private bool _canPersistData
+    {
+        get => _viewModel.CanPersistData;
+        set => _viewModel.CanPersistData = value;
+    }
+
+    private string? _startupPersistenceMessage
+    {
+        get => _viewModel.StartupPersistenceMessage;
+        set => _viewModel.StartupPersistenceMessage = value;
+    }
+
+    private string? _startupPersistenceDetail
+    {
+        get => _viewModel.StartupPersistenceDetail;
+        set => _viewModel.StartupPersistenceDetail = value;
+    }
 
     public MainWindow()
     {
         InitializeComponent();
         _opacityManager = WidgetOpacityManager.Instance;
-        _todoService = new TodoService();
+        _viewModel = new MainWindowViewModel(new TodoService());
+        _todoService = _viewModel.TodoService;
+        DataContext = _viewModel;
 
         AdjustFontSizeForDpi();
         InitializeData();
@@ -91,4 +108,6 @@ public partial class MainWindow : Window
         base.OnStateChanged(e);
         UpdateWindowFrameState();
     }
+
+    public Window TrayHostWindow => this;
 }

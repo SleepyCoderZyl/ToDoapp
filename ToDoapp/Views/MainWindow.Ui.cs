@@ -111,6 +111,11 @@ public partial class MainWindow
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
+        ShowSettingsWindow();
+    }
+
+    public void ShowSettingsWindow()
+    {
         var settingsWindow = new SettingsWindow
         {
             Owner = this

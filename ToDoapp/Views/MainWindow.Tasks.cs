@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using ToDoapp.Models;
 using ToDoapp.Services;
+using ToDoapp.ViewModels;
 
 namespace ToDoapp.Views;
 
@@ -21,39 +22,13 @@ public partial class MainWindow
     private void SmartAddTask()
     {
         var input = NewTaskTextBox?.Text?.Trim() ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(input) || input == "添加新的待办事项...")
+        var todoItem = _viewModel.AddSmartTask(input, DueDatePicker?.SelectedDate);
+        if (todoItem == null)
         {
-            UpdateStatus("请输入待办事项内容");
+            UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
             return;
         }
 
-        var parsedResult = SmartTodoParser.Parse(input);
-        if (string.IsNullOrWhiteSpace(parsedResult.Title))
-        {
-            UpdateStatus("无法解析待办事项内容");
-            return;
-        }
-
-        var todoItem = new TodoItem
-        {
-            Title = parsedResult.Title,
-            CreatedDate = DateTime.Now,
-            IsCompleted = false
-        };
-
-        if (DueDatePicker?.SelectedDate.HasValue == true)
-        {
-            todoItem.DueDate = DueDatePicker.SelectedDate.Value;
-            todoItem.HasReminder = true;
-        }
-        else if (parsedResult.DueDate.HasValue)
-        {
-            todoItem.DueDate = parsedResult.DueDate.Value;
-            todoItem.HasReminder = true;
-        }
-
-        _todoItems.Insert(0, todoItem);
         RefreshTaskCollections();
 
         Dispatcher.BeginInvoke(new Action(() =>
@@ -69,13 +44,7 @@ public partial class MainWindow
         }), DispatcherPriority.Render);
 
         ResetNewTaskInputs();
-
-        UpdateTaskCount();
-        var dateInfo = todoItem.DueDate.HasValue
-            ? $" (截止: {todoItem.DueDate.Value:MM-dd})"
-            : string.Empty;
-        UpdateStatus($"已添加: {parsedResult.Title}{dateInfo}");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void ResetNewTaskInputs()
@@ -130,7 +99,7 @@ public partial class MainWindow
 
         try
         {
-            Clipboard.SetText(BuildTaskClipboardText(todoItem));
+            Clipboard.SetText(MainWindowViewModel.BuildTaskClipboardText(todoItem));
             UpdateStatus("已复制到剪贴板");
         }
         catch (Exception ex)
@@ -152,17 +121,6 @@ public partial class MainWindow
         }
 
         return null;
-    }
-
-    private static string BuildTaskClipboardText(TodoItem todoItem)
-    {
-        var text = todoItem.Title;
-        if (todoItem.DueDate.HasValue)
-        {
-            text += $" {todoItem.DueDate.Value:yyyy-MM-dd}";
-        }
-
-        return text;
     }
 
     private void EditTask_Click(object sender, RoutedEventArgs e)
@@ -334,15 +292,9 @@ public partial class MainWindow
         var itemsToRemove = _todoItems.Where(t => t.IsDeleted).ToList();
         ExecuteBatchAnimation(DeletedTasksListBox, itemsToRemove, () =>
         {
-            foreach (var item in itemsToRemove)
-            {
-                _todoItems.Remove(item);
-            }
-
+            _viewModel.EmptyTrash();
             RefreshTaskCollections();
-            UpdateTaskCount();
-            UpdateStatus("垃圾箱已清空");
-            SaveData();
+            UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
         });
     }
 
@@ -400,16 +352,9 @@ public partial class MainWindow
             return;
         }
 
-        var tasksToRestore = group.Tasks.ToList();
-        foreach (var task in tasksToRestore)
-        {
-            task.IsArchived = false;
-        }
-
+        _viewModel.UnarchiveGroup(group);
         RefreshTaskCollections();
-        UpdateTaskCount();
-        UpdateStatus($"已恢复 {tasksToRestore.Count} 个任务");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void UnarchiveAllButton_Click(object sender, RoutedEventArgs e)
@@ -420,58 +365,43 @@ public partial class MainWindow
             return;
         }
 
-        var itemsToRestore = _todoItems.Where(t => t.IsArchived).ToList();
-        foreach (var item in itemsToRestore)
-        {
-            item.IsArchived = false;
-        }
-
+        _viewModel.UnarchiveAll();
         RefreshTaskCollections();
-        UpdateTaskCount();
-        UpdateStatus("所有归档任务已恢复");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void MoveTaskToTrash(TodoItem todoItem)
     {
-        todoItem.IsDeleted = true;
+        _viewModel.MoveTaskToTrash(todoItem);
         RefreshTaskCollections();
-        UpdateTaskCount();
-        UpdateStatus($"已移至垃圾箱: {todoItem.Title}");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void RestoreDeletedTask(TodoItem todoItem)
     {
-        todoItem.IsDeleted = false;
+        _viewModel.RestoreDeletedTask(todoItem);
         RefreshTaskCollections();
-        UpdateTaskCount();
-        UpdateStatus($"已恢复: {todoItem.Title}");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void PermanentlyDeleteTask(TodoItem todoItem)
     {
-        _todoItems.Remove(todoItem);
+        _viewModel.PermanentlyDeleteTask(todoItem);
         RefreshTaskCollections();
-        UpdateTaskCount();
-        UpdateStatus($"已永久删除: {todoItem.Title}");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void ArchiveTask(TodoItem todoItem)
     {
-        todoItem.IsArchived = true;
+        _viewModel.ArchiveTask(todoItem);
         RefreshTaskCollections();
-        UpdateStatus($"已归档: {todoItem.Title}");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 
     private void UnarchiveTask(TodoItem todoItem)
     {
-        todoItem.IsArchived = false;
+        _viewModel.UnarchiveTask(todoItem);
         RefreshTaskCollections();
-        UpdateStatus($"已取消归档: {todoItem.Title}");
-        SaveData();
+        UpdateStatus(_viewModel.StatusMessage, _viewModel.StatusDetail);
     }
 }
