@@ -623,7 +623,7 @@ public sealed class TodoBackupInfo
 
 public sealed class TodoImportMergeResult
 {
-    internal TodoImportMergeResult(
+    public TodoImportMergeResult(
         ObservableCollection<TodoItem> mergedTodos,
         int importedCount,
         int addedCount,

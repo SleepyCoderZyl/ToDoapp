@@ -11,6 +11,10 @@ public interface ITodoService
 
     ObservableCollection<TodoItem> LoadTodosFromFile(string filePath);
 
+    TodoImportMergeResult MergeImportedTodos(
+        IEnumerable<TodoItem> existingTodos,
+        IEnumerable<TodoItem> importedTodos);
+
     IReadOnlyList<TodoBackupInfo> GetBackupInfos();
 
     TodoRestoreResult RestoreFromBackup(string backupPath);

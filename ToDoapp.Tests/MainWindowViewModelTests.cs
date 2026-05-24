@@ -136,6 +136,15 @@ public class MainWindowViewModelTests
             return [];
         }
 
+        public TodoImportMergeResult MergeImportedTodos(
+            IEnumerable<TodoItem> existingTodos,
+            IEnumerable<TodoItem> importedTodos)
+        {
+            var mergedTodos = new ObservableCollection<TodoItem>(existingTodos.Concat(importedTodos));
+            var importedCount = importedTodos.Count();
+            return new TodoImportMergeResult(mergedTodos, importedCount, importedCount, 0);
+        }
+
         public IReadOnlyList<TodoBackupInfo> GetBackupInfos()
         {
             return [];
