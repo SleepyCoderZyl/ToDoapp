@@ -161,16 +161,21 @@ public partial class MainWindow
                 return;
             }
 
-            foreach (var item in importedItems)
+            var mergeResult = _todoService.MergeImportedTodos(_todoItems, importedItems);
+            if (mergeResult.AddedCount == 0)
             {
-                _todoItems.Add(item);
+                const string duplicateMessage = "导入完成，所有待办事项均已存在";
+                UpdateStatus(duplicateMessage);
+                _systemTrayService?.ShowNotification("待办便签", duplicateMessage);
+                return;
             }
 
-            RefreshTaskCollections();
-            UpdateTaskCount();
+            ReplaceTodoItems(mergeResult.MergedTodos);
             SaveData();
 
-            var message = $"已导入 {importedItems.Count} 个待办事项";
+            var message = mergeResult.SkippedCount > 0
+                ? $"已导入 {mergeResult.AddedCount} 个待办事项，跳过 {mergeResult.SkippedCount} 个重复项"
+                : $"已导入 {mergeResult.AddedCount} 个待办事项";
             UpdateStatus(message);
             _systemTrayService?.ShowNotification("待办便签", message);
         }

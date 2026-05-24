@@ -208,6 +208,34 @@ public class TodoService : ITodoService
         return result.Todos;
     }
 
+    public TodoImportMergeResult MergeImportedTodos(
+        IEnumerable<TodoItem> existingTodos,
+        IEnumerable<TodoItem> importedTodos)
+    {
+        var mergedTodos = new ObservableCollection<TodoItem>(existingTodos ?? Enumerable.Empty<TodoItem>());
+        var knownIdentities = new HashSet<TodoIdentity>(mergedTodos.Select(CreateTodoIdentity));
+        var importedCount = 0;
+        var addedCount = 0;
+
+        foreach (var importedTodo in importedTodos ?? Enumerable.Empty<TodoItem>())
+        {
+            importedCount++;
+            if (!knownIdentities.Add(CreateTodoIdentity(importedTodo)))
+            {
+                continue;
+            }
+
+            mergedTodos.Add(importedTodo);
+            addedCount++;
+        }
+
+        return new TodoImportMergeResult(
+            mergedTodos,
+            importedCount,
+            addedCount,
+            importedCount - addedCount);
+    }
+
     public IReadOnlyList<TodoBackupInfo> GetBackupInfos()
     {
         var backupFiles = GetBackupFilesDescending();
@@ -298,6 +326,12 @@ public class TodoService : ITodoService
             .ToList();
         var json = JsonSerializer.Serialize(exportItems, _jsonOptions);
         File.WriteAllText(filePath, json);
+    }
+
+    private static TodoIdentity CreateTodoIdentity(TodoItem todoItem)
+    {
+        ArgumentNullException.ThrowIfNull(todoItem);
+        return new TodoIdentity(todoItem.Title, todoItem.CreatedDate);
     }
 
     private TodoFileReadResult TryReadTodosFromFile(string filePath)
@@ -587,6 +621,29 @@ public sealed class TodoBackupInfo
     }
 }
 
+public sealed class TodoImportMergeResult
+{
+    internal TodoImportMergeResult(
+        ObservableCollection<TodoItem> mergedTodos,
+        int importedCount,
+        int addedCount,
+        int skippedCount)
+    {
+        MergedTodos = mergedTodos;
+        ImportedCount = importedCount;
+        AddedCount = addedCount;
+        SkippedCount = skippedCount;
+    }
+
+    public ObservableCollection<TodoItem> MergedTodos { get; }
+
+    public int ImportedCount { get; }
+
+    public int AddedCount { get; }
+
+    public int SkippedCount { get; }
+}
+
 internal sealed class TodoFileReadResult
 {
     public bool IsSuccess { get; }
@@ -610,3 +667,5 @@ internal sealed class TodoFileReadResult
         return new TodoFileReadResult(false, new ObservableCollection<TodoItem>(), errorMessage);
     }
 }
+
+internal readonly record struct TodoIdentity(string Title, DateTime CreatedDate);
