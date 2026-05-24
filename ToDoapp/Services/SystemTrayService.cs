@@ -495,10 +495,19 @@ public class SystemTrayService : IDisposable
                 };
 
                 var aboutPanel = BuildAboutPanel(currentVersion, statusText, detailText, checkUpdateButton, openDownloadButton);
-                DialogService.ShowCustomDialog("关于", DialogType.None, aboutPanel, "关闭", null, (_, secondaryButton) =>
-                {
-                    secondaryButton.Visibility = Visibility.Collapsed;
-                });
+                DialogService.ShowCustomDialog(
+                    "关于",
+                    DialogType.None,
+                    aboutPanel,
+                    "关闭",
+                    null,
+                    (primaryButton, secondaryButton) =>
+                    {
+                        primaryButton.Visibility = Visibility.Collapsed;
+                        secondaryButton.Visibility = Visibility.Collapsed;
+                    },
+                    showTitleCloseButton: true,
+                    dialogWidth: 480);
             });
         }
         catch (Exception ex)
@@ -547,7 +556,7 @@ public class SystemTrayService : IDisposable
             TextWrapping = TextWrapping.Wrap,
             HorizontalAlignment = HorizontalAlignment.Center,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 10, 0, 14)
+            Margin = new Thickness(0, 10, 0, 12)
         });
 
         panel.Children.Add(CreateAboutSeparator());
@@ -560,7 +569,7 @@ public class SystemTrayService : IDisposable
             Foreground = GetResourceBrush("TextPrimaryBrush"),
             HorizontalAlignment = HorizontalAlignment.Center,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 10)
+            Margin = new Thickness(0, 0, 0, 8)
         };
         panel.Children.Add(updateTitle);
         panel.Children.Add(checkUpdateButton);
@@ -571,7 +580,7 @@ public class SystemTrayService : IDisposable
         openDownloadButton.Margin = new Thickness(0, 8, 0, 0);
         panel.Children.Add(openDownloadButton);
 
-        panel.Children.Add(CreateAboutSeparator(new Thickness(0, 14, 0, 14)));
+        panel.Children.Add(CreateAboutSeparator(new Thickness(0, 12, 0, 12)));
         panel.Children.Add(CreateInfoRow("产品名称", "待办便签"));
         panel.Children.Add(CreateInfoRow("技术栈", "C# / WPF / .NET 10"));
         panel.Children.Add(CreateInfoRow("更新来源", "GitHub Releases"));
