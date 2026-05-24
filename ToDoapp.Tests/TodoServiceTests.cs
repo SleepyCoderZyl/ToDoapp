@@ -168,6 +168,124 @@ public class TodoServiceTests : IDisposable
     }
 
     [Fact]
+    public void MergeImportedTodos_SkipsDuplicateItemsByTitleAndCreatedDate()
+    {
+        var createdAt = new DateTime(2026, 4, 24, 9, 0, 0);
+        var existing = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "重复任务",
+                CreatedDate = createdAt
+            }
+        };
+        var imported = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "重复任务",
+                CreatedDate = createdAt
+            },
+            new()
+            {
+                Title = "新增任务",
+                CreatedDate = new DateTime(2026, 4, 24, 10, 0, 0)
+            }
+        };
+
+        var result = _todoService.MergeImportedTodos(existing, imported);
+
+        Assert.Equal(2, result.ImportedCount);
+        Assert.Equal(1, result.AddedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal(2, result.MergedTodos.Count);
+        Assert.Contains(result.MergedTodos, item => item.Title == "新增任务");
+    }
+
+    [Fact]
+    public void MergeImportedTodos_AllowsSameTitleWithDifferentCreatedDate()
+    {
+        var existing = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "同名任务",
+                CreatedDate = new DateTime(2026, 4, 24, 9, 0, 0)
+            }
+        };
+        var imported = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "同名任务",
+                CreatedDate = new DateTime(2026, 4, 24, 9, 0, 1)
+            }
+        };
+
+        var result = _todoService.MergeImportedTodos(existing, imported);
+
+        Assert.Equal(1, result.ImportedCount);
+        Assert.Equal(1, result.AddedCount);
+        Assert.Equal(0, result.SkippedCount);
+        Assert.Equal(2, result.MergedTodos.Count);
+    }
+
+    [Fact]
+    public void MergeImportedTodos_DeduplicatesDuplicateItemsWithinImportedList()
+    {
+        var createdAt = new DateTime(2026, 4, 24, 11, 0, 0);
+        var imported = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "文件内重复任务",
+                CreatedDate = createdAt
+            },
+            new()
+            {
+                Title = "文件内重复任务",
+                CreatedDate = createdAt
+            }
+        };
+
+        var result = _todoService.MergeImportedTodos(Array.Empty<TodoItem>(), imported);
+
+        Assert.Equal(2, result.ImportedCount);
+        Assert.Equal(1, result.AddedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Single(result.MergedTodos);
+    }
+
+    [Fact]
+    public void MergeImportedTodos_WhenAllItemsDuplicate_ReturnsZeroAdded()
+    {
+        var createdAt = new DateTime(2026, 4, 24, 9, 0, 0);
+        var existing = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "已有任务",
+                CreatedDate = createdAt
+            }
+        };
+        var imported = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "已有任务",
+                CreatedDate = createdAt
+            }
+        };
+
+        var result = _todoService.MergeImportedTodos(existing, imported);
+
+        Assert.Equal(1, result.ImportedCount);
+        Assert.Equal(0, result.AddedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Single(result.MergedTodos);
+    }
+
+    [Fact]
     public void GetBackupInfos_ReturnsDescendingItemsWithTimeAndSize()
     {
         Directory.CreateDirectory(_backupDirectory);
