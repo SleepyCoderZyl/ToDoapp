@@ -255,6 +255,7 @@ public class SystemTrayService : IDisposable
             AppendMenu(hMenu, MF_POPUP, hImportExportMenu, "导入/导出");
 
             AppendMenu(hMenu, MF_STRING, MenuSettings, "设置");
+            AppendMenu(hMenu, MF_STRING, MenuHelp, "帮助");
             AppendMenu(hMenu, MF_STRING, MenuAbout, "关于");
             AppendMenu(hMenu, MF_SEPARATOR, 0, "");
             AppendMenu(hMenu, MF_STRING, MenuExit, "退出程序");
@@ -275,6 +276,9 @@ public class SystemTrayService : IDisposable
                     break;
                 case MenuSettings:
                     Settings_Click();
+                    break;
+                case MenuHelp:
+                    Help_Click();
                     break;
                 case MenuToggleWidgetVisibility:
                     ToggleWidgetVisibility();
@@ -366,6 +370,30 @@ public class SystemTrayService : IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"打开设置窗口失败: {ex.Message}");
+        }
+    }
+
+    private void Help_Click()
+    {
+        try
+        {
+            var helpPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Help.html");
+            if (!System.IO.File.Exists(helpPath))
+            {
+                HandyControl.Controls.MessageBox.Error($"未找到帮助文件：{helpPath}", "打开帮助失败");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = helpPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"打开帮助页面失败: {ex.Message}");
+            HandyControl.Controls.MessageBox.Error($"无法打开帮助页面：{ex.Message}", "打开帮助失败");
         }
     }
 
@@ -756,6 +784,7 @@ public class SystemTrayService : IDisposable
     private const int MenuImportJson = 9;
     private const int MenuExportJson = 10;
     private const int MenuRestoreBackup = 11;
+    private const int MenuHelp = 12;
 
     [DllImport("shell32.dll", CharSet = CharSet.Auto)]
     private static extern bool Shell_NotifyIcon(int dwMessage, ref NotifyIconData pnid);
