@@ -32,6 +32,9 @@ public class AppSettingsSerializationTests
         Assert.NotNull(settings.ScheduledReminderItems);
         Assert.Empty(settings.ScheduledReminderItems);
         Assert.Null(settings.LastScheduledReminderDate);
+        Assert.True(settings.ShowHomeHotKeyEnabled);
+        Assert.Equal(0x0002u | 0x0004u | 0x0001u, settings.ShowHomeHotKeyModifiers);
+        Assert.Equal(0x48u, settings.ShowHomeHotKeyKey);
     }
 
     [Fact]
@@ -49,8 +52,8 @@ public class AppSettingsSerializationTests
             ScheduledReminderTime = "18:30",
             ScheduledReminderItems =
             [
-                new StartupReminderEntry { Text = "下班收尾", IsEnabled = true },
-                new StartupReminderEntry { Text = "明日计划", IsEnabled = false }
+                new StartupReminderEntry { Text = "下班收尾", IsEnabled = true, ScheduledTime = "18:30", LastScheduledReminderDate = "2026-05-13" },
+                new StartupReminderEntry { Text = "明日计划", IsEnabled = false, ScheduledTime = "20:00" }
             ],
             LastScheduledReminderDate = "2026-05-13"
         };
@@ -70,8 +73,33 @@ public class AppSettingsSerializationTests
         Assert.Equal(2, restored.ScheduledReminderItems.Count);
         Assert.Equal("下班收尾", restored.ScheduledReminderItems[0].Text);
         Assert.True(restored.ScheduledReminderItems[0].IsEnabled);
+        Assert.Equal("18:30", restored.ScheduledReminderItems[0].ScheduledTime);
+        Assert.Equal("2026-05-13", restored.ScheduledReminderItems[0].LastScheduledReminderDate);
         Assert.Equal("明日计划", restored.ScheduledReminderItems[1].Text);
         Assert.False(restored.ScheduledReminderItems[1].IsEnabled);
+        Assert.Equal("20:00", restored.ScheduledReminderItems[1].ScheduledTime);
         Assert.Equal("2026-05-13", restored.LastScheduledReminderDate);
+    }
+
+    [Fact]
+    public void Deserialize_OldScheduledReminderItems_UsesGlobalScheduledTime()
+    {
+        const string json = """
+            {
+              "showScheduledReminderDaily": true,
+              "scheduledReminderTime": "18:30",
+              "lastScheduledReminderDate": "2026-05-13",
+              "scheduledReminderItems": [
+                { "text": "下班收尾", "isEnabled": true }
+              ]
+            }
+            """;
+
+        var settings = JsonSerializer.Deserialize<AppSettings>(json, Options);
+
+        Assert.NotNull(settings);
+        Assert.Single(settings!.ScheduledReminderItems);
+        Assert.Equal("18:30", settings.ScheduledReminderItems[0].ScheduledTime);
+        Assert.Equal("2026-05-13", settings.ScheduledReminderItems[0].LastScheduledReminderDate);
     }
 }

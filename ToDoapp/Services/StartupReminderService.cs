@@ -38,46 +38,50 @@ public class StartupReminderService
     {
         ArgumentNullException.ThrowIfNull(todos);
         ArgumentNullException.ThrowIfNull(settings);
-        return BuildSnapshot(ReminderKind.Startup, settings.StartupReminderItems, now);
+        return BuildSnapshot(ReminderKind.Startup, GetEnabledReminderTexts(settings.StartupReminderItems), now);
     }
 
     public static ReminderSnapshot BuildScheduledSnapshot(AppSettings settings, DateTime now)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        return BuildSnapshot(ReminderKind.Scheduled, settings.ScheduledReminderItems, now);
+        var dueReminderTexts = GetDueScheduledReminderEntries(settings, now)
+            .Select(item => item.Text.Trim());
+        return BuildSnapshot(ReminderKind.Scheduled, dueReminderTexts, now);
     }
 
     public static bool ShouldShowScheduledReminder(AppSettings settings, DateTime now)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        return GetDueScheduledReminderEntries(settings, now).Any();
+    }
 
+    public static IReadOnlyList<StartupReminderEntry> GetDueScheduledReminderEntries(AppSettings settings, DateTime now)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
         if (!settings.ShowScheduledReminderDaily)
         {
-            return false;
-        }
-
-        if (!TryParseScheduledReminderTime(settings.ScheduledReminderTime, out var scheduledTime))
-        {
-            return false;
-        }
-
-        if (!GetEnabledReminderTexts(settings.ScheduledReminderItems).Any())
-        {
-            return false;
+            return [];
         }
 
         var today = now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        if (string.Equals(settings.LastScheduledReminderDate, today, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        return now.Hour == scheduledTime.Hour && now.Minute == scheduledTime.Minute;
+        return (settings.ScheduledReminderItems ?? [])
+            .Where(item => IsScheduledReminderDue(item, settings, now, today))
+            .ToList();
     }
 
     public static string GetScheduledReminderDateToken(DateTime now)
     {
         return now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    }
+
+    public static void MarkScheduledRemindersShown(IEnumerable<StartupReminderEntry> reminderEntries, DateTime now)
+    {
+        ArgumentNullException.ThrowIfNull(reminderEntries);
+        var today = GetScheduledReminderDateToken(now);
+        foreach (var reminderEntry in reminderEntries)
+        {
+            reminderEntry.LastScheduledReminderDate = today;
+        }
     }
 
     public static bool TryParseScheduledReminderTime(string? value, out TimeOnly scheduledTime)
@@ -90,9 +94,12 @@ public class StartupReminderService
             out scheduledTime);
     }
 
-    private static ReminderSnapshot BuildSnapshot(ReminderKind reminderKind, IEnumerable<StartupReminderEntry>? items, DateTime now)
+    private static ReminderSnapshot BuildSnapshot(ReminderKind reminderKind, IEnumerable<string> reminderTexts, DateTime now)
     {
-        var customReminders = GetEnabledReminderTexts(items).ToList();
+        var customReminders = reminderTexts
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Select(text => text.Trim())
+            .ToList();
         return reminderKind switch
         {
             ReminderKind.Startup => new ReminderSnapshot(
@@ -109,6 +116,29 @@ public class StartupReminderService
                 customReminders),
             _ => throw new ArgumentOutOfRangeException(nameof(reminderKind), reminderKind, null)
         };
+    }
+
+    private static bool IsScheduledReminderDue(StartupReminderEntry item, AppSettings settings, DateTime now, string today)
+    {
+        if (!item.IsEnabled || string.IsNullOrWhiteSpace(item.Text))
+        {
+            return false;
+        }
+
+        var scheduledTimeText = string.IsNullOrWhiteSpace(item.ScheduledTime)
+            ? settings.ScheduledReminderTime
+            : item.ScheduledTime;
+        if (!TryParseScheduledReminderTime(scheduledTimeText, out var scheduledTime))
+        {
+            return false;
+        }
+
+        if (string.Equals(item.LastScheduledReminderDate, today, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return now.Hour == scheduledTime.Hour && now.Minute == scheduledTime.Minute;
     }
 
     private static IEnumerable<string> GetEnabledReminderTexts(IEnumerable<StartupReminderEntry>? items)

@@ -22,7 +22,7 @@
             <DropShadowEffect ShadowDepth="4" BlurRadius="20" Opacity="0.5" Color="#000000"/>
         </Border.Effect>
         
-        <Grid Margin="20">
+        <Grid Margin="20" FocusManager.FocusedElement="{Binding ElementName=InputTextBox}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>

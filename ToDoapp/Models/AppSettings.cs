@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace ToDoapp.Models;
 
-public class AppSettings
+public class AppSettings : IJsonOnDeserialized
 {
     [JsonPropertyName("widgetOpacity")]
     public double WidgetOpacity { get; set; } = 0.8;
@@ -54,6 +54,15 @@ public class AppSettings
     [JsonPropertyName("hotKeyKey")]
     public uint HotKeyKey { get; set; } = 0x5A;
 
+    [JsonPropertyName("showHomeHotKeyEnabled")]
+    public bool ShowHomeHotKeyEnabled { get; set; } = true;
+
+    [JsonPropertyName("showHomeHotKeyModifiers")]
+    public uint ShowHomeHotKeyModifiers { get; set; } = 0x0002 | 0x0004 | 0x0001;
+
+    [JsonPropertyName("showHomeHotKeyKey")]
+    public uint ShowHomeHotKeyKey { get; set; } = 0x48;
+
     [JsonPropertyName("startInWidgetMode")]
     public bool StartInWidgetMode { get; set; } = true;
 
@@ -77,4 +86,33 @@ public class AppSettings
 
     [JsonPropertyName("lastScheduledReminderDate")]
     public string? LastScheduledReminderDate { get; set; }
+
+    public void Normalize()
+    {
+        StartupReminderItems ??= [];
+        ScheduledReminderItems ??= [];
+
+        if (string.IsNullOrWhiteSpace(ScheduledReminderTime))
+        {
+            ScheduledReminderTime = "09:00";
+        }
+
+        foreach (var item in ScheduledReminderItems)
+        {
+            if (string.IsNullOrWhiteSpace(item.ScheduledTime))
+            {
+                item.ScheduledTime = ScheduledReminderTime;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.LastScheduledReminderDate))
+            {
+                item.LastScheduledReminderDate = LastScheduledReminderDate;
+            }
+        }
+    }
+
+    void IJsonOnDeserialized.OnDeserialized()
+    {
+        Normalize();
+    }
 }

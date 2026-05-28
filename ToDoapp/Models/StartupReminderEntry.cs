@@ -8,6 +8,8 @@ public class StartupReminderEntry : INotifyPropertyChanged
 {
     private string _text = string.Empty;
     private bool _isEnabled = true;
+    private string _scheduledTime = string.Empty;
+    private string? _lastScheduledReminderDate;
 
     [JsonPropertyName("text")]
     public string Text
@@ -37,6 +39,38 @@ public class StartupReminderEntry : INotifyPropertyChanged
             }
 
             _isEnabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    [JsonPropertyName("scheduledTime")]
+    public string ScheduledTime
+    {
+        get => _scheduledTime;
+        set
+        {
+            if (_scheduledTime == value)
+            {
+                return;
+            }
+
+            _scheduledTime = value;
+            OnPropertyChanged();
+        }
+    }
+
+    [JsonPropertyName("lastScheduledReminderDate")]
+    public string? LastScheduledReminderDate
+    {
+        get => _lastScheduledReminderDate;
+        set
+        {
+            if (_lastScheduledReminderDate == value)
+            {
+                return;
+            }
+
+            _lastScheduledReminderDate = value;
             OnPropertyChanged();
         }
     }

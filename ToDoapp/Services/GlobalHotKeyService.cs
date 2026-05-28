@@ -1,9 +1,17 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
 namespace ToDoapp.Services;
+
+public enum GlobalHotKeyAction
+{
+    QuickAdd,
+    ShowHome
+}
 
 public class GlobalHotKeyService : IDisposable
 {
@@ -13,13 +21,12 @@ public class GlobalHotKeyService : IDisposable
     private bool _isDisposed;
     private const int WM_HOTKEY = 0x0312;
     private int _currentId = 0;
-    private int _registeredHotKeyId = -1;
+    private readonly Dictionary<GlobalHotKeyAction, int> _registeredHotKeyIds = [];
+    private readonly Dictionary<int, GlobalHotKeyAction> _registeredActions = [];
+    private readonly Dictionary<GlobalHotKeyAction, (uint Modifiers, uint Key)> _pendingRegistrations = [];
 
-    private uint _pendingModifiers;
-    private uint _pendingKey;
-
-    public event Action? HotKeyPressed;
-    public bool IsRegistered => _registeredHotKeyId != -1;
+    public event Action<GlobalHotKeyAction>? HotKeyPressed;
+    public bool IsRegistered => _registeredHotKeyIds.Count > 0;
 
     public GlobalHotKeyService(Window window)
     {
@@ -42,26 +49,30 @@ public class GlobalHotKeyService : IDisposable
 
     public int RegisterHotKey(uint modifiers, uint key)
     {
+        return RegisterHotKey(GlobalHotKeyAction.QuickAdd, modifiers, key);
+    }
+
+    public int RegisterHotKey(GlobalHotKeyAction action, uint modifiers, uint key)
+    {
         if (_windowHandle == IntPtr.Zero)
         {
-            _pendingModifiers = modifiers;
-            _pendingKey = key;
+            _pendingRegistrations[action] = (modifiers, key);
             return -1;
         }
 
-        return RegisterHotKeyInternal(modifiers, key);
+        return RegisterHotKeyInternal(action, modifiers, key);
     }
 
-    private int RegisterHotKeyInternal(uint modifiers, uint key)
+    private int RegisterHotKeyInternal(GlobalHotKeyAction action, uint modifiers, uint key)
     {
         if (_windowHandle == IntPtr.Zero)
         {
             return -1;
         }
         
-        if (_registeredHotKeyId != -1)
+        if (_registeredHotKeyIds.TryGetValue(action, out var registeredId))
         {
-            UnregisterHotKey(_registeredHotKeyId);
+            UnregisterHotKey(registeredId);
         }
         
         try
@@ -74,7 +85,8 @@ public class GlobalHotKeyService : IDisposable
                 return -1;
             }
 
-            _registeredHotKeyId = id;
+            _registeredHotKeyIds[action] = id;
+            _registeredActions[id] = action;
             return id;
         }
         catch
@@ -94,11 +106,17 @@ public class GlobalHotKeyService : IDisposable
         _source = HwndSource.FromHwnd(_windowHandle);
         _source?.AddHook(WndProc);
 
-        if (_pendingModifiers != 0)
+        if (_pendingRegistrations.Count > 0)
         {
-            RegisterHotKeyInternal(_pendingModifiers, _pendingKey);
-            _pendingModifiers = 0;
-            _pendingKey = 0;
+            foreach (var pendingRegistration in _pendingRegistrations.ToArray())
+            {
+                RegisterHotKeyInternal(
+                    pendingRegistration.Key,
+                    pendingRegistration.Value.Modifiers,
+                    pendingRegistration.Value.Key);
+            }
+
+            _pendingRegistrations.Clear();
         }
     }
 
@@ -108,18 +126,30 @@ public class GlobalHotKeyService : IDisposable
             return false;
 
         bool result = UnregisterHotKey(_windowHandle, id);
-        if (result && id == _registeredHotKeyId)
+        if (result && _registeredActions.TryGetValue(id, out var action))
         {
-            _registeredHotKeyId = -1;
+            _registeredActions.Remove(id);
+            _registeredHotKeyIds.Remove(action);
         }
         return result;
+    }
+
+    public bool UnregisterHotKey(GlobalHotKeyAction action)
+    {
+        _pendingRegistrations.Remove(action);
+        return _registeredHotKeyIds.TryGetValue(action, out var id) && UnregisterHotKey(id);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_HOTKEY)
         {
-            HotKeyPressed?.Invoke();
+            var id = wParam.ToInt32();
+            if (_registeredActions.TryGetValue(id, out var action))
+            {
+                HotKeyPressed?.Invoke(action);
+            }
+
             handled = true;
         }
         return IntPtr.Zero;
@@ -127,9 +157,15 @@ public class GlobalHotKeyService : IDisposable
 
     public void UnregisterAll()
     {
-        if (_registeredHotKeyId != -1 && _windowHandle != IntPtr.Zero)
+        if (_windowHandle == IntPtr.Zero)
         {
-            UnregisterHotKey(_registeredHotKeyId);
+            _pendingRegistrations.Clear();
+            return;
+        }
+
+        foreach (var id in _registeredActions.Keys.ToArray())
+        {
+            UnregisterHotKey(id);
         }
     }
 
@@ -137,10 +173,7 @@ public class GlobalHotKeyService : IDisposable
     {
         if (!_isDisposed)
         {
-            if (_registeredHotKeyId != -1 && _windowHandle != IntPtr.Zero)
-            {
-                UnregisterHotKey(_registeredHotKeyId);
-            }
+            UnregisterAll();
             _source?.RemoveHook(WndProc);
             _isDisposed = true;
         }

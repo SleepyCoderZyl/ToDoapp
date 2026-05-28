@@ -83,12 +83,7 @@ public static partial class SettingsContentFactory
     private static FrameworkElement CreateStartupReminderSettingContentCore()
     {
         var settings = SettingsService.Instance.Settings;
-        settings.StartupReminderItems ??= [];
-        settings.ScheduledReminderItems ??= [];
-        if (string.IsNullOrWhiteSpace(settings.ScheduledReminderTime))
-        {
-            settings.ScheduledReminderTime = "09:00";
-        }
+        settings.Normalize();
 
         var container = new Grid { Margin = new Thickness(20) };
         container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -151,12 +146,11 @@ public static partial class SettingsContentFactory
                 hintText: "提示窗口会按这里的顺序展示已启用的提醒项。")
         });
 
-        var scheduledReminderTimeContent = CreateScheduledReminderTimeContent(settings);
         tabControl.Items.Add(new TabItem
         {
             Header = "定时弹窗",
             Content = CreateReminderTabContent(
-                description: "应用运行或驻留托盘时，每天在指定时间弹出一次。",
+                description: "应用运行或驻留托盘时，每条提醒会在各自设置的时间每天弹出一次。",
                 isEnabled: settings.ShowScheduledReminderDaily,
                 onEnabledChanged: isEnabled =>
                 {
@@ -170,9 +164,9 @@ public static partial class SettingsContentFactory
                     SettingsService.Instance.SaveSettings();
                 },
                 emptyStateText: "还没有定时提示内容，新增一条试试。",
-                hintText: "每天只会在设定时间弹出一次，内容按这里的顺序展示已启用的提醒项。",
-                inlineInputPrefixContent: scheduledReminderTimeContent.InputContent,
-                extraSettingsContent: scheduledReminderTimeContent.HelperContent)
+                hintText: "同一分钟的多条提醒会合并到一个弹窗；如果错过当天时间点，不会补发。",
+                useScheduledTime: true,
+                defaultScheduledTime: settings.ScheduledReminderTime)
         });
 
         Grid.SetRow(tabControl, 2);
@@ -190,7 +184,9 @@ public static partial class SettingsContentFactory
         string emptyStateText,
         string hintText,
         FrameworkElement? inlineInputPrefixContent = null,
-        FrameworkElement? extraSettingsContent = null)
+        FrameworkElement? extraSettingsContent = null,
+        bool useScheduledTime = false,
+        string defaultScheduledTime = "09:00")
     {
         var scrollViewer = new ScrollViewer
         {
@@ -275,8 +271,24 @@ public static partial class SettingsContentFactory
             inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         }
 
+        if (useScheduledTime)
+        {
+            inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        }
+
         inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var timeInputBox = new TextBox
+        {
+            Width = 84,
+            Text = defaultScheduledTime,
+            MaxLength = 5,
+            Style = Application.Current.Resources["ModernTextBoxStyle"] as Style,
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = useScheduledTime ? Visibility.Visible : Visibility.Collapsed
+        };
 
         var inputTextBox = new TextBox
         {
@@ -293,14 +305,20 @@ public static partial class SettingsContentFactory
             Padding = new Thickness(14, 10, 14, 10)
         };
 
-        var inputTextColumn = inlineInputPrefixContent != null ? 1 : 0;
-        var addButtonColumn = inlineInputPrefixContent != null ? 2 : 1;
+        var inputTextColumn = (inlineInputPrefixContent != null ? 1 : 0) + (useScheduledTime ? 1 : 0);
+        var addButtonColumn = inputTextColumn + 1;
 
         if (inlineInputPrefixContent != null)
         {
             inlineInputPrefixContent.Margin = new Thickness(0, 0, 10, 0);
             Grid.SetColumn(inlineInputPrefixContent, 0);
             inputPanel.Children.Add(inlineInputPrefixContent);
+        }
+
+        if (useScheduledTime)
+        {
+            Grid.SetColumn(timeInputBox, inlineInputPrefixContent != null ? 1 : 0);
+            inputPanel.Children.Add(timeInputBox);
         }
 
         Grid.SetColumn(inputTextBox, inputTextColumn);
@@ -354,6 +372,11 @@ public static partial class SettingsContentFactory
             {
                 var row = new Grid { Margin = new Thickness(0, 0, 0, 8) };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                if (useScheduledTime)
+                {
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                }
+
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -362,6 +385,17 @@ public static partial class SettingsContentFactory
                     IsChecked = item.IsEnabled,
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(0, 0, 12, 0)
+                };
+
+                var rowTimeBox = new TextBox
+                {
+                    Width = 84,
+                    Text = string.IsNullOrWhiteSpace(item.ScheduledTime) ? defaultScheduledTime : item.ScheduledTime,
+                    MaxLength = 5,
+                    Style = Application.Current.Resources["ModernTextBoxStyle"] as Style,
+                    Margin = new Thickness(0, 0, 10, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Visibility = useScheduledTime ? Visibility.Visible : Visibility.Collapsed
                 };
 
                 var textBlock = new TextBlock
@@ -392,6 +426,39 @@ public static partial class SettingsContentFactory
                     SaveReminderSettings();
                 };
 
+                void CommitRowTime()
+                {
+                    if (!useScheduledTime)
+                    {
+                        return;
+                    }
+
+                    var input = rowTimeBox.Text.Trim();
+                    if (!StartupReminderService.TryParseScheduledReminderTime(input, out var parsedTime))
+                    {
+                        rowTimeBox.Text = string.IsNullOrWhiteSpace(item.ScheduledTime) ? defaultScheduledTime : item.ScheduledTime;
+                        hintTextBlock.Text = "请输入有效时间，例如 09:00。";
+                        hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(248, 81, 73));
+                        return;
+                    }
+
+                    item.ScheduledTime = parsedTime.ToString("HH:mm");
+                    rowTimeBox.Text = item.ScheduledTime;
+                    hintTextBlock.Text = hintText;
+                    hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128));
+                    SaveReminderSettings();
+                }
+
+                rowTimeBox.LostFocus += (s, e) => CommitRowTime();
+                rowTimeBox.KeyDown += (s, e) =>
+                {
+                    if (e.Key == Key.Enter)
+                    {
+                        CommitRowTime();
+                        e.Handled = true;
+                    }
+                };
+
                 deleteButton.Click += (s, e) =>
                 {
                     reminderItems.Remove(item);
@@ -400,9 +467,17 @@ public static partial class SettingsContentFactory
                 };
 
                 Grid.SetColumn(enabledBox, 0);
-                Grid.SetColumn(textBlock, 1);
-                Grid.SetColumn(deleteButton, 2);
+                var textColumn = useScheduledTime ? 2 : 1;
+                var deleteColumn = useScheduledTime ? 3 : 2;
+                Grid.SetColumn(rowTimeBox, 1);
+                Grid.SetColumn(textBlock, textColumn);
+                Grid.SetColumn(deleteButton, deleteColumn);
                 row.Children.Add(enabledBox);
+                if (useScheduledTime)
+                {
+                    row.Children.Add(rowTimeBox);
+                }
+
                 row.Children.Add(textBlock);
                 row.Children.Add(deleteButton);
 
@@ -418,13 +493,31 @@ public static partial class SettingsContentFactory
                 return;
             }
 
+            var scheduledTime = defaultScheduledTime;
+            if (useScheduledTime)
+            {
+                var timeInput = timeInputBox.Text.Trim();
+                if (!StartupReminderService.TryParseScheduledReminderTime(timeInput, out var parsedTime))
+                {
+                    hintTextBlock.Text = "请输入有效时间，例如 09:00。";
+                    hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(248, 81, 73));
+                    return;
+                }
+
+                scheduledTime = parsedTime.ToString("HH:mm");
+                timeInputBox.Text = scheduledTime;
+            }
+
             reminderItems.Add(new StartupReminderEntry
             {
                 Text = text,
-                IsEnabled = true
+                IsEnabled = true,
+                ScheduledTime = useScheduledTime ? scheduledTime : string.Empty
             });
 
             inputTextBox.Clear();
+            hintTextBlock.Text = hintText;
+            hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128));
             SaveReminderSettings();
             RefreshReminderList();
         }
@@ -554,12 +647,8 @@ public static partial class SettingsContentFactory
 
     private static FrameworkElement CreateHotKeySettingContentCore()
     {
-        var container = new Grid { Margin = new Thickness(20) };
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        container.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var settings = SettingsService.Instance.Settings;
+        var container = new StackPanel { Margin = new Thickness(20) };
 
         var titleText = new TextBlock
         {
@@ -569,54 +658,98 @@ public static partial class SettingsContentFactory
             Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
             Margin = new Thickness(0, 0, 0, 20)
         };
-        Grid.SetRow(titleText, 0);
         container.Children.Add(titleText);
 
         var descriptionText = new TextBlock
         {
-            Text = "设置快速添加待办事项的全局快捷键，按下快捷键时会显示快速添加窗口。",
+            Text = "设置快速添加待办事项和显示主页的全局快捷键。",
             FontSize = 13,
             Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
-        Grid.SetRow(descriptionText, 1);
         container.Children.Add(descriptionText);
 
-        var hotkeyPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 10, 0, 12) };
+        container.Children.Add(CreateHotKeyEditorSection(
+            "快速添加待办",
+            "按下快捷键时会显示快速添加窗口。",
+            null,
+            null,
+            () => (settings.HotKeyModifiers, settings.HotKeyKey),
+            (modifiers, key) =>
+            {
+                settings.HotKeyModifiers = modifiers;
+                settings.HotKeyKey = key;
+                SettingsService.Instance.SaveSettings();
+            },
+            Services.GlobalHotKeyService.MOD_CONTROL | Services.GlobalHotKeyService.MOD_SHIFT | Services.GlobalHotKeyService.MOD_ALT,
+            Services.GlobalHotKeyService.VK_Z));
 
-        var hotkeyText = new TextBlock
+        container.Children.Add(CreateHotKeyEditorSection(
+            "显示主页",
+            "按下快捷键时会从小组件、托盘或最小化状态回到主页面。",
+            settings.ShowHomeHotKeyEnabled,
+            isEnabled =>
+            {
+                settings.ShowHomeHotKeyEnabled = isEnabled;
+                SettingsService.Instance.SaveSettings();
+            },
+            () => (settings.ShowHomeHotKeyModifiers, settings.ShowHomeHotKeyKey),
+            (modifiers, key) =>
+            {
+                settings.ShowHomeHotKeyModifiers = modifiers;
+                settings.ShowHomeHotKeyKey = key;
+                SettingsService.Instance.SaveSettings();
+            },
+            Services.GlobalHotKeyService.MOD_CONTROL | Services.GlobalHotKeyService.MOD_SHIFT | Services.GlobalHotKeyService.MOD_ALT,
+            0x48));
+
+        return container;
+    }
+
+    private static FrameworkElement CreateHotKeyEditorSection(
+        string title,
+        string description,
+        bool? isEnabled,
+        Action<bool>? onEnabledChanged,
+        Func<(uint Modifiers, uint Key)> getHotKey,
+        Action<uint, uint> saveHotKey,
+        uint defaultModifiers,
+        uint defaultKey)
+    {
+        var section = new StackPanel { Margin = new Thickness(0, 0, 0, 24) };
+
+        section.Children.Add(new TextBlock
         {
-            Text = "当前快捷键：",
+            Text = title,
             FontSize = 14,
+            FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
-            Margin = new Thickness(0, 0, 10, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
+            Margin = new Thickness(0, 0, 0, 6)
+        });
 
+        section.Children.Add(new TextBlock
+        {
+            Text = description,
+            FontSize = 12,
+            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 10)
+        });
+
+        var controlsEnabled = isEnabled != false;
+        var hotKey = getHotKey();
         var hotkeyValueText = new TextBlock
         {
-            Name = "HotkeyValueText",
-            Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(
-                SettingsService.Instance.Settings.HotKeyModifiers,
-                SettingsService.Instance.Settings.HotKeyKey),
+            Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(hotKey.Modifiers, hotKey.Key),
             FontSize = 14,
             Foreground = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
             FontWeight = FontWeights.Medium,
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        hotkeyPanel.Children.Add(hotkeyText);
-        hotkeyPanel.Children.Add(hotkeyValueText);
-
-        Grid.SetRow(hotkeyPanel, 2);
-        container.Children.Add(hotkeyPanel);
-
-        var inputPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 12) };
-
         var inputTextBox = new TextBox
         {
-            Name = "HotkeyInputTextBox",
             Style = Application.Current.Resources["ModernTextBoxStyle"] as Style,
             Width = 200,
             IsReadOnly = true,
@@ -628,37 +761,109 @@ public static partial class SettingsContentFactory
 
         var resetButton = new Button
         {
-            Name = "ResetHotkeyButton",
             Content = "重置",
             Style = Application.Current.Resources["SecondaryButtonStyle"] as Style,
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        inputPanel.Children.Add(inputTextBox);
-        inputPanel.Children.Add(resetButton);
-
-        Grid.SetRow(inputPanel, 3);
-        container.Children.Add(inputPanel);
-
         var statusText = new TextBlock
         {
-            Name = "HotkeyStatusText",
-            Text = "点击输入框设置新快捷键",
+            Text = controlsEnabled ? "点击输入框设置新快捷键" : "已禁用",
             FontSize = 13,
             Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
             Margin = new Thickness(0, 10, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        Grid.SetRow(statusText, 4);
-        container.Children.Add(statusText);
+        void UpdateControlsEnabled(bool enabled)
+        {
+            controlsEnabled = enabled;
+            inputTextBox.IsEnabled = enabled;
+            resetButton.IsEnabled = enabled;
+            hotkeyValueText.Opacity = enabled ? 1.0 : 0.55;
+            statusText.Text = enabled ? "点击输入框设置新快捷键" : "已禁用";
+        }
+
+        if (isEnabled.HasValue && onEnabledChanged != null)
+        {
+            var togglePanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            var toggleSwitch = new CheckBox
+            {
+                IsChecked = isEnabled.Value,
+                FontSize = 14,
+                Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+
+            var toggleStatusText = new TextBlock
+            {
+                Text = isEnabled.Value ? "已启用" : "已禁用",
+                FontSize = 13,
+                Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+                Margin = new Thickness(10, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            toggleSwitch.Checked += (s, e) =>
+            {
+                toggleStatusText.Text = "已启用";
+                UpdateControlsEnabled(true);
+                onEnabledChanged(true);
+            };
+
+            toggleSwitch.Unchecked += (s, e) =>
+            {
+                toggleStatusText.Text = "已禁用";
+                UpdateControlsEnabled(false);
+                onEnabledChanged(false);
+            };
+
+            togglePanel.Children.Add(toggleSwitch);
+            togglePanel.Children.Add(toggleStatusText);
+            section.Children.Add(togglePanel);
+        }
+
+        var hotkeyPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+
+        hotkeyPanel.Children.Add(new TextBlock
+        {
+            Text = "当前快捷键：",
+            FontSize = 14,
+            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        hotkeyPanel.Children.Add(hotkeyValueText);
+        section.Children.Add(hotkeyPanel);
+
+        var inputPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 2)
+        };
+        inputPanel.Children.Add(inputTextBox);
+        inputPanel.Children.Add(resetButton);
+        section.Children.Add(inputPanel);
+        section.Children.Add(statusText);
 
         bool isRecording = false;
 
         inputTextBox.PreviewMouseLeftButtonDown += (s, e) =>
         {
-            if (!isRecording)
+            if (controlsEnabled && !isRecording)
             {
                 isRecording = true;
                 inputTextBox.Text = "按下快捷键组合...";
@@ -668,35 +873,15 @@ public static partial class SettingsContentFactory
             }
         };
 
-        inputTextBox.PreviewKeyDown += (s2, e2) =>
+        inputTextBox.PreviewKeyDown += (s, e) =>
         {
-            if (!isRecording) return;
-            e2.Handled = true;
+            if (!isRecording)
+            {
+                return;
+            }
 
-            uint modifiers = 0;
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) modifiers |= Services.GlobalHotKeyService.MOD_CONTROL;
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) modifiers |= Services.GlobalHotKeyService.MOD_SHIFT;
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) modifiers |= Services.GlobalHotKeyService.MOD_ALT;
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Windows)) modifiers |= Services.GlobalHotKeyService.MOD_WIN;
-
-            uint key = 0;
-            if (e2.Key >= Key.A && e2.Key <= Key.Z)
-                key = (uint)(0x41 + (e2.Key - Key.A));
-            else if (e2.Key >= Key.D0 && e2.Key <= Key.D9)
-                key = (uint)(0x30 + (e2.Key - Key.D0));
-            else if (e2.Key >= Key.NumPad0 && e2.Key <= Key.NumPad9)
-                key = (uint)(0x60 + (e2.Key - Key.NumPad0));
-            else if (e2.Key >= Key.F1 && e2.Key <= Key.F24)
-                key = (uint)(0x70 + (e2.Key - Key.F1));
-            else if (e2.Key == Key.Space)
-                key = Services.GlobalHotKeyService.VK_SPACE;
-            else if (e2.Key == Key.Back)
-                key = Services.GlobalHotKeyService.VK_BACK;
-            else if (e2.Key == Key.Tab)
-                key = Services.GlobalHotKeyService.VK_TAB;
-            else if (e2.Key == Key.Return)
-                key = Services.GlobalHotKeyService.VK_RETURN;
-            else if (e2.Key == Key.Escape)
+            e.Handled = true;
+            if (e.Key == Key.Escape)
             {
                 isRecording = false;
                 inputTextBox.Text = "点击此处重新设置快捷键";
@@ -704,40 +889,20 @@ public static partial class SettingsContentFactory
                 statusText.Text = "已取消，点击输入框可重新设置";
                 return;
             }
-            else if (e2.Key == Key.Home)
-                key = Services.GlobalHotKeyService.VK_HOME;
-            else if (e2.Key == Key.End)
-                key = Services.GlobalHotKeyService.VK_END;
-            else if (e2.Key == Key.Left)
-                key = Services.GlobalHotKeyService.VK_LEFT;
-            else if (e2.Key == Key.Up)
-                key = Services.GlobalHotKeyService.VK_UP;
-            else if (e2.Key == Key.Right)
-                key = Services.GlobalHotKeyService.VK_RIGHT;
-            else if (e2.Key == Key.Down)
-                key = Services.GlobalHotKeyService.VK_DOWN;
-            else if (e2.Key == Key.Insert)
-                key = Services.GlobalHotKeyService.VK_INSERT;
-            else if (e2.Key == Key.Delete)
-                key = Services.GlobalHotKeyService.VK_DELETE;
-            else if (e2.Key == Key.PageUp)
-                key = Services.GlobalHotKeyService.VK_PRIOR;
-            else if (e2.Key == Key.PageDown)
-                key = Services.GlobalHotKeyService.VK_NEXT;
 
-            if (modifiers != 0 && key != 0)
+            var modifiers = GetCurrentHotKeyModifiers();
+            if (modifiers != 0 && TryGetVirtualKey(e.Key, out var key))
             {
                 isRecording = false;
-                SettingsService.Instance.Settings.HotKeyModifiers = modifiers;
-                SettingsService.Instance.Settings.HotKeyKey = key;
-                SettingsService.Instance.SaveSettings();
+                saveHotKey(modifiers, key);
                 hotkeyValueText.Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(modifiers, key);
                 inputTextBox.Text = "点击此处重新设置快捷键";
                 inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
                 statusText.Text = "快捷键已更新，点击输入框可再次修改";
-                inputTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                return;
             }
-            else if (modifiers != 0)
+
+            if (modifiers != 0)
             {
                 inputTextBox.Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(modifiers, 0) + "+...";
             }
@@ -750,26 +915,59 @@ public static partial class SettingsContentFactory
                 isRecording = false;
                 inputTextBox.Text = "点击此处重新设置快捷键";
                 inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
-                statusText.Text = "快捷键已更新，点击输入框可再次修改";
+                statusText.Text = "已取消，点击输入框可重新设置";
             }
         };
 
         resetButton.Click += (s, e) =>
         {
-            uint defaultModifiers = Services.GlobalHotKeyService.MOD_CONTROL | Services.GlobalHotKeyService.MOD_SHIFT | Services.GlobalHotKeyService.MOD_ALT;
-            uint defaultKey = Services.GlobalHotKeyService.VK_Z;
-
-            SettingsService.Instance.Settings.HotKeyModifiers = defaultModifiers;
-            SettingsService.Instance.Settings.HotKeyKey = defaultKey;
-            SettingsService.Instance.SaveSettings();
-
+            saveHotKey(defaultModifiers, defaultKey);
             hotkeyValueText.Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(defaultModifiers, defaultKey);
             inputTextBox.Text = "点击此处重新设置快捷键";
             inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
             statusText.Text = "快捷键已重置为默认值，点击输入框可修改";
         };
 
-        return container;
+        UpdateControlsEnabled(controlsEnabled);
+        return section;
+    }
+
+    private static uint GetCurrentHotKeyModifiers()
+    {
+        uint modifiers = 0;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) modifiers |= Services.GlobalHotKeyService.MOD_CONTROL;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) modifiers |= Services.GlobalHotKeyService.MOD_SHIFT;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) modifiers |= Services.GlobalHotKeyService.MOD_ALT;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Windows)) modifiers |= Services.GlobalHotKeyService.MOD_WIN;
+        return modifiers;
+    }
+
+    private static bool TryGetVirtualKey(Key keyInput, out uint key)
+    {
+        key = keyInput switch
+        {
+            >= Key.A and <= Key.Z => (uint)(0x41 + (keyInput - Key.A)),
+            >= Key.D0 and <= Key.D9 => (uint)(0x30 + (keyInput - Key.D0)),
+            >= Key.NumPad0 and <= Key.NumPad9 => (uint)(0x60 + (keyInput - Key.NumPad0)),
+            >= Key.F1 and <= Key.F24 => (uint)(0x70 + (keyInput - Key.F1)),
+            Key.Space => Services.GlobalHotKeyService.VK_SPACE,
+            Key.Back => Services.GlobalHotKeyService.VK_BACK,
+            Key.Tab => Services.GlobalHotKeyService.VK_TAB,
+            Key.Return => Services.GlobalHotKeyService.VK_RETURN,
+            Key.Home => Services.GlobalHotKeyService.VK_HOME,
+            Key.End => Services.GlobalHotKeyService.VK_END,
+            Key.Left => Services.GlobalHotKeyService.VK_LEFT,
+            Key.Up => Services.GlobalHotKeyService.VK_UP,
+            Key.Right => Services.GlobalHotKeyService.VK_RIGHT,
+            Key.Down => Services.GlobalHotKeyService.VK_DOWN,
+            Key.Insert => Services.GlobalHotKeyService.VK_INSERT,
+            Key.Delete => Services.GlobalHotKeyService.VK_DELETE,
+            Key.PageUp => Services.GlobalHotKeyService.VK_PRIOR,
+            Key.PageDown => Services.GlobalHotKeyService.VK_NEXT,
+            _ => 0
+        };
+
+        return key != 0;
     }
 
     private static FrameworkElement CreateStartInWidgetModeSettingContentCore()

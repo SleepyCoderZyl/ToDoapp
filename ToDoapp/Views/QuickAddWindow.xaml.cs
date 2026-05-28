@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using ToDoapp.Models;
 using ToDoapp.Services;
 
@@ -25,7 +26,15 @@ public partial class QuickAddWindow : Window
     private void QuickAddWindow_Loaded(object sender, RoutedEventArgs e)
     {
         PositionWindow();
+        Dispatcher.BeginInvoke(FocusInput, DispatcherPriority.ApplicationIdle);
+    }
+
+    public void FocusInput()
+    {
+        Activate();
         InputTextBox.Focus();
+        Keyboard.Focus(InputTextBox);
+        InputTextBox.CaretIndex = InputTextBox.Text.Length;
     }
 
     private void PositionWindow()

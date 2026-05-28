@@ -111,7 +111,8 @@ public partial class MainWindow
     {
         var settings = SettingsService.Instance.Settings;
         var now = DateTime.Now;
-        if (!StartupReminderService.ShouldShowScheduledReminder(settings, now))
+        var dueReminderEntries = StartupReminderService.GetDueScheduledReminderEntries(settings, now);
+        if (dueReminderEntries.Count == 0)
         {
             return;
         }
@@ -122,7 +123,7 @@ public partial class MainWindow
             return;
         }
 
-        settings.LastScheduledReminderDate = StartupReminderService.GetScheduledReminderDateToken(now);
+        StartupReminderService.MarkScheduledRemindersShown(dueReminderEntries, now);
         SettingsService.Instance.SaveSettings();
 
         var reminderWindow = new StartupReminderWindow(this, snapshot);
@@ -341,17 +342,7 @@ public partial class MainWindow
             _globalHotKeyService = new GlobalHotKeyService(this);
             _globalHotKeyService.HotKeyPressed += OnGlobalHotKeyPressed;
 
-            var settings = SettingsService.Instance.Settings;
-            var hotKeyId = _globalHotKeyService.RegisterHotKey(settings.HotKeyModifiers, settings.HotKeyKey);
-
-            if (hotKeyId != -1)
-            {
-                UpdateStatus($"全局快捷键已注册：{_globalHotKeyService.GetHotKeyDisplayText()}");
-            }
-            else
-            {
-                UpdateStatus("全局快捷键等待注册...");
-            }
+            RegisterConfiguredHotKeys("已注册");
         }
         catch (Exception ex)
         {
@@ -360,7 +351,60 @@ public partial class MainWindow
         }
     }
 
-    private void OnGlobalHotKeyPressed()
+    private void RegisterConfiguredHotKeys(string statusVerb)
+    {
+        if (_globalHotKeyService == null)
+        {
+            return;
+        }
+
+        var settings = SettingsService.Instance.Settings;
+        var quickAddHotKeyId = _globalHotKeyService.RegisterHotKey(
+            GlobalHotKeyAction.QuickAdd,
+            settings.HotKeyModifiers,
+            settings.HotKeyKey);
+
+        var showHomeHotKeyId = -1;
+        if (settings.ShowHomeHotKeyEnabled)
+        {
+            showHomeHotKeyId = _globalHotKeyService.RegisterHotKey(
+                GlobalHotKeyAction.ShowHome,
+                settings.ShowHomeHotKeyModifiers,
+                settings.ShowHomeHotKeyKey);
+        }
+        else
+        {
+            _globalHotKeyService.UnregisterHotKey(GlobalHotKeyAction.ShowHome);
+        }
+
+        var quickAddText = GlobalHotKeyService.GetHotKeyDisplayText(settings.HotKeyModifiers, settings.HotKeyKey);
+        var showHomeText = settings.ShowHomeHotKeyEnabled
+            ? GlobalHotKeyService.GetHotKeyDisplayText(settings.ShowHomeHotKeyModifiers, settings.ShowHomeHotKeyKey)
+            : "未启用";
+
+        if (quickAddHotKeyId != -1 && (!settings.ShowHomeHotKeyEnabled || showHomeHotKeyId != -1))
+        {
+            UpdateStatus($"全局快捷键{statusVerb}：快速添加 {quickAddText}；显示主页 {showHomeText}");
+            return;
+        }
+
+        UpdateStatus($"全局快捷键{statusVerb}不完整：快速添加 {quickAddText}；显示主页 {showHomeText}");
+    }
+
+    private void OnGlobalHotKeyPressed(GlobalHotKeyAction action)
+    {
+        switch (action)
+        {
+            case GlobalHotKeyAction.QuickAdd:
+                OnQuickAddHotKeyPressed();
+                break;
+            case GlobalHotKeyAction.ShowHome:
+                OnShowHomeHotKeyPressed();
+                break;
+        }
+    }
+
+    private void OnQuickAddHotKeyPressed()
     {
         try
         {
@@ -369,7 +413,7 @@ public partial class MainWindow
                 if (_quickAddWindow != null && _quickAddWindow.IsVisible)
                 {
                     _quickAddWindow.Activate();
-                    _quickAddWindow.Focus();
+                    _quickAddWindow.FocusInput();
                     return;
                 }
 
@@ -399,6 +443,19 @@ public partial class MainWindow
         }
     }
 
+    private void OnShowHomeHotKeyPressed()
+    {
+        try
+        {
+            Dispatcher.Invoke(RestoreMainWindow);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"处理显示主页快捷键失败: {ex.Message}");
+            UpdateStatus("显示主页失败");
+        }
+    }
+
     private void OnSettingsChanged(object? sender, EventArgs e)
     {
         try
@@ -408,17 +465,7 @@ public partial class MainWindow
                 return;
             }
 
-            var settings = SettingsService.Instance.Settings;
-            var hotKeyId = _globalHotKeyService.RegisterHotKey(settings.HotKeyModifiers, settings.HotKeyKey);
-
-            if (hotKeyId != -1)
-            {
-                UpdateStatus($"全局快捷键已更新：{_globalHotKeyService.GetHotKeyDisplayText()}");
-            }
-            else
-            {
-                UpdateStatus("全局快捷键更新失败");
-            }
+            RegisterConfiguredHotKeys("已更新");
         }
         catch (Exception ex)
         {

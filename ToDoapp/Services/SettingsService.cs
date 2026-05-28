@@ -44,13 +44,7 @@ public class SettingsService
                 var settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
                 if (settings != null)
                 {
-                    settings.StartupReminderItems ??= [];
-                    settings.ScheduledReminderItems ??= [];
-                    if (string.IsNullOrWhiteSpace(settings.ScheduledReminderTime))
-                    {
-                        settings.ScheduledReminderTime = "09:00";
-                    }
-
+                    settings.Normalize();
                     return settings;
                 }
             }
@@ -61,8 +55,7 @@ public class SettingsService
         }
         
         var defaultSettings = new AppSettings();
-        defaultSettings.StartupReminderItems ??= [];
-        defaultSettings.ScheduledReminderItems ??= [];
+        defaultSettings.Normalize();
         return defaultSettings;
     }
 

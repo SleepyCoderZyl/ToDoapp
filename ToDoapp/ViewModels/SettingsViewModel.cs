@@ -99,7 +99,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             Id = "hotkey",
             Name = "全局快捷键",
-            Description = "设置快速添加待办事项",
+            Description = "设置快速添加和显示主页",
             Category = SettingCategory.General,
             ContentControl = hotkeyContent
         };

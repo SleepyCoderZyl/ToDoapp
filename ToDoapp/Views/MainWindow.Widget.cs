@@ -373,8 +373,7 @@ public partial class MainWindow
     {
         if (_isWidgetMode)
         {
-            Show();
-            Activate();
+            ExitWidgetMode();
             return;
         }
 
