@@ -22,7 +22,7 @@ public sealed class UpdateService
 
     public string GetCurrentVersion()
     {
-        return NormalizeVersionLabel(Assembly.GetExecutingAssembly().GetName().Version?.ToString()) ?? "1.4.0";
+        return NormalizeVersionLabel(Assembly.GetExecutingAssembly().GetName().Version?.ToString()) ?? "1.4.1";
     }
 
     public async Task<UpdateCheckResult> CheckForUpdatesAsync(CancellationToken cancellationToken = default)

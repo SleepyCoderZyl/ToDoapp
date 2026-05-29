@@ -16,7 +16,6 @@
       --subtle: #858585;
       --accent: #6ccb5f;
       --warn: #f2b84b;
-      --danger: #f85149;
     }
 
     * {
@@ -32,49 +31,49 @@
     }
 
     main {
-      width: min(980px, calc(100% - 32px));
+      width: min(860px, calc(100% - 32px));
       margin: 0 auto;
       padding: 40px 0 56px;
     }
 
-    header {
-      padding: 32px;
+    header,
+    .section {
       border: 1px solid var(--border);
       border-radius: 8px;
+    }
+
+    header {
+      padding: 30px;
       background: var(--panel);
+    }
+
+    .section {
+      margin-top: 20px;
+      padding: 26px;
+      background: var(--panel-soft);
     }
 
     h1,
     h2,
-    h3,
     p {
       margin-top: 0;
     }
 
     h1 {
       margin-bottom: 8px;
-      font-size: 32px;
+      font-size: 30px;
       line-height: 1.25;
     }
 
     h2 {
-      margin-bottom: 16px;
-      font-size: 22px;
-      border-left: 4px solid var(--accent);
+      margin-bottom: 14px;
       padding-left: 12px;
-    }
-
-    h3 {
-      margin-bottom: 8px;
-      font-size: 17px;
+      border-left: 4px solid var(--accent);
+      font-size: 21px;
     }
 
     p {
       color: var(--muted);
-    }
-
-    a {
-      color: var(--accent);
     }
 
     code {
@@ -84,40 +83,6 @@
       color: var(--text);
       font-family: Consolas, "Courier New", monospace;
       font-size: 0.95em;
-    }
-
-    .lead {
-      max-width: 760px;
-      margin-bottom: 0;
-      color: var(--muted);
-      font-size: 16px;
-    }
-
-    .section {
-      margin-top: 24px;
-      padding: 28px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--panel-soft);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .item {
-      min-height: 100%;
-      padding: 18px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--panel);
-    }
-
-    .item p:last-child,
-    .section p:last-child {
-      margin-bottom: 0;
     }
 
     ul,
@@ -131,20 +96,15 @@
       margin-top: 8px;
     }
 
-    .tag-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 18px;
+    strong {
+      color: var(--text);
     }
 
-    .tag {
-      padding: 5px 10px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
+    .lead {
+      max-width: 720px;
+      margin-bottom: 0;
       color: var(--muted);
-      background: #1c1c1c;
-      font-size: 13px;
+      font-size: 16px;
     }
 
     .notice {
@@ -156,11 +116,6 @@
       border-left-color: var(--warn);
     }
 
-    .danger {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
     footer {
       margin-top: 24px;
       color: var(--subtle);
@@ -170,7 +125,7 @@
 
     @media (max-width: 720px) {
       main {
-        width: min(100% - 24px, 980px);
+        width: min(100% - 24px, 860px);
         padding: 20px 0 36px;
       }
 
@@ -182,10 +137,6 @@
       h1 {
         font-size: 26px;
       }
-
-      .grid {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
@@ -193,94 +144,67 @@
   <main>
     <header>
       <h1>待办便签帮助</h1>
-      <p class="lead">待办便签是一个本地运行的待办事项工具，适合记录日常任务、临时提醒和桌面便签。数据默认保存在本机，不需要联网即可使用。</p>
-      <div class="tag-list" aria-label="主要功能">
-        <span class="tag">本地存储</span>
-        <span class="tag">小组件模式</span>
-        <span class="tag">全局快捷键</span>
-        <span class="tag">备份恢复</span>
-        <span class="tag">提醒弹窗</span>
-      </div>
+      <p class="lead">待办便签用于记录日常任务、桌面便签和简单提醒。数据默认保存在本机，常用功能不需要联网。</p>
     </header>
 
     <section class="section">
       <h2>快速开始</h2>
       <ol>
-        <li>在主窗口顶部输入待办事项，按 <code>Enter</code> 或点击添加按钮保存。</li>
-        <li>需要截止日期时，在日期选择器中选择日期；过期任务会在列表中突出显示。</li>
-        <li>勾选任务左侧复选框可标记完成，再次取消勾选可恢复未完成。</li>
-        <li>右键任务可修改、复制、归档、恢复或永久删除，具体选项会随所在列表变化。</li>
+        <li>在主窗口顶部输入任务，按 <code>Enter</code> 或点击 <strong>AI 添加</strong> 保存。</li>
+        <li>需要截止日期时，可以在日期选择器中选择日期，也可以输入“明天交报告”“下周五买票”“国庆后整理行程”等自然语言。</li>
+        <li>勾选任务左侧复选框可标记完成；取消勾选可恢复为未完成。</li>
       </ol>
     </section>
 
     <section class="section">
-      <h2>主要用法</h2>
-      <div class="grid">
-        <article class="item">
-          <h3>添加与智能解析</h3>
-          <p>在输入框中写下任务内容即可添加。使用“AI 添加”或快速添加窗口时，可以输入类似“明天提醒我交报告”的自然语言，程序会尝试识别任务标题和截止日期。</p>
-        </article>
-        <article class="item">
-          <h3>待办、归档与垃圾箱</h3>
-          <p>主列表用于处理当前任务。完成后可归档，归档任务可按时间分组查看和恢复。删除后的任务会进入垃圾箱，垃圾箱内可恢复或永久删除。</p>
-        </article>
-        <article class="item">
-          <h3>小组件模式</h3>
-          <p>小组件模式会以较小窗口展示待办事项，适合放在桌面边缘。可在托盘菜单或窗口按钮中切换主页面和小组件。</p>
-        </article>
-        <article class="item">
-          <h3>沉浸模式</h3>
-          <p>进入沉浸模式后，小组件会减少鼠标交互干扰。需要编辑或操作任务时，可从托盘菜单或小组件右键菜单退出沉浸模式。</p>
-        </article>
-        <article class="item">
-          <h3>全局快捷键</h3>
-          <p>默认快捷键为 <code>Ctrl + Shift + Alt + Z</code>，可唤起快速添加窗口。快捷键可在“设置”中重新配置，建议至少包含一个修饰键以减少冲突。</p>
-        </article>
-        <article class="item">
-          <h3>提醒功能</h3>
-          <p>可以在设置中配置开机自启、启动提醒和每日定时提醒。定时提醒每天只会按设定时间弹出一次，内容按设置中的顺序展示。</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>系统托盘菜单</h2>
+      <h2>任务管理</h2>
       <ul>
-        <li><strong>切换到小组件 / 切换到主页面：</strong>在主窗口和小组件模式之间切换。</li>
-        <li><strong>显示 / 隐藏小组件：</strong>在小组件模式下快速控制小组件是否显示。</li>
-        <li><strong>进入 / 退出沉浸模式：</strong>在小组件模式下降低或恢复鼠标交互。</li>
-        <li><strong>导入/导出：</strong>导入 JSON 待办文件、导出当前待办，或从本地备份恢复数据。</li>
-        <li><strong>设置：</strong>调整透明度、置顶、开机自启、快捷键、提醒和启动模式。</li>
-        <li><strong>帮助：</strong>打开当前这份本地帮助页面。</li>
-        <li><strong>关于：</strong>查看版本信息并检查 GitHub Releases 更新。</li>
-        <li><strong>退出程序：</strong>完全关闭应用。</li>
+        <li><strong>待办：</strong>查看当前未完成任务，过期任务会突出显示。</li>
+        <li><strong>已完成：</strong>查看完成后的任务，可继续修改、复制、归档或删除。</li>
+        <li><strong>归档：</strong>查看已归档任务，可恢复单个任务、某个分组或全部任务。</li>
+        <li><strong>垃圾箱：</strong>删除后的任务会先进入垃圾箱，7 天后自动永久删除。</li>
       </ul>
     </section>
 
     <section class="section">
-      <h2>数据与备份</h2>
-      <p>待办数据和设置保存在 Windows 本地用户目录下，主要位置为：</p>
+      <h2>快捷操作</h2>
       <ul>
-        <li>待办数据：<code>%LocalAppData%\ToDoApp\todos.json</code></li>
-        <li>应用设置：<code>%LocalAppData%\ToDoApp\settings.json</code></li>
-        <li>本地备份：位于同一应用数据目录下的备份文件。</li>
+        <li><strong>快速添加：</strong>默认按 <code>Ctrl + Shift + Alt + Z</code> 打开快速添加窗口，按 <code>Enter</code> 添加，按 <code>Esc</code> 取消。</li>
+        <li><strong>显示主页：</strong>默认按 <code>Ctrl + Shift + Alt + H</code> 从托盘、最小化或小组件状态回到主页面。</li>
+        <li><strong>复制任务：</strong>选中任务后按 <code>Ctrl + C</code>、双击任务，或右键选择“复制”。</li>
+        <li><strong>托盘菜单：</strong>右键托盘图标可切换小组件、导入导出、恢复备份、打开设置、帮助、关于和退出程序。</li>
       </ul>
-      <p>程序会在关键操作时保存数据，并保留最近的本地备份。需要迁移电脑或长期保存时，建议通过托盘菜单导出 JSON 文件。</p>
+    </section>
+
+    <section class="section">
+      <h2>小组件</h2>
+      <ul>
+        <li>点击主窗口右上角的小组件按钮，或在托盘菜单选择“切换到小组件”。</li>
+        <li>小组件只显示当前待办任务，位置和尺寸会自动保存。</li>
+        <li>进入沉浸模式后，小组件会降低干扰；需要操作时可从托盘菜单或小组件右键菜单退出。</li>
+        <li>小组件置顶、背景透明度和内容透明度可在“设置”中调整。</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>数据与提醒</h2>
+      <ul>
+        <li>待办数据、设置和备份保存在 <code>%LocalAppData%\ToDoApp</code>。</li>
+        <li>迁移电脑或长期保存前，建议从托盘菜单导出 JSON 文件；需要回滚时可使用“恢复备份”。</li>
+        <li>在“设置”中可开启开机自启动、启动弹窗和每日定时弹窗提醒。</li>
+      </ul>
     </section>
 
     <section class="section notice">
       <h2>注意事项</h2>
       <ul>
-        <li>数据仅存储在本机，卸载、清理用户数据目录或更换电脑前，请先导出重要待办。</li>
-        <li>全局快捷键可能与其他软件冲突；如果快速添加窗口无法弹出，请在设置中更换组合键。</li>
-        <li>开机自启和提醒弹窗依赖 Windows 当前用户环境，系统权限或安全软件可能影响启动行为。</li>
-        <li>“检查更新”需要访问 GitHub Releases；离线时不影响待办、备份和本地帮助页面使用。</li>
-        <li>恢复备份会替换当前待办列表。执行前请确认选择的备份时间，必要时先导出当前数据。</li>
-        <li>如果帮助页面无法打开，可能是 <code>Help.html</code> 缺失或默认浏览器配置异常。</li>
+        <li>全局快捷键可能与其他软件冲突，无法响应时请在“设置”中更换组合键。</li>
+        <li>定时弹窗需要应用正在运行或驻留托盘，错过当天时间点不会补发。</li>
+        <li>检查更新和节假日放假安排需要联网；离线不影响本地待办和备份使用。</li>
       </ul>
     </section>
 
-    <footer>待办便签 · 本地帮助页面</footer>
+    <footer>待办便签 1.4.1 · 本地帮助页面</footer>
   </main>
 </body>
 </html>
