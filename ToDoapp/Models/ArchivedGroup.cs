@@ -186,19 +186,21 @@ public class ArchivedGroup : INotifyPropertyChanged
 
     private static int GetMonthWeekNumber(DateTime date)
     {
-        var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
-        var firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
-        var dayOfMonth = date.Day;
-        var weekNumber = (dayOfMonth + firstDayOfWeek - 1) / 7 + 1;
-        return weekNumber;
+        return (date.Day - 1) / 7 + 1;
     }
 
     private static (DateTime start, DateTime end) GetWeekDateRange(int year, int week, int month)
     {
         var firstDayOfMonth = new DateTime(year, month, 1);
-        var firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
-        var currentWeekStart = firstDayOfMonth.AddDays((week - 1) * 7 - firstDayOfWeek);
-        var currentWeekEnd = currentWeekStart.AddDays(6);
-        return (currentWeekStart, currentWeekEnd);
+        var weekStart = firstDayOfMonth.AddDays((week - 1) * 7);
+        var weekEnd = weekStart.AddDays(6);
+
+        var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+        if (weekEnd > lastDayOfMonth)
+        {
+            weekEnd = lastDayOfMonth;
+        }
+
+        return (weekStart, weekEnd);
     }
 }
