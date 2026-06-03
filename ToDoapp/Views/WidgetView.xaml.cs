@@ -4,10 +4,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using ToDoapp.Models;
 using ToDoapp.Services;
 
-namespace ToDoapp.Widgets;
+namespace ToDoapp.Views;
 
 public partial class WidgetView : UserControl
 {
@@ -21,22 +22,80 @@ public partial class WidgetView : UserControl
     private double _resizeStartHeight;
     private const double ResizeAreaThreshold = 20;
     private SolidColorBrush? _backgroundBrush;
+    private SolidColorBrush? _borderBrush;
+    private bool _isSubscribedToOpacityManager;
+
+    public static readonly DependencyProperty IsMousePassThroughEnabledProperty =
+        DependencyProperty.Register(
+            nameof(IsMousePassThroughEnabled),
+            typeof(bool),
+            typeof(WidgetView),
+            new PropertyMetadata(false));
+
+    public static readonly DependencyProperty IsWindowInteractionEnabledProperty =
+        DependencyProperty.Register(
+            nameof(IsWindowInteractionEnabled),
+            typeof(bool),
+            typeof(WidgetView),
+            new PropertyMetadata(true));
+
+    public bool IsMousePassThroughEnabled
+    {
+        get => (bool)GetValue(IsMousePassThroughEnabledProperty);
+        set => SetValue(IsMousePassThroughEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// 是否启用窗口交互（拖动、调整大小）。当 WidgetView 被嵌入 WidgetWindow 时设为 False，
+    /// 因为 WidgetWindow 自身处理这些交互。
+    /// </summary>
+    public bool IsWindowInteractionEnabled
+    {
+        get => (bool)GetValue(IsWindowInteractionEnabledProperty);
+        set => SetValue(IsWindowInteractionEnabledProperty, value);
+    }
 
     public WidgetView()
     {
         InitializeComponent();
         Loaded += WidgetView_Loaded;
+        Unloaded += WidgetView_Unloaded;
     }
 
     private void WidgetView_Loaded(object sender, RoutedEventArgs e)
     {
         RefreshThemeBrushes();
+        EnsureOpacityManagerSubscribed();
+        UpdateOpacity();
+        UpdateContentOpacity();
+    }
+
+    private void WidgetView_Unloaded(object sender, RoutedEventArgs e)
+    {
+        UnsubscribeFromOpacityManager();
+    }
+
+    private void EnsureOpacityManagerSubscribed()
+    {
+        if (_isSubscribedToOpacityManager) return;
 
         var opacityManager = WidgetOpacityManager.Instance;
         opacityManager.OpacityChanged += OnOpacityManagerChanged;
         opacityManager.ContentOpacityChanged += OnContentOpacityManagerChanged;
-        UpdateOpacity();
-        UpdateContentOpacity();
+        opacityManager.PropertyChanged += OnOpacityManagerPropertyChanged;
+        IsMousePassThroughEnabled = opacityManager.IsMousePassThroughEnabled;
+        _isSubscribedToOpacityManager = true;
+    }
+
+    private void UnsubscribeFromOpacityManager()
+    {
+        if (!_isSubscribedToOpacityManager) return;
+
+        var opacityManager = WidgetOpacityManager.Instance;
+        opacityManager.OpacityChanged -= OnOpacityManagerChanged;
+        opacityManager.ContentOpacityChanged -= OnContentOpacityManagerChanged;
+        opacityManager.PropertyChanged -= OnOpacityManagerPropertyChanged;
+        _isSubscribedToOpacityManager = false;
     }
 
     public void RefreshThemeBrushes()
@@ -44,7 +103,10 @@ public partial class WidgetView : UserControl
         var color = GetResourceColor("WidgetBackgroundBrush", Color.FromRgb(32, 32, 32));
         _backgroundBrush = new SolidColorBrush(color);
         MainBorder.Background = _backgroundBrush;
-        MainBorder.BorderBrush = Application.Current.TryFindResource("BorderBrush") as Brush ?? MainBorder.BorderBrush;
+
+        _borderBrush = new SolidColorBrush(GetResourceColor("BorderBrush", Color.FromRgb(61, 61, 61)));
+        MainBorder.BorderBrush = _borderBrush;
+
         UpdateOpacity();
     }
 
@@ -65,6 +127,14 @@ public partial class WidgetView : UserControl
         UpdateContentOpacity();
     }
 
+    private void OnOpacityManagerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(WidgetOpacityManager.IsMousePassThroughEnabled))
+        {
+            IsMousePassThroughEnabled = WidgetOpacityManager.Instance.IsMousePassThroughEnabled;
+        }
+    }
+
     private void UpdateOpacity()
     {
         var opacityManager = WidgetOpacityManager.Instance;
@@ -77,6 +147,13 @@ public partial class WidgetView : UserControl
             var color = _backgroundBrush.Color;
             color.A = (byte)(255 * effectiveOpacity);
             _backgroundBrush.Color = color;
+        }
+
+        if (_borderBrush != null)
+        {
+            var borderColor = _borderBrush.Color;
+            borderColor.A = (byte)(255 * effectiveOpacity);
+            _borderBrush.Color = borderColor;
         }
     }
 
@@ -91,6 +168,7 @@ public partial class WidgetView : UserControl
         {
             WidgetTasksListBox.Opacity = contentOpacity;
         }
+
         if (EmptyMessage != null)
         {
             EmptyMessage.Opacity = contentOpacity;
@@ -100,14 +178,67 @@ public partial class WidgetView : UserControl
     public void SetTasks(IEnumerable<TodoItem> tasks)
     {
         WidgetTasksListBox.ItemsSource = tasks;
+        var taskList = tasks is IList<TodoItem> list ? list : new List<TodoItem>(tasks);
+        if (EmptyMessage != null)
+        {
+            EmptyMessage.Visibility = taskList.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     private void TaskCheckBox_Checked(object sender, RoutedEventArgs e)
     {
         if (sender is CheckBox checkBox && checkBox.DataContext is TodoItem todoItem)
         {
-            TaskChecked?.Invoke(this, todoItem);
+            var listBoxItem = FindParent<ListBoxItem>(checkBox);
+            if (listBoxItem != null)
+            {
+                PlayAnimationOnListBoxItem(listBoxItem, () =>
+                {
+                    TaskChecked?.Invoke(this, todoItem);
+                });
+            }
+            else
+            {
+                TaskChecked?.Invoke(this, todoItem);
+            }
         }
+    }
+
+    private void PlayAnimationOnListBoxItem(ListBoxItem listBoxItem, Action onCompleted)
+    {
+        if (Application.Current.TryFindResource("TaskActionAnimation") is Storyboard storyboard)
+        {
+            try
+            {
+                var clonedStoryboard = storyboard.Clone();
+                clonedStoryboard.Completed += (s, args) =>
+                {
+                    onCompleted?.Invoke();
+                };
+                clonedStoryboard.Begin(listBoxItem);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"播放动画失败: {ex.Message}");
+                onCompleted?.Invoke();
+            }
+        }
+        else
+        {
+            onCompleted?.Invoke();
+        }
+    }
+
+    private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+    {
+        var parent = VisualTreeHelper.GetParent(child);
+        while (parent != null)
+        {
+            if (parent is T typedParent)
+                return typedParent;
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+        return null;
     }
 
     private void DeleteTaskButton_Click(object sender, RoutedEventArgs e)
@@ -118,15 +249,17 @@ public partial class WidgetView : UserControl
         }
     }
 
-    private void WidgetView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void WidgetView_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (!IsWindowInteractionEnabled) return;
+
         // 检查是否点击了按钮或复选框
         var clickedElement = e.OriginalSource as DependencyObject;
         while (clickedElement != null && !(clickedElement is Button) && !(clickedElement is CheckBox))
         {
             clickedElement = VisualTreeHelper.GetParent(clickedElement);
         }
-        
+
         // 如果点击了按钮或复选框，不处理拖动操作
         if (clickedElement is Button || clickedElement is CheckBox)
         {
@@ -151,8 +284,10 @@ public partial class WidgetView : UserControl
         }
     }
 
-    private void WidgetView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    private void WidgetView_MouseMove(object sender, MouseEventArgs e)
     {
+        if (!IsWindowInteractionEnabled) return;
+
         var window = Window.GetWindow(this);
         if (window == null) return;
 
@@ -177,19 +312,14 @@ public partial class WidgetView : UserControl
                                   mousePosition.Y >= window.ActualHeight - ResizeAreaThreshold;
 
             // 设置光标
-            if (isInResizeArea)
-            {
-                Cursor = Cursors.SizeNWSE;
-            }
-            else
-            {
-                Cursor = Cursors.Arrow;
-            }
+            Cursor = isInResizeArea ? Cursors.SizeNWSE : Cursors.Arrow;
         }
     }
 
-    private void WidgetView_MouseLeftButtonDownForResize(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void WidgetView_MouseLeftButtonDownForResize(object sender, MouseButtonEventArgs e)
     {
+        if (!IsWindowInteractionEnabled) return;
+
         var window = Window.GetWindow(this);
         if (window == null) return;
 
@@ -211,7 +341,7 @@ public partial class WidgetView : UserControl
         }
     }
 
-    private void WidgetView_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void WidgetView_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         // 结束调整大小
         if (_isResizing)

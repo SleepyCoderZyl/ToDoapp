@@ -175,15 +175,6 @@ public class ArchivedGroup : INotifyPropertyChanged
         return groups;
     }
 
-    private static int GetWeekNumber(DateTime date)
-    {
-        var firstDayOfYear = new DateTime(date.Year, 1, 1);
-        var daysOffset = (int)System.Globalization.CultureInfo.CurrentCulture.Calendar.GetDayOfWeek(firstDayOfYear);
-        var firstMonday = firstDayOfYear.AddDays(-daysOffset + (daysOffset <= 3 ? 0 : 7) - 3);
-        var weekNumber = System.Globalization.CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(date, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-        return weekNumber;
-    }
-
     private static int GetMonthWeekNumber(DateTime date)
     {
         return (date.Day - 1) / 7 + 1;

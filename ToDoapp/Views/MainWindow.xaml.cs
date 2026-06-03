@@ -7,7 +7,6 @@ using ToDoapp.Models;
 using ToDoapp.Services;
 using ToDoapp.ViewModels;
 using ToDoapp.Views;
-using ToDoapp.Widgets;
 
 namespace ToDoapp.Views;
 

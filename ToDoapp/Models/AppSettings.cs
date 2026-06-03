@@ -64,7 +64,7 @@ public class AppSettings : IJsonOnDeserialized
     public uint ShowHomeHotKeyKey { get; set; } = 0x48;
 
     [JsonPropertyName("startInWidgetMode")]
-    public bool StartInWidgetMode { get; set; } = true;
+    public bool StartInWidgetMode { get; set; } = false;
 
     [JsonPropertyName("autoArchiveDays")]
     public int AutoArchiveDays { get; set; } = 7;

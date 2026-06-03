@@ -2,8 +2,6 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
-using ToDoapp.Constants;
-
 namespace ToDoapp.Models;
 
 public class TodoItem : INotifyPropertyChanged

@@ -1,11 +1,12 @@
 using System;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Diagnostics;
-using ToDoapp.Constants;
+using ToDoapp.Models;
 using ToDoapp.Views;
 
 namespace ToDoapp.Services;
@@ -254,7 +255,7 @@ public class SystemTrayService : IDisposable
             AppendMenu(hMenu, MF_SEPARATOR, 0, "");
             AppendMenu(hMenu, MF_STRING, MenuExit, "退出程序");
 
-            SetForegroundWindow(_windowHandle);
+            MainWindowNativeMethods.SetForegroundWindow(_windowHandle);
             int result = TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD, mousePos.X, mousePos.Y, 0, _windowHandle, IntPtr.Zero);
 
             switch (result)
@@ -440,7 +441,7 @@ public class SystemTrayService : IDisposable
 
                     try
                     {
-                        var result = await _updateService.CheckForUpdatesAsync();
+                        var result = await _updateService.CheckForUpdatesAsync(CancellationToken.None);
                         statusText.Text = result.StatusText;
                         statusText.Foreground = result.IsSuccess
                             ? GetResourceBrush("TextPrimaryBrush")
@@ -784,9 +785,6 @@ public class SystemTrayService : IDisposable
 
     [DllImport("user32.dll")]
     private static extern bool DestroyMenu(IntPtr hMenu);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct POINT

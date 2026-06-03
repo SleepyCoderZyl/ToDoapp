@@ -24,9 +24,10 @@ public partial class App : System.Windows.Application
             return;
         }
         
+        ThemeService.Instance.Initialize();
+
         base.OnStartup(e);
 
-        ThemeService.Instance.Initialize();
         StartupService.Instance.SyncWithSettings();
         _ = WarmupHolidayCalendarAsync();
     }
@@ -90,28 +91,19 @@ public partial class App : System.Windows.Application
                     var handle = process.MainWindowHandle;
                     if (handle != IntPtr.Zero)
                     {
-                        NativeMethods.ShowWindow(handle, NativeMethods.SW_RESTORE);
-                        NativeMethods.SetForegroundWindow(handle);
+                        MainWindowNativeMethods.ShowWindow(handle, MainWindowNativeMethods.SW_RESTORE);
+                        MainWindowNativeMethods.SetForegroundWindow(handle);
                     }
                 }
-                catch
+                catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
                 {
+                    // 激活已有实例失败，可能进程已退出或无访问权限
+                    System.Diagnostics.Debug.WriteLine($"激活已有实例失败: {ex.Message}");
                 }
             }
         }
     }
     
-    private static class NativeMethods
-    {
-        public const int SW_RESTORE = 9;
-        
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern bool SetForegroundWindow(IntPtr hWnd);
-    }
-
     private static async Task WarmupHolidayCalendarAsync()
     {
         try
@@ -139,7 +131,7 @@ public partial class App : System.Windows.Application
                 return;
             }
 
-            var snapshot = new StartupReminderService().CreateStartupSnapshot(DateTime.Now);
+            var snapshot = StartupReminderService.BuildStartupSnapshot([], settings, DateTime.Now);
             if (!snapshot.HasContent)
             {
                 return;

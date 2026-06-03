@@ -102,7 +102,7 @@ public partial class MainWindow
         }
     }
 
-    private void DueDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+    private void DueDatePicker_SelectedDateChanged(object sender, RoutedPropertyChangedEventArgs<DateTime?> e)
     {
         if (DueDatePicker?.SelectedDate != null && DueDatePicker.SelectedDate < DateTime.Now.Date)
         {

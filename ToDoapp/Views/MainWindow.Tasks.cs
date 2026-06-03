@@ -151,7 +151,7 @@ public partial class MainWindow
             FontSize = 14,
             Padding = new Thickness(10, 8, 10, 8),
             Margin = new Thickness(0, 0, 0, 16),
-            MaxLength = Constants.AppConstants.MaxTitleLength,
+            MaxLength = AppConstants.MaxTitleLength,
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
@@ -168,21 +168,13 @@ public partial class MainWindow
             Margin = new Thickness(0, 0, 0, 6)
         };
 
-        var datePicker = new global::HandyControl.Controls.DatePicker
+        var datePicker = new Controls.CalendarPopup
         {
             SelectedDate = selectedItem.DueDate,
-            FontSize = 14,
-            Height = 36,
-            BorderThickness = new Thickness(1),
             Margin = new Thickness(0, 0, 0, 8),
             MinWidth = 160,
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
-
-        datePicker.SetResourceReference(Control.BackgroundProperty, "InputBrush");
-        datePicker.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
-        datePicker.SetResourceReference(Control.BorderBrushProperty, "BorderBrush");
-        datePicker.SetResourceReference(System.Windows.Controls.DatePicker.CalendarStyleProperty, "ModernDatePickerCalendarStyle");
 
 
         editPanel.Children.Add(titleLabel);
@@ -208,7 +200,7 @@ public partial class MainWindow
 
             selectedItem.Title = textBox.Text.Trim();
 
-            if (panel.Children[3] is global::HandyControl.Controls.DatePicker picker)
+            if (panel.Children[3] is Controls.CalendarPopup picker)
             {
                 selectedItem.DueDate = picker.SelectedDate;
             }

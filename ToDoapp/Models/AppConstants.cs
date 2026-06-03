@@ -1,4 +1,4 @@
-namespace ToDoapp.Constants;
+namespace ToDoapp.Models;
 
 public static class AppConstants
 {

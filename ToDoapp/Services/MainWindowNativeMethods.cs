@@ -1,14 +1,25 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace ToDoapp.Interop;
+namespace ToDoapp.Services;
 
 internal static class MainWindowNativeMethods
 {
+    // ShowWindow 命令常量
     internal const int SW_RESTORE = 9;
+
+    // 窗口扩展样式常量
     internal const int GWL_EXSTYLE = -20;
     internal const int WS_EX_TOOLWINDOW = 0x00000080;
     internal const int WS_EX_TRANSPARENT = 0x00000020;
+    internal const int WS_EX_NOACTIVATE = 0x08000000;
+
+    // SetWindowPos 标志
+    internal static readonly IntPtr HWND_BOTTOM = new(1);
+    internal const uint SWP_NOSIZE = 0x0001;
+    internal const uint SWP_NOMOVE = 0x0002;
+    internal const uint SWP_NOACTIVATE = 0x0010;
+    internal const uint SWP_FRAMECHANGED = 0x0020;
 
     [DllImport("user32.dll")]
     internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -21,6 +32,9 @@ internal static class MainWindowNativeMethods
 
     [DllImport("user32.dll")]
     internal static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [DllImport("user32.dll")]
+    internal static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
     [DllImport("dwmapi.dll", PreserveSig = true)]
     internal static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);

@@ -120,8 +120,9 @@ public static class HolidayCatalog
 
             return new DateTime(year, month, lunarDay, LunarCalendar);
         }
-        catch
+        catch (ArgumentOutOfRangeException ex)
         {
+            System.Diagnostics.Debug.WriteLine($"农历日期计算失败 (年={year}, 月={lunarMonth}, 日={lunarDay}): {ex.Message}");
             return null;
         }
     }

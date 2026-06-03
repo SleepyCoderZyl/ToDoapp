@@ -79,8 +79,9 @@ public sealed class ThemeService
             var value = key?.GetValue(AppsUseLightThemeValue);
             return value is int intValue && intValue == 0;
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"读取系统主题设置失败: {ex.Message}");
             return true;
         }
     }
@@ -233,8 +234,9 @@ public sealed class ThemeService
                 dictionaries.Insert(skinIndex + 1, ResourceHelper.GetTheme());
             }
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"应用 HandyControl 主题失败: {ex.Message}");
         }
     }
 

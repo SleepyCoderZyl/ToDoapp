@@ -120,27 +120,4 @@ public class SettingsService
         SaveSettings();
     }
 
-    public T GetValue<T>(string key, T defaultValue)
-    {
-        var property = typeof(AppSettings).GetProperty(key);
-        if (property != null)
-        {
-            var value = property.GetValue(_settings);
-            if (value is T typedValue)
-            {
-                return typedValue;
-            }
-        }
-        return defaultValue;
-    }
-
-    public void SetValue<T>(string key, T value)
-    {
-        var property = typeof(AppSettings).GetProperty(key);
-        if (property != null && property.CanWrite)
-        {
-            property.SetValue(_settings, value);
-            SaveSettings();
-        }
-    }
 }

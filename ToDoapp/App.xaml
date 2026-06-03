@@ -8,9 +8,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/SkinDark.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/Theme.xaml"/>
-                <ResourceDictionary Source="Styles/ModernStyles.xaml"/>
+                <ResourceDictionary Source="Resources/ModernStyles.xaml"/>
                 <ResourceDictionary Source="Resources/IconGeometries.xaml"/>
-                <ResourceDictionary Source="Styles/AppDialogStyles.xaml"/>
+                <ResourceDictionary Source="Resources/AppDialogStyles.xaml"/>
+                <ResourceDictionary Source="Controls/CalendarPopup.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
