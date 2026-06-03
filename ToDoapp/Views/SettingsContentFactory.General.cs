@@ -139,7 +139,6 @@ public static partial class SettingsContentFactory
                 reminderItems: settings.StartupReminderItems,
                 onSaveItems: () =>
                 {
-                    settings.StartupReminderItems = settings.StartupReminderItems;
                     SettingsService.Instance.SaveSettings();
                 },
                 emptyStateText: "还没有启动弹窗内容，新增一条试试。",
@@ -160,7 +159,6 @@ public static partial class SettingsContentFactory
                 reminderItems: settings.ScheduledReminderItems,
                 onSaveItems: () =>
                 {
-                    settings.ScheduledReminderItems = settings.ScheduledReminderItems;
                     SettingsService.Instance.SaveSettings();
                 },
                 emptyStateText: "还没有定时提示内容，新增一条试试。",

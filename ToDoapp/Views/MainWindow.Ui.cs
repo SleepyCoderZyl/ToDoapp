@@ -124,24 +124,9 @@ public partial class MainWindow
     private void OnThemeChanged(object? sender, EventArgs e)
     {
         ApplyNativeWindowAppearance();
-        RefreshDatePickerThemeStyle();
         UpdateThemeToggleButton();
         WidgetView?.RefreshThemeBrushes();
         _widgetWindow?.RefreshThemeBrushes();
-    }
-
-    private void RefreshDatePickerThemeStyle()
-    {
-        if (DueDatePicker == null)
-        {
-            return;
-        }
-
-        DueDatePicker.Style = null;
-        if (Application.Current.TryFindResource(typeof(global::HandyControl.Controls.DatePicker)) is Style datePickerStyle)
-        {
-            DueDatePicker.Style = datePickerStyle;
-        }
     }
 
     private void UpdateThemeToggleButton()

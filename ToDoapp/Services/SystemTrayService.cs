@@ -24,19 +24,13 @@ public class SystemTrayService : IDisposable
 
     private const int WM_USER = 0x0400;
     private const int WM_TRAYICON = WM_USER + 1;
-    private const int WM_TRAYICON_MESSAGE = WM_USER + 2;
 
     private const int NIM_ADD = 0x00000000;
     private const int NIM_MODIFY = 0x00000001;
     private const int NIM_DELETE = 0x00000002;
-    private const int NIM_SETVERSION = 0x00000004;
 
-    private const int WM_LBUTTONDOWN = 0x0201;
-    private const int WM_LBUTTONUP = 0x0202;
     private const int WM_LBUTTONDBLCLK = 0x0203;
-    private const int WM_RBUTTONDOWN = 0x0204;
     private const int WM_RBUTTONUP = 0x0205;
-    private const int WM_RBUTTONDBLCLK = 0x0206;
 
     public SystemTrayService(ITrayActionHandler actionHandler)
     {
@@ -304,28 +298,6 @@ public class SystemTrayService : IDisposable
         {
             System.Diagnostics.Debug.WriteLine($"显示上下文菜单失败: {ex.Message}");
         }
-    }
-
-    private System.Windows.Controls.MenuItem CreateMenuItem(string header, System.Windows.RoutedEventHandler clickHandler)
-    {
-        var menuItem = new System.Windows.Controls.MenuItem { Header = header };
-        menuItem.Click += clickHandler;
-
-        menuItem.Background = System.Windows.Media.Brushes.Transparent;
-        menuItem.Foreground = GetResourceBrush("TextPrimaryBrush");
-        menuItem.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
-        menuItem.FontSize = 12;
-        menuItem.Padding = new System.Windows.Thickness(8, 4, 8, 4);
-
-        menuItem.Style = new System.Windows.Style(typeof(System.Windows.Controls.MenuItem));
-        menuItem.Style.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.BackgroundProperty, System.Windows.Media.Brushes.Transparent));
-        menuItem.Style.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.ForegroundProperty, GetResourceBrush("TextPrimaryBrush")));
-
-        var mouseOverTrigger = new System.Windows.Trigger { Property = System.Windows.UIElement.IsMouseOverProperty, Value = true };
-        mouseOverTrigger.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.BackgroundProperty, GetResourceBrush("HoverBrush")));
-        menuItem.Style.Triggers.Add(mouseOverTrigger);
-
-        return menuItem;
     }
 
     private void ToggleWidgetMode_Click()

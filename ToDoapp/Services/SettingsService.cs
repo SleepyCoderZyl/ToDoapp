@@ -61,49 +61,19 @@ public class SettingsService
 
     public void SaveSettings()
     {
-        try
-        {
-            _settings.LastUpdated = DateTime.Now;
-            var json = JsonSerializer.Serialize(_settings, _jsonOptions);
-            File.WriteAllText(_settingsFilePath, json);
-            SettingsChanged?.Invoke(this, EventArgs.Empty);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"保存设置失败: {ex.Message}");
-        }
+        PersistSettings(notifyChanged: true);
     }
 
     public void UpdateWidgetOpacity(double opacity)
     {
         _settings.WidgetOpacity = opacity;
-        
-        try
-        {
-            _settings.LastUpdated = DateTime.Now;
-            var json = JsonSerializer.Serialize(_settings, _jsonOptions);
-            File.WriteAllText(_settingsFilePath, json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"保存设置失败: {ex.Message}");
-        }
+        PersistSettings();
     }
 
     public void UpdateWidgetContentOpacity(double opacity)
     {
         _settings.WidgetContentOpacity = opacity;
-        
-        try
-        {
-            _settings.LastUpdated = DateTime.Now;
-            var json = JsonSerializer.Serialize(_settings, _jsonOptions);
-            File.WriteAllText(_settingsFilePath, json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"保存设置失败: {ex.Message}");
-        }
+        PersistSettings();
     }
 
     public void UpdateWindowPosition(double width, double height, double left, double top)
@@ -121,12 +91,22 @@ public class SettingsService
         _settings.WidgetModeHeight = height;
         _settings.WidgetModeLeft = left;
         _settings.WidgetModeTop = top;
-        
+
+        PersistSettings();
+    }
+
+    private void PersistSettings(bool notifyChanged = false)
+    {
         try
         {
             _settings.LastUpdated = DateTime.Now;
             var json = JsonSerializer.Serialize(_settings, _jsonOptions);
             File.WriteAllText(_settingsFilePath, json);
+
+            if (notifyChanged)
+            {
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
         catch (Exception ex)
         {

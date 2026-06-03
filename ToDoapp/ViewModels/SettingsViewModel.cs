@@ -158,11 +158,6 @@ public class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
-    public void SelectSettingItem(SettingItem item)
-    {
-        SelectedSettingItem = item;
-    }
-
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
