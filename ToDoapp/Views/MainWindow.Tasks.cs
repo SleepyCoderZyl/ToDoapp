@@ -182,6 +182,7 @@ public partial class MainWindow
         datePicker.SetResourceReference(Control.BackgroundProperty, "InputBrush");
         datePicker.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
         datePicker.SetResourceReference(Control.BorderBrushProperty, "BorderBrush");
+        datePicker.SetResourceReference(System.Windows.Controls.DatePicker.CalendarStyleProperty, "ModernDatePickerCalendarStyle");
 
 
         editPanel.Children.Add(titleLabel);

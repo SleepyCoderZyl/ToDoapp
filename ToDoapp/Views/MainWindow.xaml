@@ -175,6 +175,7 @@
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        BorderBrush="{DynamicResource BorderBrush}"
                                        BorderThickness="1"
+                                       CalendarStyle="{StaticResource ModernDatePickerCalendarStyle}"
                                        FontSize="14"
                                        Margin="10,0,0,0"/>
                         
