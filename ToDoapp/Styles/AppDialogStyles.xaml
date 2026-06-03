@@ -1,92 +1,78 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-            
-            <SolidColorBrush x:Key="DialogBackgroundBrush" Color="#FF202020"/>
-            <SolidColorBrush x:Key="DialogBorderBrush" Color="#FF3D3D3D"/>
-            <SolidColorBrush x:Key="DialogForegroundBrush" Color="#FFFFFFFF"/>
-            <SolidColorBrush x:Key="DialogSecondaryForegroundBrush" Color="#FF9E9E9E"/>
-            
-            <SolidColorBrush x:Key="PrimaryButtonBackgroundBrush" Color="#FF0078D4"/>
-            <SolidColorBrush x:Key="PrimaryButtonHoverBrush" Color="#FF429CE3"/>
-            <SolidColorBrush x:Key="PrimaryButtonPressedBrush" Color="#FF005A9E"/>
-            
-            <SolidColorBrush x:Key="SecondaryButtonBackgroundBrush" Color="#FF2D2D2D"/>
-            <SolidColorBrush x:Key="SecondaryButtonHoverBrush" Color="#FF3D3D3D"/>
-            <SolidColorBrush x:Key="SecondaryButtonPressedBrush" Color="#FF1F1F1F"/>
+    <Style x:Key="DialogButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource SecondaryButtonBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource DialogForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DialogBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="20,10"/>
+        <Setter Property="Margin" Value="5,0"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusControl}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource SecondaryButtonHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource SecondaryButtonPressedBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
-            <Style x:Key="DialogButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource SecondaryButtonBackgroundBrush}"/>
-                <Setter Property="Foreground" Value="{StaticResource DialogForegroundBrush}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource DialogBorderBrush}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="20,10"/>
-                <Setter Property="Margin" Value="5,0"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource SecondaryButtonHoverBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource SecondaryButtonPressedBrush}"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+    <Style x:Key="DialogPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DialogButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource PrimaryButtonBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextOnPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryButtonHoverBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusControl}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryButtonHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryButtonPressedBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
-            <Style x:Key="DialogPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DialogButtonStyle}">
-                <Setter Property="Background" Value="{StaticResource PrimaryButtonBackgroundBrush}"/>
-                <Setter Property="BorderBrush" Value="#FF429CE3"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryButtonHoverBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryButtonPressedBrush}"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+    <Style x:Key="DialogTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource DialogForegroundBrush}"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
 
-            <Style x:Key="DialogTitleStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="18"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="{StaticResource DialogForegroundBrush}"/>
-                <Setter Property="Margin" Value="0,0,0,12"/>
-            </Style>
-
-            <Style x:Key="DialogMessageStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Foreground" Value="{StaticResource DialogSecondaryForegroundBrush}"/>
-                <Setter Property="TextWrapping" Value="Wrap"/>
-                <Setter Property="Margin" Value="0,0,0,20"/>
-            </Style>
+    <Style x:Key="DialogMessageStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{DynamicResource DialogSecondaryForegroundBrush}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,0,0,20"/>
+    </Style>
 </ResourceDictionary>
-

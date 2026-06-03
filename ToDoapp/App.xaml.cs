@@ -10,10 +10,12 @@ namespace ToDoapp;
 public partial class App : System.Windows.Application
 {
     private static Mutex? _mutex;
+    private static bool _ownsMutex;
     
     protected override void OnStartup(StartupEventArgs e)
     {
         _mutex = new Mutex(true, "ToDoApp_SingleInstance", out bool isNewInstance);
+        _ownsMutex = isNewInstance;
         
         if (!isNewInstance)
         {
@@ -23,7 +25,8 @@ public partial class App : System.Windows.Application
         }
         
         base.OnStartup(e);
-        
+
+        ThemeService.Instance.Initialize();
         StartupService.Instance.SyncWithSettings();
         _ = WarmupHolidayCalendarAsync();
     }
@@ -66,7 +69,11 @@ public partial class App : System.Windows.Application
     
     protected override void OnExit(ExitEventArgs e)
     {
-        _mutex?.ReleaseMutex();
+        if (_ownsMutex)
+        {
+            _mutex?.ReleaseMutex();
+        }
+
         _mutex?.Dispose();
         base.OnExit(e);
     }

@@ -17,7 +17,7 @@
         Topmost="True"
         FontSize="14">
     
-    <Border Background="#202020" CornerRadius="12" BorderBrush="#3D3D3D" BorderThickness="1">
+    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1">
         <Border.Effect>
             <DropShadowEffect ShadowDepth="4" BlurRadius="20" Opacity="0.5" Color="#000000"/>
         </Border.Effect>
@@ -32,7 +32,7 @@
             </Grid.RowDefinitions>
             
             <TextBlock Grid.Row="0" Text="快速添加待办" 
-                      Foreground="{StaticResource TextPrimaryBrush}" 
+                      Foreground="{DynamicResource TextPrimaryBrush}" 
                       FontSize="18" FontWeight="SemiBold" 
                       Margin="0,0,0,16"
                       MouseLeftButtonDown="TitleText_MouseLeftButtonDown"
@@ -50,7 +50,7 @@
                     KeyDown="InputTextBox_KeyDown"
                     Margin="0,0,0,12"/>
             
-            <Border Grid.Row="2" Background="#282828" CornerRadius="8" Padding="14,12" Margin="0,0,0,16">
+            <Border Grid.Row="2" Background="{DynamicResource PanelBrush}" CornerRadius="8" Padding="14,12" Margin="0,0,0,16">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -58,19 +58,19 @@
                     </Grid.ColumnDefinitions>
                     
                     <TextBlock Grid.Column="0" Text="解析预览：" 
-                              Foreground="{StaticResource TextMutedBrush}" 
+                              Foreground="{DynamicResource TextMutedBrush}" 
                               FontSize="12" FontWeight="Medium"
                               VerticalAlignment="Top"/>
                     
                     <StackPanel Grid.Column="1" Margin="12,0,0,0">
                         <TextBlock x:Name="PreviewTitleText" 
                                   Text="等待输入..." 
-                                  Foreground="{StaticResource TextPrimaryBrush}" 
+                                  Foreground="{DynamicResource TextPrimaryBrush}" 
                                   FontSize="14" FontWeight="Medium"
                                   TextWrapping="Wrap"/>
                         <TextBlock x:Name="PreviewDateText" 
                                   Text="无" 
-                                  Foreground="{StaticResource TextSecondaryBrush}" 
+                                  Foreground="{DynamicResource TextSecondaryBrush}" 
                                   FontSize="12"
                                   TextWrapping="Wrap"
                                   Margin="0,4,0,0"/>
@@ -87,7 +87,7 @@
                 
                 <TextBlock Grid.Column="0" 
                           Text="按 Enter 确认，ESC 取消" 
-                          Foreground="{StaticResource TextMutedBrush}" 
+                          Foreground="{DynamicResource TextMutedBrush}" 
                           FontSize="12"
                           VerticalAlignment="Center"/>
                 
@@ -103,3 +103,4 @@
         </Grid>
     </Border>
 </Window>
+

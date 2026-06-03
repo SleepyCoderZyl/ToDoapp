@@ -26,7 +26,7 @@ public partial class MainWindow
 
             const int darkModeAttribute = 20;
             const int cornerPreferenceAttribute = 33;
-            var useDarkMode = 1;
+            var useDarkMode = ThemeService.Instance.IsDarkTheme ? 1 : 0;
             var cornerPreference = 2;
 
             MainWindowNativeMethods.DwmSetWindowAttribute(

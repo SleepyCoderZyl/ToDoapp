@@ -24,7 +24,7 @@ public static partial class SettingsContentFactory
             Text = "透明度设置",
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 0, 20)
         };
         Grid.SetRow(titleText, 0);
@@ -34,7 +34,7 @@ public static partial class SettingsContentFactory
         {
             Text = "分别调整小组件的背景和内容透明度。",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
@@ -45,7 +45,7 @@ public static partial class SettingsContentFactory
         {
             Text = "背景透明度",
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 10, 0, 10)
         };
         Grid.SetRow(backgroundLabel, 2);
@@ -61,7 +61,7 @@ public static partial class SettingsContentFactory
             Maximum = 1.0,
             Value = WidgetOpacityManager.Instance.WidgetOpacity,
             Width = 300,
-            Foreground = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            Foreground = PrimaryBrush,
             SmallChange = 0.1,
             LargeChange = 0.1,
             IsMoveToPointEnabled = true,
@@ -77,7 +77,7 @@ public static partial class SettingsContentFactory
         {
             Text = $"{Math.Round(WidgetOpacityManager.Instance.WidgetOpacity * 100)}%",
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Width = 50,
             TextAlignment = TextAlignment.Left,
             Margin = new Thickness(15, 0, 0, 0),
@@ -103,7 +103,7 @@ public static partial class SettingsContentFactory
         {
             Text = "内容透明度",
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 15, 0, 10)
         };
         Grid.SetRow(contentLabel, 4);
@@ -119,7 +119,7 @@ public static partial class SettingsContentFactory
             Maximum = 1.0,
             Value = WidgetOpacityManager.Instance.WidgetContentOpacity,
             Width = 300,
-            Foreground = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            Foreground = PrimaryBrush,
             SmallChange = 0.1,
             LargeChange = 0.1,
             IsMoveToPointEnabled = true,
@@ -135,7 +135,7 @@ public static partial class SettingsContentFactory
         {
             Text = $"{Math.Round(WidgetOpacityManager.Instance.WidgetContentOpacity * 100)}%",
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Width = 50,
             TextAlignment = TextAlignment.Left,
             Margin = new Thickness(15, 0, 0, 0),
@@ -172,7 +172,7 @@ public static partial class SettingsContentFactory
             Text = "小组件置顶",
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 0, 20)
         };
         Grid.SetRow(titleText, 0);
@@ -182,7 +182,7 @@ public static partial class SettingsContentFactory
         {
             Text = "启用后，小组件将始终显示在所有其他窗口的最上层。",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
@@ -196,7 +196,7 @@ public static partial class SettingsContentFactory
             Name = "AlwaysOnTopToggle",
             IsChecked = SettingsService.Instance.Settings.WidgetAlwaysOnTop,
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
@@ -205,7 +205,7 @@ public static partial class SettingsContentFactory
             Name = "AlwaysOnTopStatusText",
             Text = SettingsService.Instance.Settings.WidgetAlwaysOnTop ? "已启用" : "已禁用",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -232,4 +232,5 @@ public static partial class SettingsContentFactory
     }
 
 }
+
 

@@ -30,15 +30,29 @@ public partial class WidgetView : UserControl
 
     private void WidgetView_Loaded(object sender, RoutedEventArgs e)
     {
-        // 初始化背景画刷
-        _backgroundBrush = new SolidColorBrush(Color.FromRgb(32, 32, 32));
-        MainBorder.Background = _backgroundBrush;
+        RefreshThemeBrushes();
 
         var opacityManager = WidgetOpacityManager.Instance;
         opacityManager.OpacityChanged += OnOpacityManagerChanged;
         opacityManager.ContentOpacityChanged += OnContentOpacityManagerChanged;
         UpdateOpacity();
         UpdateContentOpacity();
+    }
+
+    public void RefreshThemeBrushes()
+    {
+        var color = GetResourceColor("WidgetBackgroundBrush", Color.FromRgb(32, 32, 32));
+        _backgroundBrush = new SolidColorBrush(color);
+        MainBorder.Background = _backgroundBrush;
+        MainBorder.BorderBrush = Application.Current.TryFindResource("BorderBrush") as Brush ?? MainBorder.BorderBrush;
+        UpdateOpacity();
+    }
+
+    private static Color GetResourceColor(string key, Color fallback)
+    {
+        return Application.Current.TryFindResource(key) is SolidColorBrush brush
+            ? brush.Color
+            : fallback;
     }
 
     private void OnOpacityManagerChanged(object? sender, double effectiveOpacity)

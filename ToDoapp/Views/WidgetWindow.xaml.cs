@@ -110,11 +110,7 @@ public partial class WidgetWindow : Window
 
     private void WidgetWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        _backgroundBrush = new SolidColorBrush(Color.FromRgb(32, 32, 32));
-        BackgroundBorder.Background = _backgroundBrush;
-        
-        _borderBrush = new SolidColorBrush(Color.FromRgb(61, 61, 61));
-        BackgroundBorder.BorderBrush = _borderBrush;
+        RefreshThemeBrushes();
 
         var settings = SettingsService.Instance.Settings;
         if (settings.WidgetModeLeft > 0 || settings.WidgetModeTop > 0)
@@ -133,6 +129,24 @@ public partial class WidgetWindow : Window
         UpdateImmersionModeMenuItem();
 
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+    }
+
+    public void RefreshThemeBrushes()
+    {
+        _backgroundBrush = new SolidColorBrush(GetResourceColor("WidgetBackgroundBrush", Color.FromRgb(32, 32, 32)));
+        BackgroundBorder.Background = _backgroundBrush;
+
+        _borderBrush = new SolidColorBrush(GetResourceColor("BorderBrush", Color.FromRgb(61, 61, 61)));
+        BackgroundBorder.BorderBrush = _borderBrush;
+
+        UpdateOpacity();
+    }
+
+    private static Color GetResourceColor(string key, Color fallback)
+    {
+        return Application.Current.TryFindResource(key) is SolidColorBrush brush
+            ? brush.Color
+            : fallback;
     }
 
     [DllImport("user32.dll")]

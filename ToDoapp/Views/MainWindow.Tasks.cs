@@ -151,7 +151,8 @@ public partial class MainWindow
             FontSize = 14,
             Padding = new Thickness(10, 8, 10, 8),
             Margin = new Thickness(0, 0, 0, 16),
-            MaxLength = Constants.AppConstants.MaxTitleLength
+            MaxLength = Constants.AppConstants.MaxTitleLength,
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
         if (Application.Current.Resources["ModernTextBoxStyle"] is Style titleStyle)
@@ -171,9 +172,17 @@ public partial class MainWindow
         {
             SelectedDate = selectedItem.DueDate,
             FontSize = 14,
+            Height = 36,
+            BorderThickness = new Thickness(1),
             Margin = new Thickness(0, 0, 0, 8),
-            MinWidth = 160
+            MinWidth = 160,
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
+
+        datePicker.SetResourceReference(Control.BackgroundProperty, "InputBrush");
+        datePicker.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
+        datePicker.SetResourceReference(Control.BorderBrushProperty, "BorderBrush");
+
 
         editPanel.Children.Add(titleLabel);
         editPanel.Children.Add(titleTextBox);

@@ -25,7 +25,7 @@
                                     <Thumb>
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Border Background="#3D3D3D" CornerRadius="3" Margin="1"/>
+                                                <Border Background="{DynamicResource BorderBrush}" CornerRadius="3" Margin="1"/>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -43,7 +43,7 @@
     
     <Grid>
         <!-- 背景层 - 单独控制透明度 -->
-        <Border x:Name="MainBorder" CornerRadius="8" BorderThickness="1" BorderBrush="#3D3D3D">
+        <Border x:Name="MainBorder" CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}">
             <Border.Effect>
                 <DropShadowEffect ShadowDepth="2" BlurRadius="8" Opacity="0.3" Color="#000000"/>
             </Border.Effect>
@@ -65,12 +65,12 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="ListBoxItem">
                                         <Border x:Name="border" Background="Transparent" 
-                                                CornerRadius="6" Margin="0,2" Padding="6,4">
+                                                CornerRadius="{StaticResource RadiusInput}" Margin="0,2" Padding="6,4">
                                             <ContentPresenter/>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="#2D2D2D"/>
+                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -96,16 +96,16 @@
                                               TextTrimming="CharacterEllipsis" 
                                               FontSize="13"
                                               Margin="0,0,4,0" 
-                                              Foreground="{StaticResource TextPrimaryBrush}">
+                                              Foreground="{DynamicResource TextPrimaryBrush}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                                                         <Setter Property="TextDecorations" Value="Strikethrough"/>
-                                                        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsOverdue}" Value="True">
-                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
                                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -116,12 +116,12 @@
                                               FontSize="11" 
                                               Margin="0,3,0,0"
                                               Visibility="{Binding DueDateDisplay, Converter={StaticResource StringToVisibilityConverter}}"
-                                              Foreground="{StaticResource TextSecondaryBrush}">
+                                              Foreground="{DynamicResource TextSecondaryBrush}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsOverdue}" Value="True">
-                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
                                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -137,7 +137,7 @@
             
             <TextBlock x:Name="EmptyMessage" 
                       Text="暂无待办事项" 
-                      Foreground="{StaticResource TextMutedBrush}" 
+                      Foreground="{DynamicResource TextMutedBrush}" 
                       FontSize="14" 
                       HorizontalAlignment="Center" 
                       VerticalAlignment="Center"
@@ -145,3 +145,4 @@
         </Grid>
     </Grid>
 </UserControl>
+

@@ -87,6 +87,9 @@ public class AppSettings : IJsonOnDeserialized
     [JsonPropertyName("lastScheduledReminderDate")]
     public string? LastScheduledReminderDate { get; set; }
 
+    [JsonPropertyName("themeMode")]
+    public string ThemeMode { get; set; } = "System";
+
     public void Normalize()
     {
         StartupReminderItems ??= [];
@@ -95,6 +98,11 @@ public class AppSettings : IJsonOnDeserialized
         if (string.IsNullOrWhiteSpace(ScheduledReminderTime))
         {
             ScheduledReminderTime = "09:00";
+        }
+
+        if (ThemeMode is not ("System" or "Light" or "Dark"))
+        {
+            ThemeMode = "System";
         }
 
         foreach (var item in ScheduledReminderItems)

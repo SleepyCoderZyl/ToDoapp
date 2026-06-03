@@ -10,6 +10,17 @@ namespace ToDoapp.Views;
 
 public static partial class SettingsContentFactory
 {
+    private static Brush ResourceBrush(string key)
+    {
+        return Application.Current.TryFindResource(key) as Brush ?? Brushes.White;
+    }
+
+    private static Brush TextPrimaryBrush => ResourceBrush("TextPrimaryBrush");
+    private static Brush TextSecondaryBrush => ResourceBrush("TextSecondaryBrush");
+    private static Brush TextMutedBrush => ResourceBrush("TextMutedBrush");
+    private static Brush PrimaryBrush => ResourceBrush("PrimaryBrush");
+    private static Brush DangerBrush => ResourceBrush("DangerBrush");
+
     public static FrameworkElement CreateOpacitySettingContent() => CreateOpacitySettingContentCore();
 
     public static FrameworkElement CreateStartupSettingContent() => CreateStartupSettingContentCore();

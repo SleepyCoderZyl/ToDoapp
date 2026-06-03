@@ -312,17 +312,17 @@ public class SystemTrayService : IDisposable
         menuItem.Click += clickHandler;
 
         menuItem.Background = System.Windows.Media.Brushes.Transparent;
-        menuItem.Foreground = System.Windows.Media.Brushes.White;
+        menuItem.Foreground = GetResourceBrush("TextPrimaryBrush");
         menuItem.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
         menuItem.FontSize = 12;
         menuItem.Padding = new System.Windows.Thickness(8, 4, 8, 4);
 
         menuItem.Style = new System.Windows.Style(typeof(System.Windows.Controls.MenuItem));
         menuItem.Style.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.BackgroundProperty, System.Windows.Media.Brushes.Transparent));
-        menuItem.Style.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.ForegroundProperty, System.Windows.Media.Brushes.White));
+        menuItem.Style.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.ForegroundProperty, GetResourceBrush("TextPrimaryBrush")));
 
         var mouseOverTrigger = new System.Windows.Trigger { Property = System.Windows.UIElement.IsMouseOverProperty, Value = true };
-        mouseOverTrigger.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.BackgroundProperty, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 44, 44, 44))));
+        mouseOverTrigger.Setters.Add(new System.Windows.Setter(System.Windows.Controls.Control.BackgroundProperty, GetResourceBrush("HoverBrush")));
         menuItem.Style.Triggers.Add(mouseOverTrigger);
 
         return menuItem;
@@ -690,7 +690,7 @@ public class SystemTrayService : IDisposable
 
     private System.Windows.Media.Brush GetResourceBrush(string key)
     {
-        return Application.Current.Resources[key] as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.White;
+        return Application.Current.TryFindResource(key) as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.White;
     }
 
     private void Exit_Click()

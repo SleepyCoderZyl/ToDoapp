@@ -21,7 +21,7 @@ public static partial class SettingsContentFactory
             Text = "开机自启动",
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 0, 20)
         };
         Grid.SetRow(titleText, 0);
@@ -31,7 +31,7 @@ public static partial class SettingsContentFactory
         {
             Text = "启用后，应用程序将在 Windows 启动时自动运行。",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
@@ -45,7 +45,7 @@ public static partial class SettingsContentFactory
             Name = "StartupToggle",
             IsChecked = StartupService.Instance.IsAutoStartEnabled,
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
@@ -54,7 +54,7 @@ public static partial class SettingsContentFactory
             Name = "StartupStatusText",
             Text = StartupService.Instance.IsAutoStartEnabled ? "已启用" : "已禁用",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -95,7 +95,7 @@ public static partial class SettingsContentFactory
             Text = "弹窗提示",
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 0, 20)
         };
         Grid.SetRow(titleText, 0);
@@ -105,7 +105,7 @@ public static partial class SettingsContentFactory
         {
             Text = "统一管理应用启动和每日定时弹出的提醒内容。",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
@@ -204,7 +204,7 @@ public static partial class SettingsContentFactory
         {
             Text = description,
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 12)
         };
@@ -221,7 +221,7 @@ public static partial class SettingsContentFactory
         {
             IsChecked = isEnabled,
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
@@ -229,7 +229,7 @@ public static partial class SettingsContentFactory
         {
             Text = isEnabled ? "已启用" : "已禁用",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -260,7 +260,7 @@ public static partial class SettingsContentFactory
             Text = "提醒内容",
             FontSize = 13,
             FontWeight = FontWeights.Medium,
-            Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 2, 0, 8)
         };
         container.Children.Add(sectionTitle);
@@ -341,7 +341,7 @@ public static partial class SettingsContentFactory
         {
             Text = hintText,
             FontSize = 12,
-            Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128)),
+            Foreground = TextMutedBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 10, 0, 0)
         };
@@ -362,7 +362,7 @@ public static partial class SettingsContentFactory
                 {
                     Text = emptyStateText,
                     FontSize = 13,
-                    Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+                    Foreground = TextSecondaryBrush,
                     Margin = new Thickness(0, 6, 0, 0)
                 });
                 return;
@@ -402,7 +402,7 @@ public static partial class SettingsContentFactory
                 {
                     Text = item.Text,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+                    Foreground = TextPrimaryBrush,
                     TextWrapping = TextWrapping.Wrap
                 };
 
@@ -438,14 +438,14 @@ public static partial class SettingsContentFactory
                     {
                         rowTimeBox.Text = string.IsNullOrWhiteSpace(item.ScheduledTime) ? defaultScheduledTime : item.ScheduledTime;
                         hintTextBlock.Text = "请输入有效时间，例如 09:00。";
-                        hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(248, 81, 73));
+                        hintTextBlock.Foreground = DangerBrush;
                         return;
                     }
 
                     item.ScheduledTime = parsedTime.ToString("HH:mm");
                     rowTimeBox.Text = item.ScheduledTime;
                     hintTextBlock.Text = hintText;
-                    hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128));
+                    hintTextBlock.Foreground = TextMutedBrush;
                     SaveReminderSettings();
                 }
 
@@ -500,7 +500,7 @@ public static partial class SettingsContentFactory
                 if (!StartupReminderService.TryParseScheduledReminderTime(timeInput, out var parsedTime))
                 {
                     hintTextBlock.Text = "请输入有效时间，例如 09:00。";
-                    hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(248, 81, 73));
+                    hintTextBlock.Foreground = DangerBrush;
                     return;
                 }
 
@@ -517,7 +517,7 @@ public static partial class SettingsContentFactory
 
             inputTextBox.Clear();
             hintTextBlock.Text = hintText;
-            hintTextBlock.Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128));
+            hintTextBlock.Foreground = TextMutedBrush;
             SaveReminderSettings();
             RefreshReminderList();
         }
@@ -557,7 +557,7 @@ public static partial class SettingsContentFactory
         {
             Text = "时间",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
+            Foreground = TextPrimaryBrush,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 8, 0)
         };
@@ -575,7 +575,7 @@ public static partial class SettingsContentFactory
         {
             Text = "HH:mm",
             FontSize = 12,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Margin = new Thickness(8, 0, 10, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -583,7 +583,7 @@ public static partial class SettingsContentFactory
         var timeHintText = new TextBlock
         {
             FontSize = 12,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 8)
         };
@@ -591,7 +591,7 @@ public static partial class SettingsContentFactory
         void ShowTimeHint(string text, Brush? foreground = null)
         {
             timeHintText.Text = text;
-            timeHintText.Foreground = foreground ?? new SolidColorBrush(Color.FromRgb(156, 163, 175));
+            timeHintText.Foreground = foreground ?? TextSecondaryBrush;
         }
 
         void CommitScheduledTime()
@@ -599,7 +599,7 @@ public static partial class SettingsContentFactory
             var input = timeInputBox.Text.Trim();
             if (!StartupReminderService.TryParseScheduledReminderTime(input, out var parsedTime))
             {
-                ShowTimeHint("请输入有效时间，例如 09:00。", new SolidColorBrush(Color.FromRgb(248, 81, 73)));
+                ShowTimeHint("请输入有效时间，例如 09:00。", DangerBrush);
                 return;
             }
 
@@ -637,7 +637,7 @@ public static partial class SettingsContentFactory
         {
             Text = "仅在应用运行或驻留托盘时生效；如果错过当天时间点，不会补发。",
             FontSize = 12,
-            Foreground = new SolidColorBrush(Color.FromRgb(107, 114, 128)),
+            Foreground = TextMutedBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 0)
         });
@@ -655,7 +655,7 @@ public static partial class SettingsContentFactory
             Text = "全局快捷键",
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 0, 20)
         };
         container.Children.Add(titleText);
@@ -664,7 +664,7 @@ public static partial class SettingsContentFactory
         {
             Text = "设置快速添加待办事项和显示主页的全局快捷键。",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
@@ -724,7 +724,7 @@ public static partial class SettingsContentFactory
             Text = title,
             FontSize = 14,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 0, 6)
         });
 
@@ -732,7 +732,7 @@ public static partial class SettingsContentFactory
         {
             Text = description,
             FontSize = 12,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 10)
         });
@@ -743,7 +743,7 @@ public static partial class SettingsContentFactory
         {
             Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(hotKey.Modifiers, hotKey.Key),
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            Foreground = PrimaryBrush,
             FontWeight = FontWeights.Medium,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -754,7 +754,7 @@ public static partial class SettingsContentFactory
             Width = 200,
             IsReadOnly = true,
             Text = "点击此处设置快捷键",
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             VerticalAlignment = VerticalAlignment.Center,
             Cursor = System.Windows.Input.Cursors.Hand
         };
@@ -771,7 +771,7 @@ public static partial class SettingsContentFactory
         {
             Text = controlsEnabled ? "点击输入框设置新快捷键" : "已禁用",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Margin = new Thickness(0, 10, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -798,7 +798,7 @@ public static partial class SettingsContentFactory
             {
                 IsChecked = isEnabled.Value,
                 FontSize = 14,
-                Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+                Foreground = TextPrimaryBrush,
                 VerticalContentAlignment = VerticalAlignment.Center
             };
 
@@ -806,7 +806,7 @@ public static partial class SettingsContentFactory
             {
                 Text = isEnabled.Value ? "已启用" : "已禁用",
                 FontSize = 13,
-                Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+                Foreground = TextSecondaryBrush,
                 Margin = new Thickness(10, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -841,7 +841,7 @@ public static partial class SettingsContentFactory
         {
             Text = "当前快捷键：",
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 10, 0),
             VerticalAlignment = VerticalAlignment.Center
         });
@@ -867,7 +867,7 @@ public static partial class SettingsContentFactory
             {
                 isRecording = true;
                 inputTextBox.Text = "按下快捷键组合...";
-                inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(99, 102, 241));
+                inputTextBox.Foreground = PrimaryBrush;
                 statusText.Text = "请按下想要的快捷键组合（至少包含一个修饰键），按 Esc 取消";
                 inputTextBox.Focus();
             }
@@ -885,7 +885,7 @@ public static partial class SettingsContentFactory
             {
                 isRecording = false;
                 inputTextBox.Text = "点击此处重新设置快捷键";
-                inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+                inputTextBox.Foreground = TextSecondaryBrush;
                 statusText.Text = "已取消，点击输入框可重新设置";
                 return;
             }
@@ -897,7 +897,7 @@ public static partial class SettingsContentFactory
                 saveHotKey(modifiers, key);
                 hotkeyValueText.Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(modifiers, key);
                 inputTextBox.Text = "点击此处重新设置快捷键";
-                inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+                inputTextBox.Foreground = TextSecondaryBrush;
                 statusText.Text = "快捷键已更新，点击输入框可再次修改";
                 return;
             }
@@ -914,7 +914,7 @@ public static partial class SettingsContentFactory
             {
                 isRecording = false;
                 inputTextBox.Text = "点击此处重新设置快捷键";
-                inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+                inputTextBox.Foreground = TextSecondaryBrush;
                 statusText.Text = "已取消，点击输入框可重新设置";
             }
         };
@@ -924,7 +924,7 @@ public static partial class SettingsContentFactory
             saveHotKey(defaultModifiers, defaultKey);
             hotkeyValueText.Text = Services.GlobalHotKeyService.GetHotKeyDisplayText(defaultModifiers, defaultKey);
             inputTextBox.Text = "点击此处重新设置快捷键";
-            inputTextBox.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+            inputTextBox.Foreground = TextSecondaryBrush;
             statusText.Text = "快捷键已重置为默认值，点击输入框可修改";
         };
 
@@ -982,7 +982,7 @@ public static partial class SettingsContentFactory
             Text = "启动模式",
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             Margin = new Thickness(0, 0, 0, 20)
         };
         Grid.SetRow(titleText, 0);
@@ -992,7 +992,7 @@ public static partial class SettingsContentFactory
         {
             Text = "启用后，程序启动时将自动进入小组件模式，不显示主页面。",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
@@ -1006,7 +1006,7 @@ public static partial class SettingsContentFactory
             Name = "StartInWidgetModeToggle",
             IsChecked = SettingsService.Instance.Settings.StartInWidgetMode,
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
+            Foreground = TextPrimaryBrush,
             VerticalContentAlignment = VerticalAlignment.Center
         };
 
@@ -1015,7 +1015,7 @@ public static partial class SettingsContentFactory
             Name = "StartInWidgetModeStatusText",
             Text = SettingsService.Instance.Settings.StartInWidgetMode ? "小组件模式" : "主页面模式",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+            Foreground = TextSecondaryBrush,
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -1045,4 +1045,5 @@ public static partial class SettingsContentFactory
 
 
 }
+
 

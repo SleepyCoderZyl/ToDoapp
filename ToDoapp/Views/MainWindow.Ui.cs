@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using ToDoapp.Models;
+using ToDoapp.Services;
 
 namespace ToDoapp.Views;
 
@@ -112,6 +113,59 @@ public partial class MainWindow
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ShowSettingsWindow();
+    }
+
+    private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        ThemeService.Instance.ToggleExplicitTheme();
+        UpdateStatus(ThemeService.Instance.IsDarkTheme ? "已切换到深色主题" : "已切换到浅色主题");
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        ApplyNativeWindowAppearance();
+        RefreshDatePickerThemeStyle();
+        UpdateThemeToggleButton();
+        WidgetView?.RefreshThemeBrushes();
+        _widgetWindow?.RefreshThemeBrushes();
+    }
+
+    private void RefreshDatePickerThemeStyle()
+    {
+        if (DueDatePicker == null)
+        {
+            return;
+        }
+
+        DueDatePicker.Style = null;
+        if (Application.Current.TryFindResource(typeof(global::HandyControl.Controls.DatePicker)) is Style datePickerStyle)
+        {
+            DueDatePicker.Style = datePickerStyle;
+        }
+    }
+
+    private void UpdateThemeToggleButton()
+    {
+        if (ThemeToggleButton == null || ThemeToggleButtonIcon == null || ThemeToggleButtonIconBox == null)
+        {
+            return;
+        }
+
+        var isDarkTheme = ThemeService.Instance.IsDarkTheme;
+        var iconKey = isDarkTheme ? "DayIconGeometry" : "NightIconGeometry";
+        var iconSizeKey = isDarkTheme ? "ThemeDayIconSize" : "ThemeNightIconSize";
+
+        ThemeToggleButton.ToolTip = isDarkTheme ? "切换到浅色" : "切换到深色";
+        if (Application.Current.TryFindResource(iconKey) is Geometry iconGeometry)
+        {
+            ThemeToggleButtonIcon.Data = iconGeometry;
+        }
+
+        if (Application.Current.TryFindResource(iconSizeKey) is double iconSize)
+        {
+            ThemeToggleButtonIconBox.Width = iconSize;
+            ThemeToggleButtonIconBox.Height = iconSize;
+        }
     }
 
     public void ShowSettingsWindow()

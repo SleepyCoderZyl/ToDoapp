@@ -275,7 +275,7 @@ public partial class MainWindow
 
         var statusTextBlock = new TextBlock
         {
-            Foreground = Brushes.OrangeRed,
+            Foreground = Application.Current.TryFindResource("DangerBrush") as Brush ?? Brushes.OrangeRed,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 12, 0, 0),
             Visibility = Visibility.Collapsed

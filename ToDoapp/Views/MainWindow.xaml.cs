@@ -59,6 +59,7 @@ public partial class MainWindow : Window, ITrayActionHandler
     public MainWindow()
     {
         InitializeComponent();
+        UpdateThemeToggleButton();
         _opacityManager = WidgetOpacityManager.Instance;
         _viewModel = new MainWindowViewModel(new TodoService());
         _todoService = _viewModel.TodoService;
@@ -72,6 +73,7 @@ public partial class MainWindow : Window, ITrayActionHandler
 
         _opacityManager.OpacityChanged += OnOpacityChanged;
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+        ThemeService.Instance.ThemeChanged += OnThemeChanged;
         HolidayCalendarService.Instance.WarmupStatusChanged += OnHolidayWarmupStatusChanged;
         SourceInitialized += OnMainWindowSourceInitialized;
 
@@ -97,6 +99,7 @@ public partial class MainWindow : Window, ITrayActionHandler
             _mainTimer.Stop();
             _systemTrayService?.Dispose();
             _globalHotKeyService?.Dispose();
+            ThemeService.Instance.ThemeChanged -= OnThemeChanged;
             HolidayCalendarService.Instance.WarmupStatusChanged -= OnHolidayWarmupStatusChanged;
         }
 
