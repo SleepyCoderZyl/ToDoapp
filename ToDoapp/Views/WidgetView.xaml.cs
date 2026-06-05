@@ -21,8 +21,6 @@ public partial class WidgetView : UserControl
     private double _resizeStartWidth;
     private double _resizeStartHeight;
     private const double ResizeAreaThreshold = 20;
-    private SolidColorBrush? _backgroundBrush;
-    private SolidColorBrush? _borderBrush;
     private bool _isSubscribedToOpacityManager;
 
     public static readonly DependencyProperty IsMousePassThroughEnabledProperty =
@@ -64,7 +62,6 @@ public partial class WidgetView : UserControl
 
     private void WidgetView_Loaded(object sender, RoutedEventArgs e)
     {
-        RefreshThemeBrushes();
         EnsureOpacityManagerSubscribed();
         UpdateOpacity();
         UpdateContentOpacity();
@@ -98,25 +95,6 @@ public partial class WidgetView : UserControl
         _isSubscribedToOpacityManager = false;
     }
 
-    public void RefreshThemeBrushes()
-    {
-        var color = GetResourceColor("WidgetBackgroundBrush", Color.FromRgb(32, 32, 32));
-        _backgroundBrush = new SolidColorBrush(color);
-        MainBorder.Background = _backgroundBrush;
-
-        _borderBrush = new SolidColorBrush(GetResourceColor("BorderBrush", Color.FromRgb(61, 61, 61)));
-        MainBorder.BorderBrush = _borderBrush;
-
-        UpdateOpacity();
-    }
-
-    private static Color GetResourceColor(string key, Color fallback)
-    {
-        return Application.Current.TryFindResource(key) is SolidColorBrush brush
-            ? brush.Color
-            : fallback;
-    }
-
     private void OnOpacityManagerChanged(object? sender, double effectiveOpacity)
     {
         UpdateOpacity();
@@ -142,18 +120,9 @@ public partial class WidgetView : UserControl
             ? opacityManager.EffectiveOpacity
             : 1.0;
 
-        if (_backgroundBrush != null)
+        if (MainBorder != null)
         {
-            var color = _backgroundBrush.Color;
-            color.A = (byte)(255 * effectiveOpacity);
-            _backgroundBrush.Color = color;
-        }
-
-        if (_borderBrush != null)
-        {
-            var borderColor = _borderBrush.Color;
-            borderColor.A = (byte)(255 * effectiveOpacity);
-            _borderBrush.Color = borderColor;
+            MainBorder.Opacity = effectiveOpacity;
         }
     }
 

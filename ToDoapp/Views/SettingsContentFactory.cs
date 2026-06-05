@@ -12,7 +12,7 @@ public static partial class SettingsContentFactory
 {
     private static Brush ResourceBrush(string key)
     {
-        return Application.Current.TryFindResource(key) as Brush ?? Brushes.White;
+        return (Brush)Application.Current.Resources[key];
     }
 
     private static Brush TextPrimaryBrush => ResourceBrush("TextPrimaryBrush");

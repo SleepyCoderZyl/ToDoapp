@@ -2,7 +2,18 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:ToDoapp.Controls">
 
-    <!-- CalendarPopup 默认样式 -->
+    <!--
+        合并 Themes/Generic.xaml 自身依赖的静态资源。
+        注意：WPF 通过 ThemeInfo 机制自动加载 Themes/Generic.xaml 作为 CustomControl 的默认样式，
+        该字典不会合并到 App.Resources 中，因此必须自包含它直接引用的 StaticResource。
+        主题 Brush 通过 DynamicResource 引用（运行时查找 Application.Resources）。
+    -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Resources/ModernColors.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Resources/IconGeometries.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- CalendarPopup 默认样式（WPF CustomControl 规范：位于 Themes/Generic.xaml 由运行时自动加载） -->
     <Style TargetType="{x:Type controls:CalendarPopup}">
         <Setter Property="Focusable" Value="True"/>
         <Setter Property="IsTabStop" Value="True"/>
@@ -56,7 +67,8 @@
                             </Grid>
                         </Border>
 
-                        <!-- 弹出日历面板 -->
+                        <!-- 弹出日历面板：StaysOpen=True，由代码接管"点击外部关闭"逻辑，
+                             避免 StaysOpen=False 内部鼠标捕获导致的"按下闪关"问题。 -->
                         <Popup x:Name="PART_Popup"
                                IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                PlacementTarget="{Binding ElementName=PART_InputBorder}"
@@ -113,31 +125,97 @@
                                             </Button.Template>
                                         </Button>
 
-                                        <!-- 月份/年份标题 -->
-                                        <Button x:Name="PART_HeaderButton"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Cursor="Hand"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                FontSize="14"
-                                                FontWeight="Medium"
-                                                Foreground="{DynamicResource TextPrimaryBrush}">
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border x:Name="Bd" Background="Transparent"
-                                                            CornerRadius="{StaticResource RadiusInput}"
-                                                            Padding="8,4">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Button.Template>
-                                        </Button>
+                                        <!-- 年份/月份双按钮标题 -->
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                            <!-- 年份按钮 -->
+                                            <Button x:Name="PART_YearHeaderButton"
+                                                    Height="32"
+                                                    MinWidth="64"
+                                                    Padding="8,0"
+                                                    Cursor="Hand"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Foreground="{DynamicResource TextPrimaryBrush}"
+                                                    FontSize="14"
+                                                    FontWeight="Medium"
+                                                    ToolTip="选择年份">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="Bd" Background="Transparent"
+                                                                CornerRadius="{StaticResource RadiusInput}">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <ContentPresenter Grid.Column="0"
+                                                                                  HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center"/>
+                                                                <Path Grid.Column="1"
+                                                                      Data="{StaticResource ChevronDownIconGeometry}"
+                                                                      Width="7" Height="7"
+                                                                      Stretch="Uniform"
+                                                                      Fill="{DynamicResource TextSecondaryBrush}"
+                                                                      HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"
+                                                                      Margin="4,0,0,0"/>
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <!-- 月份按钮 -->
+                                            <Button x:Name="PART_MonthHeaderButton"
+                                                    Height="32"
+                                                    MinWidth="48"
+                                                    Padding="8,0"
+                                                    Margin="2,0,0,0"
+                                                    Cursor="Hand"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Foreground="{DynamicResource TextPrimaryBrush}"
+                                                    FontSize="14"
+                                                    FontWeight="Medium"
+                                                    ToolTip="选择月份">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="Bd" Background="Transparent"
+                                                                CornerRadius="{StaticResource RadiusInput}">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <ContentPresenter Grid.Column="0"
+                                                                                  HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center"/>
+                                                                <Path Grid.Column="1"
+                                                                      Data="{StaticResource ChevronDownIconGeometry}"
+                                                                      Width="7" Height="7"
+                                                                      Stretch="Uniform"
+                                                                      Fill="{DynamicResource TextSecondaryBrush}"
+                                                                      HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"
+                                                                      Margin="4,0,0,0"/>
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </StackPanel>
 
                                         <!-- 右箭头 -->
                                         <Button x:Name="PART_NextButton"

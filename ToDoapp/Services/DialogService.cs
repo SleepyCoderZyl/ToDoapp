@@ -104,11 +104,11 @@ public static class DialogService
                 break;
             case DialogType.Warning:
                 icon = "\u26A0";
-                iconColor = Brushes.Orange;
+                iconColor = (Brush)Application.Current.Resources["WarningBrush"];
                 break;
             case DialogType.Error:
                 icon = "\u2717";
-                iconColor = Brushes.Red;
+                iconColor = (Brush)Application.Current.Resources["DangerBrush"];
                 break;
             case DialogType.Question:
                 icon = "?";
@@ -328,11 +328,11 @@ public static class DialogService
                 break;
             case DialogType.Warning:
                 icon = "\u26A0";
-                iconColor = System.Windows.Media.Brushes.Orange;
+                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["WarningBrush"];
                 break;
             case DialogType.Error:
                 icon = "\u2717";
-                iconColor = System.Windows.Media.Brushes.Red;
+                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DangerBrush"];
                 break;
             case DialogType.Question:
                 icon = "?";

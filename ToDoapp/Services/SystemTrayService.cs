@@ -663,7 +663,7 @@ public class SystemTrayService : IDisposable
 
     private System.Windows.Media.Brush GetResourceBrush(string key)
     {
-        return Application.Current.TryFindResource(key) as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.White;
+        return (System.Windows.Media.Brush)Application.Current.Resources[key];
     }
 
     private void Exit_Click()

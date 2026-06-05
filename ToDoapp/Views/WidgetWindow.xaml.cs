@@ -97,14 +97,6 @@ public partial class WidgetWindow : Window
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
     }
 
-    /// <summary>
-    /// 刷新主题画刷，委托给内部 WidgetContent
-    /// </summary>
-    public void RefreshThemeBrushes()
-    {
-        WidgetContent.RefreshThemeBrushes();
-    }
-
     private void UpdateTopmost()
     {
         var isAlwaysOnTop = SettingsService.Instance.Settings.WidgetAlwaysOnTop;

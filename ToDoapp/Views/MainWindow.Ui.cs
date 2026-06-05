@@ -125,8 +125,6 @@ public partial class MainWindow
     {
         ApplyNativeWindowAppearance();
         UpdateThemeToggleButton();
-        WidgetView?.RefreshThemeBrushes();
-        _widgetWindow?.RefreshThemeBrushes();
     }
 
     private void UpdateThemeToggleButton()
