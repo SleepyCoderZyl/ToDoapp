@@ -10,12 +10,13 @@
         mc:Ignorable="d"
         Title="待办便签" Height="700" Width="420"
         WindowStyle="None"
-        AllowsTransparency="False"
-        Background="{DynamicResource WindowBackgroundBrush}"
+        AllowsTransparency="True"
+        Background="Transparent"
         Topmost="False"
         ResizeMode="CanResize"
         FontSize="14"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        SnapsToDevicePixels="True">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="52"
                             CornerRadius="8"
@@ -26,18 +27,13 @@
     
     <Window.Resources>
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
-        
-        <Storyboard x:Key="FadeInAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="0" To="1" Duration="0:0:0.3"/>
-        </Storyboard>
-        
+
         <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}"/>
-        
+
         <Style TargetType="TextBox" BasedOn="{StaticResource ModernTextBoxStyle}"/>
-        
+
         <Style TargetType="ListBox" BasedOn="{StaticResource ModernListBoxStyle}"/>
-        
+
         <Style x:Key="WidgetStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource WidgetBackgroundBrush}"/>
             <Setter Property="CornerRadius" Value="{StaticResource RadiusWindow}"/>
@@ -50,8 +46,9 @@
         <EventTrigger RoutedEvent="Window.Loaded">
             <BeginStoryboard>
                 <Storyboard>
-                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                   From="0" To="1" Duration="0:0:0.4">
+                    <DoubleAnimation Storyboard.TargetName="MainBorder"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0" To="1" Duration="0:0:0.3">
                         <DoubleAnimation.EasingFunction>
                             <CubicEase EasingMode="EaseOut"/>
                         </DoubleAnimation.EasingFunction>
@@ -60,8 +57,8 @@
             </BeginStoryboard>
         </EventTrigger>
     </Window.Triggers>
-    
-    <Border x:Name="MainBorder" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+
+    <Border x:Name="MainBorder" Opacity="0" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="{StaticResource RadiusWindow}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" SnapsToDevicePixels="True">
         <Grid>
             <Grid x:Name="MainInterfaceGrid">
                 <Grid.RowDefinitions>

@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ToDoapp.Views"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="快速添加待办"
         SizeToContent="Height"
@@ -15,13 +16,18 @@
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         Topmost="True"
-        FontSize="14">
-    
-    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect ShadowDepth="4" BlurRadius="20" Opacity="0.5" Color="#000000"/>
-        </Border.Effect>
-        
+        FontSize="14"
+        SnapsToDevicePixels="True">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CornerRadius="8"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="0"
+                            CaptionHeight="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1" SnapsToDevicePixels="True">
+
         <Grid Margin="20" FocusManager.FocusedElement="{Binding ElementName=InputTextBox}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

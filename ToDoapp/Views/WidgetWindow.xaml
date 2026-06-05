@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:widgets="clr-namespace:ToDoapp.Views"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         x:Name="WidgetWindowRoot"
         mc:Ignorable="d"
         Title="待办便签" Height="360" Width="280"
@@ -16,7 +17,15 @@
         ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False"
         FontSize="14"
+        SnapsToDevicePixels="True"
         WindowStartupLocation="Manual">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CornerRadius="8"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="6"
+                            CaptionHeight="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
 
     <Window.ContextMenu>
         <ContextMenu Style="{StaticResource ModernContextMenuStyle}">

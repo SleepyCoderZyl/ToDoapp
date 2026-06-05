@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:ToDoapp.Views"
         xmlns:vm="clr-namespace:ToDoapp.ViewModels"
         xmlns:models="clr-namespace:ToDoapp.Models"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="设置"
         Height="500" Width="700"
@@ -15,7 +16,15 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        FontSize="14">
+        FontSize="14"
+        SnapsToDevicePixels="True">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CornerRadius="8"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="0"
+                            CaptionHeight="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
     
     <Window.Resources>
         <Style x:Key="SettingItemButtonStyle" TargetType="ListBoxItem">
@@ -50,10 +59,7 @@
     </Window.Resources>
     
     <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect ShadowDepth="2" BlurRadius="12" Opacity="0.4" Color="#000000"/>
-        </Border.Effect>
-        
+
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

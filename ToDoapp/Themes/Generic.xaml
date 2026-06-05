@@ -83,11 +83,8 @@
                                     Background="{DynamicResource PanelBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="{StaticResource RadiusOverlay}">
-                                <Border.Effect>
-                                    <DropShadowEffect ShadowDepth="4" BlurRadius="16" Opacity="0.35" Color="#000000"/>
-                                </Border.Effect>
-
+                                    CornerRadius="{StaticResource RadiusOverlay}"
+                                    SnapsToDevicePixels="True">
                                 <StackPanel Margin="8">
                                     <!-- 顶部导航栏 -->
                                     <Grid Height="36" Margin="0,0,0,4">
