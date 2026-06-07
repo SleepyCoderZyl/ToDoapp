@@ -2,8 +2,6 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
-using HandyControl.Data;
-using HandyControl.Tools;
 using Microsoft.Win32;
 
 namespace ToDoapp.Services;
@@ -92,7 +90,6 @@ public sealed class ThemeService
     {
         IsDarkTheme = useDarkTheme;
 
-        ApplyHandyControlTheme(useDarkTheme);
         ReplaceThemeDictionary(useDarkTheme ? DarkThemeUri : LightThemeUri);
 
         ThemeChanged?.Invoke(this, EventArgs.Empty);
@@ -125,39 +122,5 @@ public sealed class ThemeService
                    (source.Contains("DarkTheme", StringComparison.OrdinalIgnoreCase) ||
                     source.Contains("LightTheme", StringComparison.OrdinalIgnoreCase));
         });
-    }
-
-    private static void ApplyHandyControlTheme(bool useDarkTheme)
-    {
-        var dictionaries = Application.Current.Resources.MergedDictionaries;
-        var skinDictionary = dictionaries.FirstOrDefault(dictionary =>
-            dictionary.Source?.OriginalString.Contains("HandyControl;component/Themes/Skin", StringComparison.OrdinalIgnoreCase) == true);
-        var themeDictionary = dictionaries.FirstOrDefault(dictionary =>
-            dictionary.Source?.OriginalString.Contains("HandyControl;component/Themes/Theme.xaml", StringComparison.OrdinalIgnoreCase) == true);
-
-        if (skinDictionary == null)
-        {
-            return;
-        }
-
-        try
-        {
-            var skinIndex = dictionaries.IndexOf(skinDictionary);
-            dictionaries[skinIndex] = ResourceHelper.GetSkin(useDarkTheme ? SkinType.Dark : SkinType.Default);
-
-            if (themeDictionary != null)
-            {
-                var themeIndex = dictionaries.IndexOf(themeDictionary);
-                dictionaries[themeIndex] = ResourceHelper.GetTheme();
-            }
-            else
-            {
-                dictionaries.Insert(skinIndex + 1, ResourceHelper.GetTheme());
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"应用 HandyControl 主题失败: {ex.Message}");
-        }
     }
 }

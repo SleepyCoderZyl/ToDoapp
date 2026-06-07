@@ -11,8 +11,6 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/SkinDark.xaml"/>
-                <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/Theme.xaml"/>
                 <ResourceDictionary Source="Resources/Themes/DarkTheme.xaml"/>
                 <ResourceDictionary Source="Resources/ModernStyles.xaml"/>
                 <ResourceDictionary Source="Resources/IconGeometries.xaml"/>

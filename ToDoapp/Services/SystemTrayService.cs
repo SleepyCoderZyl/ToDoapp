@@ -353,7 +353,7 @@ public class SystemTrayService : IDisposable
             var helpPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Help.html");
             if (!System.IO.File.Exists(helpPath))
             {
-                HandyControl.Controls.MessageBox.Error($"未找到帮助文件：{helpPath}", "打开帮助失败");
+                MessageBox.Show($"未找到帮助文件：{helpPath}", "打开帮助失败", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -366,7 +366,7 @@ public class SystemTrayService : IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"打开帮助页面失败: {ex.Message}");
-            HandyControl.Controls.MessageBox.Error($"无法打开帮助页面：{ex.Message}", "打开帮助失败");
+            MessageBox.Show($"无法打开帮助页面：{ex.Message}", "打开帮助失败", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -489,7 +489,7 @@ public class SystemTrayService : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        HandyControl.Controls.MessageBox.Error($"无法打开下载页面：{ex.Message}", "打开失败");
+                        MessageBox.Show($"无法打开下载页面：{ex.Message}", "打开失败", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 };
 
