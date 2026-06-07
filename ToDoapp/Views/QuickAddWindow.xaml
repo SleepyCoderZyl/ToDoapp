@@ -37,12 +37,10 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             
-            <TextBlock Grid.Row="0" Text="快速添加待办" 
-                      Foreground="{DynamicResource TextPrimaryBrush}" 
-                      FontSize="18" FontWeight="SemiBold" 
-                      Margin="0,0,0,16"
-                      MouseLeftButtonDown="TitleText_MouseLeftButtonDown"
-                      Cursor="SizeAll"/>
+            <TextBlock Grid.Row="0" Text="快速添加待办"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      FontSize="18" FontWeight="SemiBold"
+                      Margin="0,0,0,16"/>
             
             <TextBox Grid.Row="1" x:Name="InputTextBox"
                     Style="{StaticResource ModernTextBoxStyle}"

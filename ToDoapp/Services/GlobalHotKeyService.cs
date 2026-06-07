@@ -10,7 +10,9 @@ namespace ToDoapp.Services;
 public enum GlobalHotKeyAction
 {
     QuickAdd,
-    ShowHome
+    ShowHome,
+    HideWidget,
+    ToggleWidgetMode
 }
 
 public class GlobalHotKeyService : IDisposable

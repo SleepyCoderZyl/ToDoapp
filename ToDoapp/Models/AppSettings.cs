@@ -54,6 +54,9 @@ public class AppSettings : IJsonOnDeserialized
     [JsonPropertyName("hotKeyKey")]
     public uint HotKeyKey { get; set; } = 0x5A;
 
+    [JsonPropertyName("quickAddHotKeyEnabled")]
+    public bool QuickAddHotKeyEnabled { get; set; } = true;
+
     [JsonPropertyName("showHomeHotKeyEnabled")]
     public bool ShowHomeHotKeyEnabled { get; set; } = true;
 
@@ -62,6 +65,24 @@ public class AppSettings : IJsonOnDeserialized
 
     [JsonPropertyName("showHomeHotKeyKey")]
     public uint ShowHomeHotKeyKey { get; set; } = 0x48;
+
+    [JsonPropertyName("hideWidgetHotKeyEnabled")]
+    public bool HideWidgetHotKeyEnabled { get; set; } = true;
+
+    [JsonPropertyName("hideWidgetHotKeyModifiers")]
+    public uint HideWidgetHotKeyModifiers { get; set; } = 0x0002 | 0x0004 | 0x0001;
+
+    [JsonPropertyName("hideWidgetHotKeyKey")]
+    public uint HideWidgetHotKeyKey { get; set; } = 0x4D;
+
+    [JsonPropertyName("toggleWidgetModeHotKeyEnabled")]
+    public bool ToggleWidgetModeHotKeyEnabled { get; set; } = true;
+
+    [JsonPropertyName("toggleWidgetModeHotKeyModifiers")]
+    public uint ToggleWidgetModeHotKeyModifiers { get; set; } = 0x0002 | 0x0004 | 0x0001;
+
+    [JsonPropertyName("toggleWidgetModeHotKeyKey")]
+    public uint ToggleWidgetModeHotKeyKey { get; set; } = 0x57;
 
     [JsonPropertyName("startInWidgetMode")]
     public bool StartInWidgetMode { get; set; } = false;

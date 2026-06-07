@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using ToDoapp.Models;
 using ToDoapp.Services;
@@ -136,11 +137,47 @@ public partial class QuickAddWindow : Window
         Close();
     }
 
-    private void TitleText_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed)
+        base.OnPreviewMouseLeftButtonDown(e);
+
+        if (e.LeftButton != MouseButtonState.Pressed)
+            return;
+
+        var source = e.OriginalSource as DependencyObject;
+        if (source == null)
+            return;
+
+        // 排除输入框及其子元素
+        if (IsDescendantOf(source, InputTextBox))
+            return;
+
+        // 排除按钮及其子元素
+        if (FindAncestorOfType<Button>(source) != null)
+            return;
+
+        DragMove();
+    }
+
+    private static bool IsDescendantOf(DependencyObject? node, DependencyObject? ancestor)
+    {
+        while (node != null)
         {
-            DragMove();
+            if (node == ancestor)
+                return true;
+            node = VisualTreeHelper.GetParent(node);
         }
+        return false;
+    }
+
+    private static T? FindAncestorOfType<T>(DependencyObject? node) where T : DependencyObject
+    {
+        while (node != null)
+        {
+            if (node is T t)
+                return t;
+            node = VisualTreeHelper.GetParent(node);
+        }
+        return null;
     }
 }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ToDoapp.Views"
         xmlns:vm="clr-namespace:ToDoapp.ViewModels"
-        xmlns:models="clr-namespace:ToDoapp.Models"
+        xmlns:settings="clr-namespace:ToDoapp.ViewModels.Settings"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="设置"
@@ -25,8 +25,9 @@
                             CaptionHeight="0"
                             UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
-    
+
     <Window.Resources>
+        <!-- 通用 ListBoxItem 样式：左侧设置项 -->
         <Style x:Key="SettingItemButtonStyle" TargetType="ListBoxItem">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
@@ -56,8 +57,20 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- 左侧设置项的 DataTemplate -->
+        <DataTemplate x:Key="SettingItemTemplate" DataType="{x:Type settings:SettingsPageViewModel}">
+            <StackPanel>
+                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Medium"/>
+                <TextBlock Text="{Binding Description}"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="160"/>
+            </StackPanel>
+        </DataTemplate>
     </Window.Resources>
-    
+
     <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
 
         <Grid>
@@ -65,7 +78,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            
+
             <!-- 标题栏 -->
             <Border Grid.Row="0" Background="{DynamicResource TitleBarBrush}" CornerRadius="8,8,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
@@ -74,16 +87,16 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0" Text="设置" 
-                              Foreground="{DynamicResource TextPrimaryBrush}" 
-                              FontSize="16" FontWeight="SemiBold" 
+
+                    <TextBlock Grid.Column="0" Text="设置"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
+                              FontSize="16" FontWeight="SemiBold"
                               VerticalAlignment="Center"/>
-                    
+
                     <Button Grid.Column="1"
-                           Width="32" Height="32" 
-                           Click="CloseButton_Click" 
-                           Style="{StaticResource IconButtonStyle}" 
+                           Width="32" Height="32"
+                           Click="CloseButton_Click"
+                           Style="{StaticResource IconButtonStyle}"
                            Foreground="{DynamicResource DangerBrush}">
                         <Viewbox Width="{StaticResource DialogTitleBarIconSize}" Height="{StaticResource DialogTitleBarIconSize}">
                             <Path Data="{StaticResource CloseIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
@@ -91,100 +104,57 @@
                     </Button>
                 </Grid>
             </Border>
-            
+
             <!-- 主内容区域 -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="200"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <!-- 左侧设置项列表 -->
-                <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}" 
+                <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel x:Name="SettingItemsPanel" Margin="8,12">
-                            
+                        <StackPanel Margin="8,12">
                             <!-- 常规设置分类 -->
-                            <TextBlock Text="常规" 
-                                      Foreground="{DynamicResource TextMutedBrush}" 
-                                      FontSize="11" FontWeight="SemiBold" 
-                                      Margin="12,8,12,6"
-                                      x:Name="GeneralCategoryHeader"/>
-                            
+                            <TextBlock Text="常规"
+                                      Foreground="{DynamicResource TextMutedBrush}"
+                                      FontSize="11" FontWeight="SemiBold"
+                                      Margin="12,8,12,6"/>
+
                             <ListBox x:Name="GeneralSettingsList"
-                                     Background="Transparent" 
+                                     Background="Transparent"
                                      BorderThickness="0"
                                      ItemContainerStyle="{StaticResource SettingItemButtonStyle}"
+                                     ItemTemplate="{StaticResource SettingItemTemplate}"
+                                     ItemsSource="{Binding GeneralPages}"
                                      SelectionChanged="SettingItem_SelectionChanged"
-                                     SelectionMode="Single">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type models:SettingItem}">
-                                        <StackPanel>
-                                            <TextBlock x:Name="NameText" Text="{Binding Name}" 
-                                                      FontSize="13" 
-                                                      FontWeight="Medium"/>
-                                            <TextBlock x:Name="DescriptionText" Text="{Binding Description}" 
-                                                      FontSize="11" 
-                                                      Foreground="{DynamicResource TextMutedBrush}"
-                                                      TextTrimming="CharacterEllipsis"
-                                                      MaxWidth="160"/>
-                                        </StackPanel>
-                                        <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                                <Setter TargetName="DescriptionText" Property="Foreground" Value="{DynamicResource TextOnPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            
+                                     SelectionMode="Single"/>
+
                             <!-- 外观设置分类 -->
-                            <TextBlock Text="外观" 
-                                      Foreground="{DynamicResource TextMutedBrush}" 
-                                      FontSize="11" FontWeight="SemiBold" 
+                            <TextBlock Text="外观"
+                                      Foreground="{DynamicResource TextMutedBrush}"
+                                      FontSize="11" FontWeight="SemiBold"
                                       Margin="12,16,12,6"/>
-                            
+
                             <ListBox x:Name="AppearanceSettingsList"
-                                     Background="Transparent" 
+                                     Background="Transparent"
                                      BorderThickness="0"
                                      ItemContainerStyle="{StaticResource SettingItemButtonStyle}"
+                                     ItemTemplate="{StaticResource SettingItemTemplate}"
+                                     ItemsSource="{Binding AppearancePages}"
                                      SelectionChanged="SettingItem_SelectionChanged"
-                                     SelectionMode="Single">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type models:SettingItem}">
-                                        <StackPanel>
-                                            <TextBlock x:Name="NameText" Text="{Binding Name}" 
-                                                      FontSize="13" 
-                                                      FontWeight="Medium"/>
-                                            <TextBlock x:Name="DescriptionText" Text="{Binding Description}" 
-                                                      FontSize="11" 
-                                                      Foreground="{DynamicResource TextMutedBrush}"
-                                                      TextTrimming="CharacterEllipsis"
-                                                      MaxWidth="160"/>
-                                        </StackPanel>
-                                        <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                                <Setter TargetName="DescriptionText" Property="Foreground" Value="{DynamicResource TextOnPrimaryBrush}"/>
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            
-                            
+                                     SelectionMode="Single"/>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
-                
-                <!-- 右侧设置内容区域 -->
+
+                <!-- 右侧设置内容区域：由 Implicit DataTemplate 自动按 ViewModel 类型选 View -->
                 <Border Grid.Column="1" Background="{DynamicResource ContentBackgroundBrush}">
-                    <ContentControl x:Name="ContentArea" 
-                                   Content="{Binding CurrentContent}"
-                                   Margin="0"/>
+                    <ContentControl Content="{Binding CurrentPage}" Margin="0"/>
                 </Border>
             </Grid>
         </Grid>
     </Border>
 </Window>
-

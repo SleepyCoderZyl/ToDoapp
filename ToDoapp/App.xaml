@@ -1,7 +1,13 @@
 <Application x:Class="ToDoapp.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ToDoapp">
+             xmlns:local="clr-namespace:ToDoapp"
+             xmlns:vm="clr-namespace:ToDoapp.ViewModels.Settings"
+             xmlns:vmGeneral="clr-namespace:ToDoapp.ViewModels.Settings.General"
+             xmlns:vmAppearance="clr-namespace:ToDoapp.ViewModels.Settings.Appearance"
+             xmlns:viewsGeneral="clr-namespace:ToDoapp.Views.Settings.General"
+             xmlns:viewsAppearance="clr-namespace:ToDoapp.Views.Settings.Appearance"
+             xmlns:converters="clr-namespace:ToDoapp.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -12,6 +18,30 @@
                 <ResourceDictionary Source="Resources/IconGeometries.xaml"/>
                 <ResourceDictionary Source="Resources/AppDialogStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- 全局转换器 -->
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
+            <!-- 设置页 Implicit DataTemplate：按 ViewModel 类型自动选 View -->
+            <DataTemplate DataType="{x:Type vmGeneral:StartupSettingsViewModel}">
+                <viewsGeneral:StartupSettingsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmGeneral:StartupReminderSettingsViewModel}">
+                <viewsGeneral:StartupReminderSettingsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmGeneral:HotKeySettingsViewModel}">
+                <viewsGeneral:HotKeySettingsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmGeneral:StartInWidgetModeSettingsViewModel}">
+                <viewsGeneral:StartInWidgetModeSettingsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmAppearance:OpacitySettingsViewModel}">
+                <viewsAppearance:OpacitySettingsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmAppearance:AlwaysOnTopSettingsViewModel}">
+                <viewsAppearance:AlwaysOnTopSettingsView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

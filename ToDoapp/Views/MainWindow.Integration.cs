@@ -359,10 +359,19 @@ public partial class MainWindow
         }
 
         var settings = SettingsService.Instance.Settings;
-        var quickAddHotKeyId = _globalHotKeyService.RegisterHotKey(
-            GlobalHotKeyAction.QuickAdd,
-            settings.HotKeyModifiers,
-            settings.HotKeyKey);
+
+        var quickAddHotKeyId = -1;
+        if (settings.QuickAddHotKeyEnabled)
+        {
+            quickAddHotKeyId = _globalHotKeyService.RegisterHotKey(
+                GlobalHotKeyAction.QuickAdd,
+                settings.HotKeyModifiers,
+                settings.HotKeyKey);
+        }
+        else
+        {
+            _globalHotKeyService.UnregisterHotKey(GlobalHotKeyAction.QuickAdd);
+        }
 
         var showHomeHotKeyId = -1;
         if (settings.ShowHomeHotKeyEnabled)
@@ -377,18 +386,57 @@ public partial class MainWindow
             _globalHotKeyService.UnregisterHotKey(GlobalHotKeyAction.ShowHome);
         }
 
-        var quickAddText = GlobalHotKeyService.GetHotKeyDisplayText(settings.HotKeyModifiers, settings.HotKeyKey);
+        var hideWidgetHotKeyId = -1;
+        if (settings.HideWidgetHotKeyEnabled)
+        {
+            hideWidgetHotKeyId = _globalHotKeyService.RegisterHotKey(
+                GlobalHotKeyAction.HideWidget,
+                settings.HideWidgetHotKeyModifiers,
+                settings.HideWidgetHotKeyKey);
+        }
+        else
+        {
+            _globalHotKeyService.UnregisterHotKey(GlobalHotKeyAction.HideWidget);
+        }
+
+        var toggleWidgetModeHotKeyId = -1;
+        if (settings.ToggleWidgetModeHotKeyEnabled)
+        {
+            toggleWidgetModeHotKeyId = _globalHotKeyService.RegisterHotKey(
+                GlobalHotKeyAction.ToggleWidgetMode,
+                settings.ToggleWidgetModeHotKeyModifiers,
+                settings.ToggleWidgetModeHotKeyKey);
+        }
+        else
+        {
+            _globalHotKeyService.UnregisterHotKey(GlobalHotKeyAction.ToggleWidgetMode);
+        }
+
+        var quickAddText = settings.QuickAddHotKeyEnabled
+            ? GlobalHotKeyService.GetHotKeyDisplayText(settings.HotKeyModifiers, settings.HotKeyKey)
+            : "未启用";
         var showHomeText = settings.ShowHomeHotKeyEnabled
             ? GlobalHotKeyService.GetHotKeyDisplayText(settings.ShowHomeHotKeyModifiers, settings.ShowHomeHotKeyKey)
             : "未启用";
+        var hideWidgetText = settings.HideWidgetHotKeyEnabled
+            ? GlobalHotKeyService.GetHotKeyDisplayText(settings.HideWidgetHotKeyModifiers, settings.HideWidgetHotKeyKey)
+            : "未启用";
+        var toggleWidgetModeText = settings.ToggleWidgetModeHotKeyEnabled
+            ? GlobalHotKeyService.GetHotKeyDisplayText(settings.ToggleWidgetModeHotKeyModifiers, settings.ToggleWidgetModeHotKeyKey)
+            : "未启用";
 
-        if (quickAddHotKeyId != -1 && (!settings.ShowHomeHotKeyEnabled || showHomeHotKeyId != -1))
+        var allRegistered = quickAddHotKeyId != -1
+            && (!settings.ShowHomeHotKeyEnabled || showHomeHotKeyId != -1)
+            && (!settings.HideWidgetHotKeyEnabled || hideWidgetHotKeyId != -1)
+            && (!settings.ToggleWidgetModeHotKeyEnabled || toggleWidgetModeHotKeyId != -1);
+
+        if (allRegistered)
         {
-            UpdateStatus($"全局快捷键{statusVerb}：快速添加 {quickAddText}；显示主页 {showHomeText}");
+            UpdateStatus($"全局快捷键{statusVerb}：快速添加 {quickAddText}；显示主页 {showHomeText}；隐藏小组件 {hideWidgetText}；切到小组件模式 {toggleWidgetModeText}");
             return;
         }
 
-        UpdateStatus($"全局快捷键{statusVerb}不完整：快速添加 {quickAddText}；显示主页 {showHomeText}");
+        UpdateStatus($"全局快捷键{statusVerb}不完整：快速添加 {quickAddText}；显示主页 {showHomeText}；隐藏小组件 {hideWidgetText}；切到小组件模式 {toggleWidgetModeText}");
     }
 
     private void OnGlobalHotKeyPressed(GlobalHotKeyAction action)
@@ -400,6 +448,12 @@ public partial class MainWindow
                 break;
             case GlobalHotKeyAction.ShowHome:
                 OnShowHomeHotKeyPressed();
+                break;
+            case GlobalHotKeyAction.HideWidget:
+                OnHideWidgetHotKeyPressed();
+                break;
+            case GlobalHotKeyAction.ToggleWidgetMode:
+                OnToggleWidgetModeHotKeyPressed();
                 break;
         }
     }
@@ -453,6 +507,36 @@ public partial class MainWindow
         {
             System.Diagnostics.Debug.WriteLine($"处理显示主页快捷键失败: {ex.Message}");
             UpdateStatus("显示主页失败");
+        }
+    }
+
+    private void OnHideWidgetHotKeyPressed()
+    {
+        try
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (!IsWidgetMode()) return;
+                ToggleWidgetWindowVisibility();
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"处理隐藏小组件快捷键失败: {ex.Message}");
+            UpdateStatus("隐藏小组件失败");
+        }
+    }
+
+    private void OnToggleWidgetModeHotKeyPressed()
+    {
+        try
+        {
+            Dispatcher.Invoke(EnterWidgetMode);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"处理切到小组件模式快捷键失败: {ex.Message}");
+            UpdateStatus("切到小组件模式失败");
         }
     }
 

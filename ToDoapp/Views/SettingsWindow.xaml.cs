@@ -1,82 +1,64 @@
-using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using ToDoapp.Models;
-using ToDoapp.Services;
 using ToDoapp.ViewModels;
+using ToDoapp.ViewModels.Settings;
 
 namespace ToDoapp.Views;
 
 public partial class SettingsWindow : Window
 {
     private readonly SettingsViewModel _viewModel;
-    private bool _isInitializing = true;
 
     public SettingsWindow()
     {
         InitializeComponent();
-        
+
         _viewModel = new SettingsViewModel();
         DataContext = _viewModel;
-        
+
         Loaded += SettingsWindow_Loaded;
     }
 
-    private void SettingsWindow_Loaded(object sender, RoutedEventArgs e)
+    private void SettingsWindow_Loaded(object? sender, RoutedEventArgs e)
     {
-        LoadSettingItems();
-        _isInitializing = false;
-        
-        if (GeneralSettingsList.Items.Count > 0)
+        // 默认选中第一项（已在 ViewModel 构造时设过 CurrentPage）
+        // 这里把 ListBox 的选中状态同步过去，以便高亮显示
+        if (_viewModel.CurrentPage != null)
         {
-            GeneralSettingsList.SelectedIndex = 0;
-        }
-        else if (AppearanceSettingsList.Items.Count > 0)
-        {
-            AppearanceSettingsList.SelectedIndex = 0;
+            SelectInListBox(_viewModel.CurrentPage);
         }
     }
 
-    private void LoadSettingItems()
+    private void SelectInListBox(SettingsPageViewModel page)
     {
-        var generalItems = _viewModel.SettingItems
-            .Where(i => i.Category == SettingCategory.General)
-            .ToList();
-        
-        var appearanceItems = _viewModel.SettingItems
-            .Where(i => i.Category == SettingCategory.Appearance)
-            .ToList();
-
-        foreach (var item in generalItems)
+        if (page.Category == ToDoapp.Models.SettingCategory.General)
         {
-            GeneralSettingsList.Items.Add(item);
+            AppearanceSettingsList.SelectedItem = null;
+            GeneralSettingsList.SelectedItem = page;
         }
-
-        foreach (var item in appearanceItems)
+        else
         {
-            AppearanceSettingsList.Items.Add(item);
+            GeneralSettingsList.SelectedItem = null;
+            AppearanceSettingsList.SelectedItem = page;
         }
     }
 
     private void SettingItem_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_isInitializing) return;
+        if (sender is not ListBox listBox) return;
+        if (listBox.SelectedItem is not SettingsPageViewModel selected) return;
 
-        if (sender is ListBox listBox && listBox.SelectedItem is SettingItem selectedItem)
+        _viewModel.CurrentPage = selected;
+
+        // 互斥：另一个 ListBox 取消选中
+        if (listBox == GeneralSettingsList)
         {
-            _viewModel.SelectedSettingItem = selectedItem;
-            ContentArea.Content = selectedItem.ContentControl;
-            
-            if (listBox == GeneralSettingsList && AppearanceSettingsList != null)
-            {
-                AppearanceSettingsList.SelectedItem = null;
-            }
-            else if (listBox == AppearanceSettingsList && GeneralSettingsList != null)
-            {
-                GeneralSettingsList.SelectedItem = null;
-            }
+            AppearanceSettingsList.SelectedItem = null;
+        }
+        else if (listBox == AppearanceSettingsList)
+        {
+            GeneralSettingsList.SelectedItem = null;
         }
     }
 
