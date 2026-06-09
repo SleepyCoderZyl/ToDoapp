@@ -197,7 +197,6 @@
                           SelectionChanged="TaskTabs_SelectionChanged">
                     <TabControl.Resources>
                         <Style TargetType="TabItem" BasedOn="{StaticResource ModernTabItemStyle}"/>
-                        <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernScrollBarStyle}"/>
                     </TabControl.Resources>
                     
                     <TabItem Header="待办">

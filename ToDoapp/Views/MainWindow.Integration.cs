@@ -247,31 +247,20 @@ public partial class MainWindow
         };
         rootPanel.Children.Add(emptyStateText);
 
-        var backupListView = new ListView
+        var backupListBox = new ListBox
         {
-            Height = 280,
+            Height = 260,
             ItemsSource = backupInfos,
             Visibility = backupInfos.Count > 0 ? Visibility.Visible : Visibility.Collapsed,
-            Background = (Brush)Application.Current.Resources["SurfaceBrush"],
-            BorderBrush = (Brush)Application.Current.Resources["BackgroundLightBrush"],
-            BorderThickness = new Thickness(1)
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            ItemContainerStyle = (Style)Application.Current.Resources["DialogBackupListBoxItemStyle"],
+            ItemTemplate = (DataTemplate)Application.Current.Resources["BackupItemDataTemplate"]
         };
-
-        var gridView = new GridView();
-        gridView.Columns.Add(new GridViewColumn
-        {
-            Header = "备份时间",
-            DisplayMemberBinding = new Binding(nameof(TodoBackupInfo.BackupTimeDisplay))
-        });
-        gridView.Columns.Add(new GridViewColumn
-        {
-            Header = "文件大小",
-            DisplayMemberBinding = new Binding(nameof(TodoBackupInfo.FileSizeDisplay)),
-            Width = 80
-        });
-        backupListView.View = gridView;
-        backupListView.SelectedIndex = backupInfos.Count > 0 ? 0 : -1;
-        rootPanel.Children.Add(backupListView);
+        backupListBox.SelectedIndex = backupInfos.Count > 0 ? 0 : -1;
+        rootPanel.Children.Add(backupListBox);
 
         var statusTextBlock = new TextBlock
         {
@@ -284,7 +273,7 @@ public partial class MainWindow
 
         DialogService.OnDialogConfirmed = _ =>
         {
-            if (backupListView.SelectedItem is not TodoBackupInfo selectedBackup)
+            if (backupListBox.SelectedItem is not TodoBackupInfo selectedBackup)
             {
                 statusTextBlock.Text = "请选择一个备份文件。";
                 statusTextBlock.Visibility = Visibility.Visible;
@@ -321,13 +310,15 @@ public partial class MainWindow
                 "取消",
                 (primaryButton, _) =>
                 {
-                    primaryButton.IsEnabled = backupInfos.Count > 0 && backupListView.SelectedItem != null;
-                    backupListView.SelectionChanged += (_, _) =>
+                    primaryButton.IsEnabled = backupInfos.Count > 0 && backupListBox.SelectedItem != null;
+                    backupListBox.SelectionChanged += (_, _) =>
                     {
-                        primaryButton.IsEnabled = backupListView.SelectedItem != null;
+                        primaryButton.IsEnabled = backupListBox.SelectedItem != null;
                         statusTextBlock.Visibility = Visibility.Collapsed;
                     };
-                });
+                },
+                false,
+                420);
         }
         finally
         {

@@ -309,15 +309,53 @@
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
     </Style>
 
-    <!-- 滚动条样式 -->
-    <Style x:Key="ModernScrollBarStyle" TargetType="ScrollBar">
+    <!-- 滚动条内置按钮：上下/左右 Line 按钮为透明背景的 RepeatButton -->
+    <Style x:Key="ScrollBarLineButtonStyle" TargetType="RepeatButton">
         <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Background="Transparent"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 滚动条内置按钮：轨道上 PageUp/Down 区域为透明 RepeatButton -->
+    <Style x:Key="ScrollBarPageButtonStyle" TargetType="RepeatButton">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Background="Transparent"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 滚动条全局隐式样式（垂直/水平两套模板由 Orientation 触发器切换） -->
+    <Style TargetType="ScrollBar">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="MinWidth" Value="8"/>
+        <Setter Property="MinHeight" Value="8"/>
         <Setter Property="Width" Value="8"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
-                    <Grid>
-                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                    <Grid x:Name="GridRoot" Background="{TemplateBinding Background}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Track x:Name="PART_Track" Grid.Row="1" IsDirectionReversed="True">
                             <Track.Thumb>
                                 <Thumb>
                                     <Thumb.Template>
@@ -329,22 +367,98 @@
                                     </Thumb.Template>
                                 </Thumb>
                             </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton x:Name="PART_PageDownButton"
+                                              Command="ScrollBar.PageDownCommand"
+                                              Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton x:Name="PART_PageUpButton"
+                                              Command="ScrollBar.PageUpCommand"
+                                              Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                            </Track.DecreaseRepeatButton>
                         </Track>
+                        <RepeatButton x:Name="PART_LineUpButton"
+                                      Grid.Row="0"
+                                      Command="ScrollBar.LineUpCommand"
+                                      Style="{StaticResource ScrollBarLineButtonStyle}"/>
+                        <RepeatButton x:Name="PART_LineDownButton"
+                                      Grid.Row="2"
+                                      Command="ScrollBar.LineDownCommand"
+                                      Style="{StaticResource ScrollBarLineButtonStyle}"/>
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto"/>
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="Height" Value="8"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid x:Name="GridRoot" Background="{TemplateBinding Background}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Track x:Name="PART_Track" Grid.Column="1" Orientation="Horizontal" IsDirectionReversed="False">
+                                    <Track.Thumb>
+                                        <Thumb>
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border Background="{DynamicResource BackgroundLightBrush}"
+                                                            CornerRadius="{StaticResource RadiusControl}"
+                                                            Margin="1"/>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton x:Name="PART_PageRightButton"
+                                                      Command="ScrollBar.PageRightCommand"
+                                                      Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton x:Name="PART_PageLeftButton"
+                                                      Command="ScrollBar.PageLeftCommand"
+                                                      Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                                    </Track.DecreaseRepeatButton>
+                                </Track>
+                                <RepeatButton x:Name="PART_LineLeftButton"
+                                              Grid.Column="0"
+                                              Command="ScrollBar.LineLeftCommand"
+                                              Style="{StaticResource ScrollBarLineButtonStyle}"/>
+                                <RepeatButton x:Name="PART_LineRightButton"
+                                              Grid.Column="2"
+                                              Command="ScrollBar.LineRightCommand"
+                                              Style="{StaticResource ScrollBarLineButtonStyle}"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
-    <!-- 小组件滚动条样式（窄版） -->
+    <!-- 小组件滚动条样式（窄版 6px，在 WidgetView 显式 BasedOn 引用以覆盖全局隐式样式） -->
     <Style x:Key="WidgetScrollBarStyle" TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="MinWidth" Value="6"/>
+        <Setter Property="MinHeight" Value="6"/>
         <Setter Property="Width" Value="6"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
-                    <Grid Background="Transparent" Width="6">
-                        <Track x:Name="PART_Track" Orientation="Vertical" IsDirectionReversed="True">
+                    <Grid x:Name="GridRoot" Background="Transparent">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Track x:Name="PART_Track" Grid.Row="1" IsDirectionReversed="True">
                             <Track.Thumb>
                                 <Thumb>
                                     <Thumb.Template>
@@ -354,11 +468,78 @@
                                     </Thumb.Template>
                                 </Thumb>
                             </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton x:Name="PART_PageDownButton"
+                                              Command="ScrollBar.PageDownCommand"
+                                              Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton x:Name="PART_PageUpButton"
+                                              Command="ScrollBar.PageUpCommand"
+                                              Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                            </Track.DecreaseRepeatButton>
                         </Track>
+                        <RepeatButton x:Name="PART_LineUpButton"
+                                      Grid.Row="0"
+                                      Command="ScrollBar.LineUpCommand"
+                                      Style="{StaticResource ScrollBarLineButtonStyle}"/>
+                        <RepeatButton x:Name="PART_LineDownButton"
+                                      Grid.Row="2"
+                                      Command="ScrollBar.LineDownCommand"
+                                      Style="{StaticResource ScrollBarLineButtonStyle}"/>
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto"/>
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="Height" Value="6"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid x:Name="GridRoot" Background="Transparent">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Track x:Name="PART_Track" Grid.Column="1" Orientation="Horizontal" IsDirectionReversed="False">
+                                    <Track.Thumb>
+                                        <Thumb>
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border Background="{DynamicResource BorderBrush}" CornerRadius="3" Margin="1"/>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton x:Name="PART_PageRightButton"
+                                                      Command="ScrollBar.PageRightCommand"
+                                                      Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton x:Name="PART_PageLeftButton"
+                                                      Command="ScrollBar.PageLeftCommand"
+                                                      Style="{StaticResource ScrollBarPageButtonStyle}"/>
+                                    </Track.DecreaseRepeatButton>
+                                </Track>
+                                <RepeatButton x:Name="PART_LineLeftButton"
+                                              Grid.Column="0"
+                                              Command="ScrollBar.LineLeftCommand"
+                                              Style="{StaticResource ScrollBarLineButtonStyle}"/>
+                                <RepeatButton x:Name="PART_LineRightButton"
+                                              Grid.Column="2"
+                                              Command="ScrollBar.LineRightCommand"
+                                              Style="{StaticResource ScrollBarLineButtonStyle}"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- 现代化右键菜单样式 -->
@@ -426,6 +607,98 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- 现代化滑块样式 (Win11 风格) -->
+    <Style x:Key="ModernSliderStyle" TargetType="Slider">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid>
+                        <!-- 轨道背景 -->
+                        <Border x:Name="TrackBackground"
+                                Background="{DynamicResource BorderBrush}"
+                                Height="4"
+                                CornerRadius="2"
+                                VerticalAlignment="Center"
+                                SnapsToDevicePixels="True"/>
+
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="Slider.DecreaseLarge"
+                                              Background="{DynamicResource PrimaryBrush}"
+                                              Height="4"
+                                              BorderThickness="0"
+                                              Focusable="False"
+                                              VerticalAlignment="Center"
+                                              SnapsToDevicePixels="True">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    CornerRadius="2"
+                                                    Height="{TemplateBinding Height}"
+                                                    SnapsToDevicePixels="True"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="Slider.IncreaseLarge"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              Focusable="False"
+                                              VerticalAlignment="Center">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <Border Background="Transparent"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Width="32" Height="32" Focusable="False">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Grid Width="32" Height="32">
+                                                <Ellipse x:Name="HoverRing"
+                                                         Width="32"
+                                                         Height="32"
+                                                         Fill="{DynamicResource PrimarySubtleBrush}"
+                                                         Opacity="0"/>
+                                                <Ellipse x:Name="ThumbEllipse"
+                                                         Width="16"
+                                                         Height="16"
+                                                         Fill="{DynamicResource TextPrimaryBrush}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                                            </Grid>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="HoverRing" Property="Opacity" Value="1"/>
+                                                    <Setter TargetName="ThumbEllipse" Property="Fill" Value="{DynamicResource PrimaryBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="ThumbEllipse" Property="Width" Value="14"/>
+                                                    <Setter TargetName="ThumbEllipse" Property="Height" Value="14"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
 </ResourceDictionary>

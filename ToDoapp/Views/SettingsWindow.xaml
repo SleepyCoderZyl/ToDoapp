@@ -9,7 +9,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="设置"
-        Height="500" Width="700"
+        Height="580" Width="700"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -108,7 +108,7 @@
             <!-- 主内容区域 -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="240"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 

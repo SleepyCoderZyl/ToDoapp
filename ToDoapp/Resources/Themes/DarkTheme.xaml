@@ -28,6 +28,7 @@
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
     <SolidColorBrush x:Key="DangerSubtleBrush" Color="#33F85149"/>
+    <SolidColorBrush x:Key="PrimarySubtleBrush" Color="#33FF6B47"/>
     <SolidColorBrush x:Key="DangerHoverBrush" Color="#FF7168"/>
     <SolidColorBrush x:Key="DangerPressedBrush" Color="#E0443D"/>
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>

@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:services="clr-namespace:ToDoapp.Services">
 
     <Style x:Key="DialogButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource SecondaryButtonBackgroundBrush}"/>
@@ -75,4 +76,101 @@
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="Margin" Value="0,0,0,20"/>
     </Style>
+
+    <!-- 备份列表项数据模板 -->
+    <DataTemplate x:Key="BackupItemDataTemplate" DataType="{x:Type services:TodoBackupInfo}">
+        <Grid MinHeight="36">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock Text="{Binding BackupTimeDisplay}"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+                <Border CornerRadius="{StaticResource RadiusPill}"
+                        Padding="6,2"
+                        HorizontalAlignment="Left"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource PrimarySubtleBrush}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsLatest}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="最新"
+                               FontSize="10"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryBrush}"/>
+                </Border>
+            </StackPanel>
+
+            <TextBlock Grid.Column="1"
+                       Text="{Binding FileSizeDisplay}"
+                       FontSize="12"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+        </Grid>
+    </DataTemplate>
+
+    <!-- 对话框内单选列表项样式：卡片风格 + 项目主色选中指示 -->
+    <Style x:Key="DialogBackupListBoxItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Grid>
+                        <Border x:Name="indicator"
+                                Background="{DynamicResource PrimaryBrush}"
+                                Width="3"
+                                HorizontalAlignment="Left"
+                                CornerRadius="{StaticResource RadiusControl}"
+                                Visibility="Collapsed"
+                                Margin="0,4"/>
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource RadiusControl}"
+                                Padding="10,8">
+                            <ContentPresenter HorizontalAlignment="Stretch"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="indicator" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimarySubtleBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsSelected" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimarySubtleBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
