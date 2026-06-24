@@ -95,7 +95,7 @@ public class HotKeySettingsViewModel : SettingsPageViewModel
         var settings = SettingsService.Instance.Settings;
 
         Entries.Add(new HotKeyEntryViewModel(
-            title: "快速添加待办",
+            title: "快速添加",
             initialEnabled: settings.QuickAddHotKeyEnabled,
             initialModifiers: settings.HotKeyModifiers,
             initialKey: settings.HotKeyKey,
@@ -152,7 +152,7 @@ public class HotKeySettingsViewModel : SettingsPageViewModel
             }));
 
         Entries.Add(new HotKeyEntryViewModel(
-            title: "切到小组件模式",
+            title: "切换小组件",
             initialEnabled: settings.ToggleWidgetModeHotKeyEnabled,
             initialModifiers: settings.ToggleWidgetModeHotKeyModifiers,
             initialKey: settings.ToggleWidgetModeHotKeyKey,

@@ -114,6 +114,7 @@
 
                 <!-- 左侧设置项列表 -->
                 <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
+                        CornerRadius="0,0,0,8"
                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="8,12">
@@ -151,7 +152,8 @@
                 </Border>
 
                 <!-- 右侧设置内容区域：由 Implicit DataTemplate 自动按 ViewModel 类型选 View -->
-                <Border Grid.Column="1" Background="{DynamicResource ContentBackgroundBrush}">
+                <Border Grid.Column="1" Background="{DynamicResource ContentBackgroundBrush}"
+                        CornerRadius="0,0,8,0">
                     <ContentControl Content="{Binding CurrentPage}" Margin="0"/>
                 </Border>
             </Grid>

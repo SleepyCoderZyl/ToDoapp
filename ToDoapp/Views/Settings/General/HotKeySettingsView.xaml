@@ -39,25 +39,27 @@
                                        FontSize="14"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
-                                       Margin="0,0,16,0"/>
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Title}"
+                                       Margin="0,0,12,0"/>
 
                             <CheckBox Grid.Column="1"
                                       IsChecked="{Binding IsEnabled}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"
-                                      Margin="0,0,16,0"
+                                      Margin="0,0,12,0"
                                       ToolTip="启用或禁用此快捷键"/>
 
                             <TextBox x:Name="HotKeyInput"
                                      Grid.Column="2"
                                      Style="{StaticResource ModernTextBoxStyle}"
-                                     Width="220"
+                                     Width="180"
                                      IsReadOnly="True"
                                      IsEnabled="{Binding IsControlsEnabled}"
                                      Foreground="{DynamicResource PrimaryBrush}"
                                      VerticalAlignment="Center"
                                      Cursor="Hand"
-                                     Margin="0,0,10,0"/>
+                                     Margin="0,0,8,0"/>
 
                             <Button Grid.Column="3"
                                     Content="重置"

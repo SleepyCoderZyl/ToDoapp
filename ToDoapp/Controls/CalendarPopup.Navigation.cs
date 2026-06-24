@@ -138,7 +138,25 @@ public partial class CalendarPopup
     {
         if (!IsDropDownOpen) return;
         if (IsInPopupTree(e.OriginalSource as DependencyObject)) return;
+        if (IsInInputTree(e.OriginalSource as DependencyObject)) return;
         IsDropDownOpen = false;
+    }
+
+    /// <summary>
+    /// 判断 DependencyObject 是否位于输入框区域中，避免预览事件先关闭、输入点击再重新打开。
+    /// </summary>
+    private bool IsInInputTree(DependencyObject? source)
+    {
+        if (_inputBorder == null) return false;
+        if (source == null) return false;
+
+        var d = source;
+        while (d != null)
+        {
+            if (d == _inputBorder) return true;
+            d = VisualTreeHelper.GetParent(d) ?? LogicalTreeHelper.GetParent(d);
+        }
+        return false;
     }
 
     /// <summary>
