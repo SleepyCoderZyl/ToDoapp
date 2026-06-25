@@ -9,7 +9,8 @@ namespace ToDoapp.Services;
 public enum ReminderKind
 {
     Startup,
-    Scheduled
+    Scheduled,
+    Todo
 }
 
 public class StartupReminderService
@@ -32,6 +33,32 @@ public class StartupReminderService
     public ReminderSnapshot CreateScheduledSnapshot(DateTime now)
     {
         return BuildScheduledSnapshot(_settingsAccessor(), now);
+    }
+
+    public static ReminderSnapshot BuildTodoSnapshot(TodoItem todoItem, DateTime now)
+    {
+        ArgumentNullException.ThrowIfNull(todoItem);
+        var dueText = todoItem.DueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "未指定";
+        var timeText = todoItem.DueTime?.ToString("HH:mm", CultureInfo.InvariantCulture);
+        var offsetText = todoItem.ReminderOffsetMinutes.HasValue && todoItem.ReminderOffsetMinutes.Value > 0
+            ? $"提前 {todoItem.ReminderOffsetMinutes.Value} 分钟"
+            : "准时";
+
+        var lines = new List<string>
+        {
+            $"截止：{dueText}{(string.IsNullOrEmpty(timeText) ? string.Empty : " " + timeText)}（{offsetText}）"
+        };
+        if (todoItem.GetReminderTriggerTime() is { } trigger)
+        {
+            lines.Add($"触发时间：{trigger.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)}（当前 {now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)}）");
+        }
+
+        return new ReminderSnapshot(
+            ReminderKind.Todo,
+            $"待办提醒：{todoItem.Title}",
+            string.Join("  ·  ", lines),
+            "可以点击\"知道了\"关闭，或点击\"打开主窗口\"查看全部。",
+            [todoItem.Title]);
     }
 
     public static ReminderSnapshot BuildStartupSnapshot(IEnumerable<TodoItem> todos, AppSettings settings, DateTime now)

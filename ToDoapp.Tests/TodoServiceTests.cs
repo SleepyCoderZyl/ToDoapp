@@ -504,6 +504,172 @@ public class TodoServiceTests : IDisposable
         Assert.Single(Directory.GetFiles(_backupDirectory, "todos-*.json"));
     }
 
+    [Fact]
+    public void SaveTodos_ThenLoad_RoundTripsReminderFields()
+    {
+        var items = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "带提醒的待办",
+                CreatedDate = new DateTime(2026, 5, 13, 9, 0, 0),
+                DueDate = new DateTime(2026, 5, 13),
+                DueTime = new TimeOnly(15, 0),
+                ReminderOffsetMinutes = 15,
+                HasReminder = true
+            }
+        };
+
+        Assert.True(_todoService.SaveTodos(items).IsSuccess);
+
+        var loaded = _todoService.LoadTodos();
+        Assert.True(loaded.IsSuccess);
+        var todo = Assert.Single(loaded.Todos);
+        Assert.Equal(new TimeOnly(15, 0), todo.DueTime);
+        Assert.Equal(15, todo.ReminderOffsetMinutes);
+        Assert.True(todo.HasReminder);
+    }
+
+    [Fact]
+    public void LoadTodosFromFile_OldSchemaWithoutReminderFields_LoadsWithNulls()
+    {
+        var filePath = Path.Combine(_testDirectory, "legacy.json");
+        var document = JsonSerializer.Serialize(new[]
+        {
+            new
+            {
+                Title = "旧版待办",
+                IsCompleted = false,
+                CreatedDate = new DateTime(2026, 4, 1, 9, 0, 0),
+                CompletedDate = (DateTime?)null,
+                DueDate = (DateTime?)new DateTime(2026, 4, 2, 0, 0, 0),
+                HasReminder = true,
+                IsDeleted = false,
+                DeletedDate = (DateTime?)null,
+                IsArchived = false,
+                ArchivedDate = (DateTime?)null
+            }
+        });
+        File.WriteAllText(filePath, document);
+
+        var items = _todoService.LoadTodosFromFile(filePath);
+
+        var todo = Assert.Single(items);
+        Assert.Equal("旧版待办", todo.Title);
+        Assert.Null(todo.DueTime);
+        Assert.Null(todo.ReminderOffsetMinutes);
+        Assert.Null(todo.LastReminderShownAt);
+        Assert.True(todo.HasReminder);
+    }
+
+    [Fact]
+    public void SaveTodos_ExportsReminderFieldsInJson()
+    {
+        var items = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "导出测试",
+                CreatedDate = new DateTime(2026, 5, 13, 9, 0, 0),
+                DueDate = new DateTime(2026, 5, 13),
+                DueTime = new TimeOnly(18, 0),
+                ReminderOffsetMinutes = 15,
+                HasReminder = true
+            }
+        };
+        var exportPath = Path.Combine(_testDirectory, "export.json");
+        _todoService.ExportTodosToFile(items, exportPath);
+
+        var json = File.ReadAllText(exportPath);
+        Assert.Contains("\"dueTime\":", json);
+        Assert.Contains("\"reminderOffsetMinutes\":", json);
+        Assert.Contains("18:00", json);
+        Assert.Contains("15", json);
+    }
+
+    [Fact]
+    public void RestoreFromBackup_ContainsReminderFields_RestoresData()
+    {
+        var current = new ObservableCollection<TodoItem>
+        {
+            new()
+            {
+                Title = "当前",
+                CreatedDate = new DateTime(2026, 5, 13, 9, 0, 0)
+            }
+        };
+
+        Assert.True(_todoService.SaveTodos(current).IsSuccess);
+        Directory.CreateDirectory(_backupDirectory);
+
+        var backupPayload = new[]
+        {
+            new
+            {
+                Title = "带提醒的备份",
+                IsCompleted = false,
+                CreatedDate = new DateTime(2026, 5, 12, 8, 0, 0),
+                CompletedDate = (DateTime?)null,
+                DueDate = (DateTime?)new DateTime(2026, 5, 15, 0, 0, 0),
+                DueTime = (TimeOnly?)new TimeOnly(10, 30),
+                ReminderOffsetMinutes = (int?)30,
+                LastReminderShownAt = (DateTime?)null,
+                HasReminder = true,
+                IsDeleted = false,
+                DeletedDate = (DateTime?)null,
+                IsArchived = false,
+                ArchivedDate = (DateTime?)null
+            }
+        };
+        var backupPath = Path.Combine(_backupDirectory, "todos-20260512-080000000.json");
+        File.WriteAllText(backupPath, JsonSerializer.Serialize(backupPayload));
+        File.SetLastWriteTime(backupPath, new DateTime(2026, 5, 12, 8, 0, 0));
+
+        var restoreResult = _todoService.RestoreFromBackup(backupPath);
+
+        Assert.True(restoreResult.IsSuccess);
+        var todo = Assert.Single(restoreResult.Todos);
+        Assert.Equal("带提醒的备份", todo.Title);
+        Assert.Equal(new TimeOnly(10, 30), todo.DueTime);
+        Assert.Equal(30, todo.ReminderOffsetMinutes);
+        Assert.True(todo.HasReminder);
+
+        var reloaded = _todoService.LoadTodos();
+        Assert.True(reloaded.IsSuccess);
+        Assert.Equal(new TimeOnly(10, 30), reloaded.Todos[0].DueTime);
+        Assert.Equal(30, reloaded.Todos[0].ReminderOffsetMinutes);
+    }
+
+    [Fact]
+    public void LoadTodosFromFile_MissingFieldsLoadAsNullAndDoNotThrow()
+    {
+        var filePath = Path.Combine(_testDirectory, "legacy.json");
+        var document = JsonSerializer.Serialize(new[]
+        {
+            new
+            {
+                Title = "旧版字段",
+                IsCompleted = false,
+                CreatedDate = new DateTime(2026, 4, 1, 9, 0, 0),
+                CompletedDate = (DateTime?)null,
+                DueDate = (DateTime?)new DateTime(2026, 4, 2, 0, 0, 0),
+                HasReminder = true,
+                IsDeleted = false,
+                DeletedDate = (DateTime?)null,
+                IsArchived = false,
+                ArchivedDate = (DateTime?)null
+            }
+        });
+        File.WriteAllText(filePath, document);
+
+        var items = _todoService.LoadTodosFromFile(filePath);
+
+        var todo = Assert.Single(items);
+        Assert.Null(todo.DueTime);
+        Assert.Null(todo.ReminderOffsetMinutes);
+        Assert.Null(todo.LastReminderShownAt);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_testDirectory))

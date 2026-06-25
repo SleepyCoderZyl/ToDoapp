@@ -63,22 +63,49 @@ public partial class QuickAddWindow : Window
         }
 
         var parsedResult = SmartTodoParser.Parse(input);
-        
-        PreviewTitleText.Text = string.IsNullOrWhiteSpace(parsedResult.Title) 
-            ? "无法解析内容" 
+
+        PreviewTitleText.Text = string.IsNullOrWhiteSpace(parsedResult.Title)
+            ? "无法解析内容"
             : parsedResult.Title;
-        
-        PreviewDateText.Text = parsedResult.DueDate.HasValue 
-            ? FormatPreviewDateText(parsedResult)
-            : "无";
+
+        PreviewDateText.Text = BuildPreviewSummary(parsedResult);
     }
 
-    private static string FormatPreviewDateText(SmartTodoParser.ParsedTodoResult parsedResult)
+    private static string BuildPreviewSummary(SmartTodoParser.ParsedTodoResult parsedResult)
     {
-        var dateText = parsedResult.DueDate?.ToString("yyyy-MM-dd") ?? "无";
-        return string.IsNullOrWhiteSpace(parsedResult.DateSourceHint)
-            ? dateText
-            : $"{dateText} · {parsedResult.DateSourceHint}";
+        var parts = new List<string>();
+
+        if (parsedResult.DueDate.HasValue)
+        {
+            var dateText = parsedResult.DueDate.Value.ToString("yyyy-MM-dd");
+            if (!string.IsNullOrWhiteSpace(parsedResult.DateSourceHint))
+            {
+                dateText += $"（{parsedResult.DateSourceHint}）";
+            }
+            parts.Add($"日期: {dateText}");
+        }
+
+        if (parsedResult.DueTime.HasValue)
+        {
+            var timeText = parsedResult.DueTime.Value.ToString("HH:mm");
+            if (!string.IsNullOrWhiteSpace(parsedResult.TimeSourceHint))
+            {
+                timeText += $"（{parsedResult.TimeSourceHint}）";
+            }
+            parts.Add($"时间: {timeText}");
+        }
+
+        if (parsedResult.ReminderOffsetMinutes.HasValue)
+        {
+            var offsetText = $"提前 {parsedResult.ReminderOffsetMinutes.Value} 分钟";
+            if (!string.IsNullOrWhiteSpace(parsedResult.OffsetSourceHint))
+            {
+                offsetText += $"（{parsedResult.OffsetSourceHint}）";
+            }
+            parts.Add($"提醒: {offsetText}");
+        }
+
+        return parts.Count == 0 ? "无" : string.Join("  ·  ", parts);
     }
 
     private void InputTextBox_KeyDown(object sender, KeyEventArgs e)
@@ -98,14 +125,14 @@ public partial class QuickAddWindow : Window
     private void AddButton_Click(object sender, RoutedEventArgs e)
     {
         var input = InputTextBox.Text?.Trim() ?? "";
-        
+
         if (string.IsNullOrWhiteSpace(input))
         {
             return;
         }
 
         var parsedResult = SmartTodoParser.Parse(input);
-        
+
         if (string.IsNullOrWhiteSpace(parsedResult.Title))
         {
             return;
@@ -121,12 +148,15 @@ public partial class QuickAddWindow : Window
         if (parsedResult.DueDate.HasValue)
         {
             todoItem.DueDate = parsedResult.DueDate.Value;
-            todoItem.HasReminder = true;
+            todoItem.DueTime = parsedResult.DueTime;
+            todoItem.ReminderOffsetMinutes = parsedResult.ReminderOffsetMinutes;
+            // 仅当解析得到具体时间时，才开启提醒
+            todoItem.HasReminder = parsedResult.DueTime.HasValue;
         }
 
         _todoItems.Insert(0, todoItem);
         _todoService.SaveTodos(_todoItems);
-        
+
         DialogResult = true;
         Close();
     }

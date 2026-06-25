@@ -11,6 +11,9 @@ public class TodoItem : INotifyPropertyChanged
     private DateTime _createdDate;
     private DateTime? _completedDate;
     private DateTime? _dueDate;
+    private TimeOnly? _dueTime;
+    private int? _reminderOffsetMinutes;
+    private DateTime? _lastReminderShownAt;
     private bool _hasReminder;
     private bool _isDeleted;
     private DateTime? _deletedDate;
@@ -89,6 +92,54 @@ public class TodoItem : INotifyPropertyChanged
             OnPropertyChanged(nameof(DueDateDisplay));
             OnPropertyChanged(nameof(IsOverdue));
             OnPropertyChanged(nameof(DaysUntilDue));
+            OnPropertyChanged(nameof(ReminderTimeDisplay));
+            OnPropertyChanged(nameof(ReminderOffsetDisplay));
+        }
+    }
+
+    public TimeOnly? DueTime
+    {
+        get => _dueTime;
+        set
+        {
+            if (value.HasValue && (value.Value.Hour < 0 || value.Value.Hour > 23 || value.Value.Minute < 0 || value.Value.Minute > 59))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "时间必须在 00:00 到 23:59 之间。");
+            }
+
+            _dueTime = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ReminderTimeDisplay));
+            OnPropertyChanged(nameof(ReminderOffsetDisplay));
+        }
+    }
+
+    public int? ReminderOffsetMinutes
+    {
+        get => _reminderOffsetMinutes;
+        set
+        {
+            if (value.HasValue)
+            {
+                if (value.Value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "提前提醒分钟数不能为负数。");
+                if (value.Value > AppConstants.MaxReminderOffsetMinutes)
+                    throw new ArgumentOutOfRangeException(nameof(value), $"提前提醒分钟数不能超过 {AppConstants.MaxReminderOffsetMinutes} 分钟。");
+            }
+
+            _reminderOffsetMinutes = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ReminderOffsetDisplay));
+        }
+    }
+
+    public DateTime? LastReminderShownAt
+    {
+        get => _lastReminderShownAt;
+        set
+        {
+            _lastReminderShownAt = value;
+            OnPropertyChanged();
         }
     }
 
@@ -99,31 +150,33 @@ public class TodoItem : INotifyPropertyChanged
         {
             _hasReminder = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ReminderTimeDisplay));
+            OnPropertyChanged(nameof(ReminderOffsetDisplay));
         }
     }
 
     // 只读属性用于UI显示
     public bool IsOverdue => DueDate.HasValue && DueDate < DateTime.Now && !IsCompleted;
-    
+
     public string DueDateDisplay
     {
         get
         {
             if (!DueDate.HasValue) return "";
-            
+
             var dueDate = DueDate.Value.Date;
             var today = DateTime.Now.Date;
             var daysUntil = (dueDate - today).Days;
-            
+
             if (daysUntil < 0) return $"已过期 {Math.Abs(daysUntil)} 天";
             if (daysUntil == 0) return "今天到期";
             if (daysUntil == 1) return "明天到期";
             if (daysUntil <= 7) return $"{daysUntil} 天后到期";
-            
+
             return DueDate.Value.ToString("MM-dd");
         }
     }
-    
+
     public int? DaysUntilDue
     {
         get
@@ -133,6 +186,52 @@ public class TodoItem : INotifyPropertyChanged
         }
     }
 
+    public string ReminderTimeDisplay
+    {
+        get
+        {
+            if (!HasReminder) return string.Empty;
+            return DueTime.HasValue ? DueTime.Value.ToString("HH:mm") : "全天";
+        }
+    }
+
+    public string ReminderOffsetDisplay
+    {
+        get
+        {
+            if (!HasReminder) return string.Empty;
+            if (!ReminderOffsetMinutes.HasValue || ReminderOffsetMinutes.Value == 0)
+            {
+                return "准时";
+            }
+
+            var minutes = ReminderOffsetMinutes.Value;
+            if (minutes < 60)
+            {
+                return $"提前 {minutes} 分钟";
+            }
+
+            if (minutes % 60 == 0)
+            {
+                return $"提前 {minutes / 60} 小时";
+            }
+
+            return $"提前 {minutes} 分钟";
+        }
+    }
+
+    public DateTime? GetReminderTriggerTime()
+    {
+        if (!HasReminder || !DueDate.HasValue || !DueTime.HasValue)
+        {
+            return null;
+        }
+
+        var dueAt = DueDate.Value.Date.Add(DueTime.Value.ToTimeSpan());
+        var offset = ReminderOffsetMinutes ?? 0;
+        return dueAt.AddMinutes(-offset);
+    }
+
     public void RefreshTimeSensitiveProperties()
     {
         OnPropertyChanged(nameof(IsOverdue));
@@ -140,8 +239,10 @@ public class TodoItem : INotifyPropertyChanged
         OnPropertyChanged(nameof(DaysUntilDue));
         OnPropertyChanged(nameof(DaysUntilPermanentDelete));
         OnPropertyChanged(nameof(DeleteTimeDisplay));
+        OnPropertyChanged(nameof(ReminderTimeDisplay));
+        OnPropertyChanged(nameof(ReminderOffsetDisplay));
     }
-    
+
     public string CompletedDateDisplay
     {
         get
@@ -264,6 +365,9 @@ public class TodoItem : INotifyPropertyChanged
             _createdDate = storageItem.CreatedDate,
             _completedDate = storageItem.CompletedDate,
             _dueDate = storageItem.DueDate,
+            _dueTime = storageItem.DueTime,
+            _reminderOffsetMinutes = storageItem.ReminderOffsetMinutes,
+            _lastReminderShownAt = storageItem.LastReminderShownAt,
             _hasReminder = storageItem.HasReminder,
             _isDeleted = storageItem.IsDeleted,
             _deletedDate = storageItem.DeletedDate,

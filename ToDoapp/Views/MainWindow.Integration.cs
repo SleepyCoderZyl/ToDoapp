@@ -12,6 +12,9 @@ namespace ToDoapp.Views;
 
 public partial class MainWindow
 {
+    private readonly TodoReminderService _todoReminderService = new();
+    private StartupReminderWindow? _activeTodoReminderWindow;
+
     private void InitializeTimer()
     {
         _mainTimer.Interval = TimeSpan.FromSeconds(30);
@@ -21,6 +24,7 @@ public partial class MainWindow
         CheckOverdueTasks();
         CleanupExpiredTrashItems();
         CheckScheduledReminder();
+        CheckTodoReminders();
     }
 
     private void MainTimer_Tick(object? sender, EventArgs e)
@@ -58,6 +62,7 @@ public partial class MainWindow
         }
 
         CheckScheduledReminder();
+        CheckTodoReminders();
     }
 
     private void RefreshTimeSensitiveTaskProperties()
@@ -128,6 +133,51 @@ public partial class MainWindow
 
         var reminderWindow = new StartupReminderWindow(this, snapshot);
         reminderWindow.ShowDialog();
+    }
+
+    private void CheckTodoReminders()
+    {
+        if (!IsLoaded || _activeTodoReminderWindow is { IsVisible: true })
+        {
+            return;
+        }
+
+        var matches = _todoReminderService.Scan(_viewModel.TodoItems, DateTime.Now);
+        if (matches.Count == 0)
+        {
+            return;
+        }
+
+        var match = matches[0];
+        var snapshot = match.Snapshot;
+        if (!snapshot.HasContent)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (_activeTodoReminderWindow is { IsVisible: true })
+            {
+                return;
+            }
+
+            var reminderWindow = new StartupReminderWindow(this, snapshot)
+            {
+                Owner = this
+            };
+            _activeTodoReminderWindow = reminderWindow;
+            reminderWindow.Closed += (_, _) =>
+            {
+                _activeTodoReminderWindow = null;
+                TodoReminderService.MarkShown(match.TodoItem, match.TriggerTime);
+                if (_canPersistData)
+                {
+                    SaveData();
+                }
+            };
+            reminderWindow.Show();
+        }));
     }
 
     private void InitializeSystemTray()

@@ -164,13 +164,16 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
         if (selectedDueDate.HasValue)
         {
+            // 日期选择器不提供时间 → 不自动开启提醒，避免与"必须具体时间"规则冲突
             todoItem.DueDate = selectedDueDate.Value;
-            todoItem.HasReminder = true;
         }
         else if (parsedResult.DueDate.HasValue)
         {
             todoItem.DueDate = parsedResult.DueDate.Value;
-            todoItem.HasReminder = true;
+            todoItem.DueTime = parsedResult.DueTime;
+            todoItem.ReminderOffsetMinutes = parsedResult.ReminderOffsetMinutes;
+            // 仅当解析得到具体时间时，才标记"开启提醒"
+            todoItem.HasReminder = parsedResult.DueTime.HasValue;
         }
 
         TodoItems.Insert(0, todoItem);
@@ -178,12 +181,28 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         UpdateTaskCount();
 
         var dateInfo = todoItem.DueDate.HasValue
-            ? $" (截止: {todoItem.DueDate.Value:MM-dd})"
+            ? $" (截止: {BuildReminderDateLabel(todoItem)})"
             : string.Empty;
         UpdateStatus($"已添加: {parsedResult.Title}{dateInfo}");
         SaveData();
 
         return todoItem;
+    }
+
+    private static string BuildReminderDateLabel(TodoItem todoItem)
+    {
+        var dateText = todoItem.DueDate!.Value.ToString("MM-dd");
+        if (todoItem.DueTime.HasValue)
+        {
+            dateText += $" {todoItem.DueTime.Value:HH:mm}";
+        }
+
+        if (todoItem.ReminderOffsetMinutes.HasValue && todoItem.ReminderOffsetMinutes.Value > 0)
+        {
+            dateText += $" (提前{todoItem.ReminderOffsetMinutes.Value}分钟)";
+        }
+
+        return dateText;
     }
 
     public List<TodoItem> GetPendingTodoItems()

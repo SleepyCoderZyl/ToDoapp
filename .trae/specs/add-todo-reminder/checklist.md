@@ -1,0 +1,24 @@
+# Checklist
+- [x] `TodoItem` 新增 `DueTime: TimeOnly?` 与 `ReminderOffsetMinutes: int?`，属性 setter 校验非负/上限
+- [x] `TodoItem` 暴露 `ReminderTimeDisplay`、`ReminderOffsetDisplay` 等只读派生属性，且 `RefreshTimeSensitiveProperties` 能触发通知
+- [x] `TodoStorageItem` 新增 `DueTime`/`ReminderOffsetMinutes`/`LastReminderShownAt`，`FromTodoItem` 与 `TodoItem.FromStorage` 双向映射正确
+- [x] `AppConstants` 提供 `MaxReminderOffsetMinutes` 等常量
+- [x] `SmartTodoParser.ParsedTodoResult` 暴露 `DueTime`、`ReminderOffsetMinutes`、`TimeSourceHint`、`OffsetSourceHint`
+- [x] `SmartTodoParser` 能解析 `HH:mm`、`H点`、`H点半`、`H点M分`、`上午/下午/晚上 H点` 等中文时间
+- [x] `SmartTodoParser` 能解析 `提前N分钟/半小时/一刻钟/N小时/N天`，统一换算为分钟
+- [x] `SmartTodoParser.ExtractTitle` 能从原始输入中剥离时间与提前量片段，保留主标题
+- [x] 新增 `Services/TodoReminderService.cs`，对外暴露纯逻辑入口（接受 `now` 与待办集合）
+- [x] `TodoReminderService` 跳过 `IsCompleted`/`IsDeleted`/`IsArchived` 的待办
+- [x] `TodoReminderService` 同一触发窗口内仅弹出一次，更新 `LastReminderShownAt`
+- [x] `StartupReminderService` / `ReminderSnapshot` 扩展支持"待办来源"文案（标题/副标题/FooterHint）
+- [x] `MainWindow` 主定时器（30s）周期调用 `TodoReminderService`，弹窗运行在 UI 线程
+- [x] `MainWindow.NewTaskTextBox_TextChanged` 与 `QuickAddWindow.InputTextBox_TextChanged` 增加时间与提前量预览
+- [x] `MainWindow.EditTask_Click` 自定义面板包含"具体时间"与"提前提醒分钟数"控件
+- [x] 编辑面板对非法时间显示行内错误且不关闭弹窗
+- [x] `TodoService` 导出 JSON 包含 `dueTime`/`reminderOffsetMinutes` 字段
+- [x] `TodoService.LoadTodosFromFile` / `MergeImportedTodos` / `RestoreFromBackup` 对缺少新字段的旧版 JSON 不抛异常
+- [x] `SmartTodoParserTests` 覆盖新解析用例
+- [x] 新增 `TodoReminderServiceTests` 覆盖触发判定与去重
+- [x] `TodoServiceTests` 覆盖导入/导出/恢复兼容
+- [x] `dotnet build` 全部项目通过
+- [x] `dotnet test` 全部测试通过

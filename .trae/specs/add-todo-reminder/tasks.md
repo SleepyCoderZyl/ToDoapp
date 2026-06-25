@@ -1,0 +1,38 @@
+# Tasks
+- [x] Task 1: 扩展 TodoItem / TodoStorageItem 数据模型
+  - [x] SubTask 1.1: 在 `TodoItem` 新增 `DueTime: TimeOnly?` 与 `ReminderOffsetMinutes: int?` 属性，遵循现有 `INotifyPropertyChanged` 风格，并扩展 `RefreshTimeSensitiveProperties` 让其触发 `ReminderTimeDisplay` 等 UI 派生属性
+  - [x] SubTask 1.2: 同步扩展 `TodoStorageItem`：`dueTime`（`HH:mm:ss` 字符串，可空）、`reminderOffsetMinutes`（`int?`）、`lastReminderShownAt`（`DateTime?`），并通过 `FromTodoItem` / `TodoItem.FromStorage` 双向映射
+  - [x] SubTask 1.3: 为 `TodoItem.ReminderOffsetMinutes` 加合理范围校验（非负、上限 7 天）
+  - [x] SubTask 1.4: 在 `AppConstants` 中加入 `MaxReminderOffsetMinutes`、`DefaultReminderOffsetMinutes` 等常量
+- [x] Task 2: 增强 SmartTodoParser 时间与提前量解析
+  - [x] SubTask 2.1: 在 `ParsedTodoResult` 中增加 `DueTime`、`ReminderOffsetMinutes`、`TimeSourceHint`、`OffsetSourceHint`
+  - [x] SubTask 2.2: 新增中文时间正则（24h `HH:mm`、`H点`、`H点M分`、`H点半`、`上午/下午/晚上/早上/中午/傍晚/凌晨 H点` 等）并接入 `GetDateExtractors` 之后的时间提取阶段
+  - [x] SubTask 2.3: 新增"提前 N"正则（`提前N分钟/半小时/一刻钟/N小时/N天`），按规则换算成分钟数
+  - [x] SubTask 2.4: 扩展 `ExtractTitle` 与 `CleanupDateRegexes`，从标题中剥离命中时间片段与提前量片段
+  - [x] SubTask 2.5: 单元测试覆盖典型用例：纯时段、含上下午、HH:mm、提前量、混合输入
+- [x] Task 3: 引入 TodoReminderService 并接入主定时器
+  - [x] SubTask 3.1: 新增 `Services/TodoReminderService.cs`，提供 `ScanAndShowAsync(IEnumerable<TodoItem> todos, DateTime now, Action<ReminderSnapshot> showPopup)` 等纯逻辑入口，便于测试
+  - [x] SubTask 3.2: 计算 `TriggerTime = DueDate.Date + (DueTime ?? 23:59) - (ReminderOffsetMinutes ?? 0)`；状态为已完成/已删除/已归档时跳过
+  - [x] SubTask 3.3: 在 `MainWindow` 中持有 `TodoReminderService` 实例；在 `InitializeTimer` 与 `MainTimer_Tick` 中以 30 秒节奏调用，并通过 `Dispatcher` 弹窗
+  - [x] SubTask 3.4: 弹窗复用 `StartupReminderWindow`，扩展 `ReminderSnapshot` 携带"待办来源"文案（标题、副标题、FooterHint）
+  - [x] SubTask 3.5: 触发后将 `TodoItem.LastReminderShownAt` 写回并触发 `SaveData`
+- [x] Task 4: 扩展输入框预览与编辑弹窗
+  - [x] SubTask 4.1: `MainWindow.NewTaskTextBox_TextChanged` 与 `QuickAddWindow.InputTextBox_TextChanged` 增加"时间"与"提前量"两行预览
+  - [x] SubTask 4.2: `MainWindow.EditTask_Click` 自定义面板中追加"具体时间"（`TextBox` + 行内校验）和"提前提醒"（`ComboBox`）；保存路径走 `DialogService.OnDialogConfirmed`
+  - [x] SubTask 4.3: 解析失败时按既有占位行为降级（时间不填则不入弹窗、提前量为空回退到 0）
+- [x] Task 5: 持久化与导入导出兼容
+  - [x] SubTask 5.1: `TodoService` / `TodoStorageItem` 的序列化与反序列化路径补齐新字段；`JsonSerializerOptions` 保持 `WriteIndented` + `PropertyNameCaseInsensitive`
+  - [x] SubTask 5.2: `TodoService.LoadTodosFromFile` / `MergeImportedTodos` / `RestoreFromBackup` 验证缺字段不抛异常
+  - [x] SubTask 5.3: `ToDoapp.Tests` 新增覆盖：旧版 JSON 导入、含新字段导出、备份恢复
+- [x] Task 6: 单元与端到端验证
+  - [x] SubTask 6.1: `SmartTodoParserTests` 增加时间/提前量用例
+  - [x] SubTask 6.2: 新增 `TodoReminderServiceTests`：触发判定、同一窗口去重、跨次重置（修改 `LastReminderShownAt` 早于 `TriggerTime` 后再次触发）
+  - [x] SubTask 6.3: `TodoItemTests` / `TodoServiceTests` 补充新字段序列化与导入导出兼容用例
+  - [x] SubTask 6.4: 运行 `dotnet build` 与 `dotnet test`，确保全部通过
+
+# Task Dependencies
+- Task 2 依赖 Task 1（解析结果需要承载新模型字段）
+- Task 3 依赖 Task 1 与 Task 2（提醒判定与弹窗文案依赖字段与解析）
+- Task 4 依赖 Task 2（预览与编辑依赖解析能力）
+- Task 5 依赖 Task 1
+- Task 6 依赖 Task 1~5

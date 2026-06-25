@@ -176,14 +176,81 @@ public partial class MainWindow
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
+        var timeLabel = new TextBlock
+        {
+            Text = "具体时间（可选，格式 HH:mm）",
+            FontSize = 13,
+            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
+            Margin = new Thickness(0, 8, 0, 6)
+        };
+
+        var timeTextBox = new TextBox
+        {
+            Text = selectedItem.DueTime?.ToString("HH:mm") ?? string.Empty,
+            FontSize = 14,
+            Padding = new Thickness(10, 8, 10, 8),
+            Margin = new Thickness(0, 0, 0, 6),
+            MaxLength = 5,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        if (Application.Current.Resources["ModernTextBoxStyle"] is Style timeStyle)
+        {
+            timeTextBox.Style = timeStyle;
+        }
+
+        var timeErrorText = new TextBlock
+        {
+            Text = string.Empty,
+            Foreground = (Brush)Application.Current.Resources["DangerBrush"],
+            FontSize = 12,
+            Margin = new Thickness(0, 0, 0, 8),
+            Visibility = Visibility.Collapsed
+        };
+
+        var offsetLabel = new TextBlock
+        {
+            Text = "提前提醒",
+            FontSize = 13,
+            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
+            Margin = new Thickness(0, 8, 0, 6)
+        };
+
+        var offsetOptions = new System.Collections.Generic.List<OffsetOption>
+        {
+            new("不提前（截止时提醒）", 0),
+            new("提前 5 分钟", 5),
+            new("提前 10 分钟", 10),
+            new("提前 15 分钟", 15),
+            new("提前 30 分钟", 30),
+            new("提前 1 小时", 60),
+            new("提前 2 小时", 120)
+        };
+
+        var offsetComboBox = new ComboBox
+        {
+            ItemsSource = offsetOptions,
+            DisplayMemberPath = "Display",
+            SelectedValuePath = "Minutes",
+            SelectedValue = selectedItem.ReminderOffsetMinutes ?? 0,
+            Margin = new Thickness(0, 0, 0, 8),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            FontSize = 14
+        };
 
         editPanel.Children.Add(titleLabel);
         editPanel.Children.Add(titleTextBox);
         editPanel.Children.Add(dateLabel);
         editPanel.Children.Add(datePicker);
+        editPanel.Children.Add(timeLabel);
+        editPanel.Children.Add(timeTextBox);
+        editPanel.Children.Add(timeErrorText);
+        editPanel.Children.Add(offsetLabel);
+        editPanel.Children.Add(offsetComboBox);
 
         var originalTitle = selectedItem.Title;
         var originalDueDate = selectedItem.DueDate;
+        var originalDueTime = selectedItem.DueTime;
+        var originalOffset = selectedItem.ReminderOffsetMinutes;
 
         DialogService.OnDialogConfirmed = content =>
         {
@@ -198,11 +265,31 @@ public partial class MainWindow
                 return false;
             }
 
+            if (!TryParseTimeText(panel.Children[5] as TextBox, out var parsedTime, out var timeError))
+            {
+                timeErrorText.Text = timeError;
+                timeErrorText.Visibility = Visibility.Visible;
+                return false;
+            }
+
+            timeErrorText.Text = string.Empty;
+            timeErrorText.Visibility = Visibility.Collapsed;
+
             selectedItem.Title = textBox.Text.Trim();
 
             if (panel.Children[3] is Controls.CalendarPopup picker)
             {
                 selectedItem.DueDate = picker.SelectedDate;
+            }
+
+            selectedItem.DueTime = parsedTime;
+
+            if (panel.Children[8] is ComboBox combo)
+            {
+                var minutes = combo.SelectedValue is int value ? value : 0;
+                selectedItem.ReminderOffsetMinutes = minutes <= 0 ? null : minutes;
+                // 仅当"日期 + 具体时间"同时存在时，才开启提醒
+                selectedItem.HasReminder = selectedItem.DueDate.HasValue && selectedItem.DueTime.HasValue;
             }
 
             RefreshTaskCollections();
@@ -216,10 +303,39 @@ public partial class MainWindow
         {
             selectedItem.Title = originalTitle;
             selectedItem.DueDate = originalDueDate;
+            selectedItem.DueTime = originalDueTime;
+            selectedItem.ReminderOffsetMinutes = originalOffset;
         }
 
         DialogService.OnDialogConfirmed = null;
     }
+
+    private static bool TryParseTimeText(TextBox? textBox, out TimeOnly? time, out string error)
+    {
+        time = null;
+        error = string.Empty;
+        if (textBox == null)
+        {
+            return true;
+        }
+
+        var raw = textBox.Text?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(raw))
+        {
+            return true;
+        }
+
+        if (!TimeOnly.TryParseExact(raw, "HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsed))
+        {
+            error = "时间格式应为 HH:mm（如 09:30 或 18:00）";
+            return false;
+        }
+
+        time = parsed;
+        return true;
+    }
+
+    private sealed record OffsetOption(string Display, int Minutes);
 
     private void TaskCheckBox_Checked(object sender, RoutedEventArgs e)
     {

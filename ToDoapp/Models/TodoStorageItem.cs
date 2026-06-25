@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace ToDoapp.Models;
 
@@ -13,6 +15,15 @@ internal sealed class TodoStorageItem
     public DateTime? CompletedDate { get; set; }
 
     public DateTime? DueDate { get; set; }
+
+    [JsonPropertyName("dueTime")]
+    public TimeOnly? DueTime { get; set; }
+
+    [JsonPropertyName("reminderOffsetMinutes")]
+    public int? ReminderOffsetMinutes { get; set; }
+
+    [JsonPropertyName("lastReminderShownAt")]
+    public DateTime? LastReminderShownAt { get; set; }
 
     public bool HasReminder { get; set; }
 
@@ -35,6 +46,9 @@ internal sealed class TodoStorageItem
             CreatedDate = todoItem.CreatedDate,
             CompletedDate = todoItem.CompletedDate,
             DueDate = todoItem.DueDate,
+            DueTime = todoItem.DueTime,
+            ReminderOffsetMinutes = todoItem.ReminderOffsetMinutes,
+            LastReminderShownAt = todoItem.LastReminderShownAt,
             HasReminder = todoItem.HasReminder,
             IsDeleted = todoItem.IsDeleted,
             DeletedDate = todoItem.DeletedDate,
