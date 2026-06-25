@@ -24,7 +24,7 @@ public class SmartTodoParser
     }
 
     private readonly record struct DateExtractionResult(DateTime? DueDate, string MatchedText, string? SourceHint);
-    private readonly record struct TimeExtractionResult(TimeOnly? DueTime, string MatchedText, string? SourceHint);
+    private readonly record struct TimeExtractionResult(TimeOnly? DueTime, string MatchedText, string? SourceHint, int? RelativeOffsetMinutes = null);
     private readonly record struct OffsetExtractionResult(int? OffsetMinutes, string MatchedText, string? SourceHint);
 
     private static readonly Regex GreatDayAfterTomorrowRegex = new(@"(大后天)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -54,10 +54,24 @@ public class SmartTodoParser
 
     // 24h: HH:mm 或 HH:mm:ss，冒号支持半角/全角
     private static readonly Regex Time24hRegex = new(@"(?<!\d)(\d{1,2})[:：](\d{1,2})(?:[:：](\d{1,2}))?(?!\d)", RegexOptions.Compiled);
-    // H点 / H点半 / H点M分
+    // H点 / H点半 / H点M分（阿拉伯数字）
     private static readonly Regex TimeChineseRegex = new(@"(?<!\d)(\d{1,2})点(?:(半|(\d{1,2})分))?(?!\d)", RegexOptions.Compiled);
-    // 上午/下午/晚上/早上/今早/明早/中午/傍晚/凌晨 H点
+    // 上午/下午/晚上/早上/今早/明早/中午/傍晚/凌晨 H点（阿拉伯数字）
     private static readonly Regex TimePeriodRegex = new(@"(上午|下午|晚上|早上|今早|明早|中午|傍晚|凌晨|今晚)\s*(\d{1,2})点(?:(半|(\d{1,2})分))?", RegexOptions.Compiled);
+
+    // H点 / H点半 / H点M分（汉字数字，如四点半、两点十五分）
+    private static readonly Regex ChineseNumeralTimeRegex = new(
+        @"(?<![〇零一二两三四五六七八九十百千万\d])([〇零一二两三四五六七八九十百千万]+)点(?:(半)|([〇零一二两三四五六七八九十百千万]+)分)?(?![〇零一二两三四五六七八九十百千万\d])",
+        RegexOptions.Compiled);
+    // 上午/下午... H点（汉字数字，如下午四点半）
+    private static readonly Regex ChineseNumeralTimePeriodRegex = new(
+        @"(上午|下午|晚上|早上|今早|明早|中午|傍晚|凌晨|今晚)\s*([〇零一二两三四五六七八九十百千万]+)点(?:(半)|([〇零一二两三四五六七八九十百千万]+)分)?",
+        RegexOptions.Compiled);
+
+    // 相对当前时间：半小时后、十分钟后、一小时后、两天后
+    private static readonly Regex RelativeTimeRegex = new(
+        @"(?<!\d)(半小?时|([\d〇零一二两三四五六七八九十百千万]+)\s*分\s*钟?|([\d〇零一二两三四五六七八九十百千万]+)\s*小?时|([\d〇零一二两三四五六七八九十百千万]+)\s*天)(?:后|以后)(?!\d)",
+        RegexOptions.Compiled);
 
     // 提前N分钟/半小时/一刻钟/N小时/N天
     private static readonly Regex ReminderOffsetRegex = new(
@@ -106,16 +120,29 @@ public class SmartTodoParser
     {
         var cleanedInput = input.Trim();
         var dateResult = ExtractDate(cleanedInput, referenceDate.Date, holidayDateResolver);
-        var timeResult = ExtractTime(cleanedInput);
+        var timeResult = ExtractTime(cleanedInput, referenceDate);
         var offsetResult = ExtractReminderOffset(cleanedInput, dateResult.MatchedText, timeResult.MatchedText);
+
+        var dueDate = dateResult.DueDate;
+        var dueTime = timeResult.DueTime;
+        var dateSourceHint = dateResult.SourceHint;
+
+        // 相对当前时间（如半小时后）需要同时确定日期和时间
+        if (timeResult.RelativeOffsetMinutes.HasValue)
+        {
+            var targetDateTime = referenceDate.AddMinutes(timeResult.RelativeOffsetMinutes.Value);
+            dueDate = targetDateTime.Date;
+            dueTime = TimeOnly.FromDateTime(targetDateTime);
+            dateSourceHint ??= "相对当前";
+        }
 
         return new ParsedTodoResult
         {
-            DueDate = dateResult.DueDate,
-            DueTime = timeResult.DueTime,
+            DueDate = dueDate,
+            DueTime = dueTime,
             ReminderOffsetMinutes = offsetResult.OffsetMinutes,
             Title = ExtractTitle(cleanedInput, dateResult.MatchedText, timeResult.MatchedText, offsetResult.MatchedText),
-            DateSourceHint = dateResult.SourceHint,
+            DateSourceHint = dateSourceHint,
             TimeSourceHint = timeResult.SourceHint,
             OffsetSourceHint = offsetResult.SourceHint
         };
@@ -446,7 +473,7 @@ public class SmartTodoParser
         };
     }
 
-    private static TimeExtractionResult ExtractTime(string input)
+    private static TimeExtractionResult ExtractTime(string input, DateTime referenceDate)
     {
         var candidates = new List<TimeExtractionResult>();
 
@@ -459,6 +486,23 @@ public class SmartTodoParser
             if (TryBuildTime(hour, minute, period, out var time))
             {
                 candidates.Add(new TimeExtractionResult(time, periodMatch.Value, "时段"));
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            var chinesePeriodMatch = ChineseNumeralTimePeriodRegex.Match(input);
+            if (chinesePeriodMatch.Success)
+            {
+                var period = ResolvePeriod(chinesePeriodMatch.Groups[1].Value);
+                if (TryParseHour(chinesePeriodMatch.Groups[2].Value, out var hour))
+                {
+                    var minute = ResolveMinutes(chinesePeriodMatch.Groups[3].Value, string.Empty, chinesePeriodMatch.Groups[4].Value);
+                    if (TryBuildTime(hour, minute, period, out var time))
+                    {
+                        candidates.Add(new TimeExtractionResult(time, chinesePeriodMatch.Value, "时段"));
+                    }
+                }
             }
         }
 
@@ -478,6 +522,22 @@ public class SmartTodoParser
 
         if (candidates.Count == 0)
         {
+            var chineseNumeralMatch = ChineseNumeralTimeRegex.Match(input);
+            if (chineseNumeralMatch.Success)
+            {
+                if (TryParseHour(chineseNumeralMatch.Groups[1].Value, out var hour))
+                {
+                    var minute = ResolveMinutes(chineseNumeralMatch.Groups[2].Value, string.Empty, chineseNumeralMatch.Groups[3].Value);
+                    if (TryBuildTime(hour, minute, DayPeriod.None, out var time))
+                    {
+                        candidates.Add(new TimeExtractionResult(time, chineseNumeralMatch.Value, "中文时间"));
+                    }
+                }
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
             var match24 = Time24hRegex.Match(input);
             if (match24.Success)
             {
@@ -486,6 +546,21 @@ public class SmartTodoParser
                 if (TryBuildTime(hour, minute, DayPeriod.None, out var time))
                 {
                     candidates.Add(new TimeExtractionResult(time, match24.Value, "24小时"));
+                }
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            var relativeMatch = RelativeTimeRegex.Match(input);
+            if (relativeMatch.Success)
+            {
+                var offsetMinutes = ResolveRelativeOffsetMinutes(relativeMatch);
+                if (offsetMinutes.HasValue)
+                {
+                    var targetDateTime = referenceDate.AddMinutes(offsetMinutes.Value);
+                    var time = TimeOnly.FromDateTime(targetDateTime);
+                    candidates.Add(new TimeExtractionResult(time, relativeMatch.Value, "相对当前", offsetMinutes.Value));
                 }
             }
         }
@@ -564,14 +639,131 @@ public class SmartTodoParser
         return new OffsetExtractionResult(minutes, match.Value, hint);
     }
 
-    private static int ResolveMinutes(string halfText, string digitText)
+    private static int ResolveMinutes(string halfText, string digitText, string chineseMinuteText = "")
     {
         if (!string.IsNullOrEmpty(digitText) && int.TryParse(digitText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var digit))
         {
             return digit;
         }
 
+        if (!string.IsNullOrEmpty(chineseMinuteText) && TryParseChineseNumber(chineseMinuteText, out var chineseMinute))
+        {
+            return chineseMinute;
+        }
+
         return halfText == "半" ? 30 : 0;
+    }
+
+    private static bool TryParseHour(string text, out int hour)
+    {
+        if (int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out hour))
+        {
+            return true;
+        }
+
+        return TryParseChineseNumber(text, out hour);
+    }
+
+    private static bool TryParseChineseNumber(string text, out int value)
+    {
+        value = 0;
+        if (string.IsNullOrEmpty(text))
+        {
+            return false;
+        }
+
+        var digits = new Dictionary<char, int>
+        {
+            ['〇'] = 0,
+            ['零'] = 0,
+            ['一'] = 1,
+            ['二'] = 2,
+            ['两'] = 2,
+            ['三'] = 3,
+            ['四'] = 4,
+            ['五'] = 5,
+            ['六'] = 6,
+            ['七'] = 7,
+            ['八'] = 8,
+            ['九'] = 9
+        };
+
+        if (text.Length == 1 && digits.TryGetValue(text[0], out value))
+        {
+            return true;
+        }
+
+        int result = 0;
+        int current = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c == '十')
+            {
+                if (current == 0)
+                {
+                    result += 10;
+                }
+                else
+                {
+                    result += current * 10;
+                    current = 0;
+                }
+            }
+            else if (digits.TryGetValue(c, out var d))
+            {
+                current = d;
+                if (i + 1 >= text.Length || text[i + 1] != '十')
+                {
+                    result += current;
+                    current = 0;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        value = result;
+        return value is >= 0 and <= 99;
+    }
+
+    private static int? ResolveRelativeOffsetMinutes(Match match)
+    {
+        if (match.Value.Contains("半小时"))
+        {
+            return 30;
+        }
+
+        if (match.Groups[2].Success)
+        {
+            var minuteText = match.Groups[2].Value.Trim();
+            if (int.TryParse(minuteText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var minute) || TryParseChineseNumber(minuteText, out minute))
+            {
+                return minute;
+            }
+        }
+
+        if (match.Groups[3].Success)
+        {
+            var hourText = match.Groups[3].Value.Trim();
+            if (int.TryParse(hourText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var hour) || TryParseChineseNumber(hourText, out hour))
+            {
+                return hour * 60;
+            }
+        }
+
+        if (match.Groups[4].Success)
+        {
+            var dayText = match.Groups[4].Value.Trim();
+            if (int.TryParse(dayText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var day) || TryParseChineseNumber(dayText, out day))
+            {
+                return day * 24 * 60;
+            }
+        }
+
+        return null;
     }
 
     private enum DayPeriod
@@ -681,8 +873,11 @@ public class SmartTodoParser
 
         title = TimeQualifierRegex.Replace(title, " ");
         title = ReminderOffsetRegex.Replace(title, " ");
+        title = RelativeTimeRegex.Replace(title, " ");
         title = TimePeriodRegex.Replace(title, " ");
+        title = ChineseNumeralTimePeriodRegex.Replace(title, " ");
         title = TimeChineseRegex.Replace(title, " ");
+        title = ChineseNumeralTimeRegex.Replace(title, " ");
         title = Time24hRegex.Replace(title, " ");
         title = NormalizeSeparators(title);
 

@@ -179,6 +179,76 @@ public class SmartTodoParserTests
         Assert.Contains("405会议室", result.Title);
     }
 
+    [Theory]
+    [InlineData("四点半 开会", 4, 30, "开会")]
+    [InlineData("两点 起床", 2, 0, "起床")]
+    [InlineData("四点十五分 出发", 4, 15, "出发")]
+    [InlineData("十一点半 吃饭", 11, 30, "吃饭")]
+    [InlineData("十二点 午休", 12, 0, "午休")]
+    public void Parse_ExtractsChineseNumeralTimeExpressions(string input, int expectedHour, int expectedMinute, string expectedTitle)
+    {
+        var result = SmartTodoParser.Parse(input, new DateTime(2026, 4, 1), new StubHolidayDateResolver());
+
+        Assert.Equal(new TimeOnly(expectedHour, expectedMinute), result.DueTime);
+        Assert.Equal(expectedTitle, result.Title);
+        Assert.Equal("中文时间", result.TimeSourceHint);
+    }
+
+    [Theory]
+    [InlineData("下午四点半 开会", 16, 30, "开会")]
+    [InlineData("晚上八点 看电影", 20, 0, "看电影")]
+    [InlineData("上午两点 起床", 2, 0, "起床")]
+    [InlineData("中午十二点 吃饭", 12, 0, "吃饭")]
+    [InlineData("凌晨三点 起床", 3, 0, "起床")]
+    public void Parse_ExtractsPeriodWithChineseNumeralTime(string input, int expectedHour, int expectedMinute, string expectedTitle)
+    {
+        var result = SmartTodoParser.Parse(input, new DateTime(2026, 4, 1), new StubHolidayDateResolver());
+
+        Assert.Equal(new TimeOnly(expectedHour, expectedMinute), result.DueTime);
+        Assert.Equal(expectedTitle, result.Title);
+        Assert.Equal("时段", result.TimeSourceHint);
+    }
+
+    [Theory]
+    [InlineData("半小时后 开会", 30)]
+    [InlineData("十分钟后 打电话", 10)]
+    [InlineData("一小时后 提交", 60)]
+    [InlineData("两小时后 休息", 120)]
+    [InlineData("一天后 复查", 1440)]
+    public void Parse_ExtractsRelativeFutureTime(string input, int offsetMinutes)
+    {
+        var referenceDate = new DateTime(2026, 4, 1, 14, 0, 0);
+        var result = SmartTodoParser.Parse(input, referenceDate, new StubHolidayDateResolver());
+
+        var expectedDateTime = referenceDate.AddMinutes(offsetMinutes);
+        Assert.Equal(expectedDateTime.Date, result.DueDate);
+        Assert.Equal(TimeOnly.FromDateTime(expectedDateTime), result.DueTime);
+        Assert.Equal("相对当前", result.TimeSourceHint);
+    }
+
+    [Fact]
+    public void Parse_StripsChineseNumeralTimeAndRelativeTimeFromTitle()
+    {
+        var chineseNumeralResult = SmartTodoParser.Parse("下午四点半 提交周报", new DateTime(2026, 4, 1), new StubHolidayDateResolver());
+        Assert.Equal("提交周报", chineseNumeralResult.Title);
+        Assert.DoesNotContain("下午四点半", chineseNumeralResult.Title);
+
+        var relativeResult = SmartTodoParser.Parse("半小时后 开会", new DateTime(2026, 4, 1, 14, 0, 0), new StubHolidayDateResolver());
+        Assert.Equal("开会", relativeResult.Title);
+        Assert.DoesNotContain("半小时后", relativeResult.Title);
+    }
+
+    [Fact]
+    public void Parse_CombinesDateAndChineseNumeralTime()
+    {
+        var referenceDate = new DateTime(2026, 4, 1);
+        var result = SmartTodoParser.Parse("明天下午四点半 提交周报", referenceDate, new StubHolidayDateResolver());
+
+        Assert.Equal(new DateTime(2026, 4, 2), result.DueDate);
+        Assert.Equal(new TimeOnly(16, 30), result.DueTime);
+        Assert.Equal("提交周报", result.Title);
+    }
+
     private sealed class StubHolidayDateResolver : IHolidayDateResolver
     {
         private readonly Dictionary<(string HolidayText, HolidayDateRelation Relation), HolidayDateResolution> _dates = new();
