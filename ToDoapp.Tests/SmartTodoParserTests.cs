@@ -122,6 +122,24 @@ public class SmartTodoParserTests
         Assert.Contains(expectedHintContains, result.OffsetSourceHint!);
     }
 
+    [Theory]
+    [InlineData("明天 9点 提前10分钟提醒 提交报告", 10, "提交报告")]
+    [InlineData("明天 9点 提交报告 提前十分钟", 10, "提交报告")]
+    [InlineData("明天 9点 提交报告 提前两小时", 120, "提交报告")]
+    [InlineData("明天 9点 提交报告 提前1个小时", 60, "提交报告")]
+    [InlineData("明天 9点 提交报告 提前一天", 1440, "提交报告")]
+    public void Parse_ExtractsFlexibleReminderOffsetExpressions(string input, int expectedMinutes, string expectedTitle)
+    {
+        var result = SmartTodoParser.Parse(input, new DateTime(2026, 4, 1), new StubHolidayDateResolver());
+
+        Assert.Equal(new DateTime(2026, 4, 2), result.DueDate);
+        Assert.Equal(new TimeOnly(9, 0), result.DueTime);
+        Assert.Equal(expectedMinutes, result.ReminderOffsetMinutes);
+        Assert.Equal(expectedTitle, result.Title);
+        Assert.DoesNotContain("提前", result.Title);
+        Assert.DoesNotContain("提醒", result.Title);
+    }
+
     [Fact]
     public void Parse_CombinesDateTimeAndOffset()
     {

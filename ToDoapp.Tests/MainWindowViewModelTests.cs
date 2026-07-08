@@ -116,6 +116,62 @@ public class MainWindowViewModelTests
         Assert.Equal("提交重构 2026-05-25", text);
     }
 
+    [Fact]
+    public void BuildTaskClipboardText_IncludesTimeAndReminderOffsetWhenPresent()
+    {
+        var item = new TodoItem
+        {
+            Title = "提交重构",
+            CreatedDate = DateTime.Now,
+            DueDate = new DateTime(2026, 5, 25),
+            DueTime = new TimeOnly(14, 30),
+            ReminderOffsetMinutes = 10,
+            HasReminder = true
+        };
+
+        var text = MainWindowViewModel.BuildTaskClipboardText(item);
+
+        Assert.Equal("提交重构 2026-05-25 14:30 提前 10 分钟", text);
+    }
+
+    [Fact]
+    public void BuildTaskClipboardText_OutputCanBeParsedBackToSameReminderFields()
+    {
+        var item = new TodoItem
+        {
+            Title = "提交重构",
+            CreatedDate = DateTime.Now,
+            DueDate = new DateTime(2026, 5, 25),
+            DueTime = new TimeOnly(14, 30),
+            ReminderOffsetMinutes = 10,
+            HasReminder = true
+        };
+
+        var text = MainWindowViewModel.BuildTaskClipboardText(item);
+        var parsed = SmartTodoParser.Parse(text, new DateTime(2026, 4, 1), new StubHolidayDateResolver());
+
+        Assert.Equal(item.Title, parsed.Title);
+        Assert.Equal(item.DueDate, parsed.DueDate);
+        Assert.Equal(item.DueTime, parsed.DueTime);
+        Assert.Equal(item.ReminderOffsetMinutes, parsed.ReminderOffsetMinutes);
+    }
+
+    [Fact]
+    public void AddSmartTask_WithSelectedDate_KeepsParsedTimeAndReminderOffset()
+    {
+        var service = new FakeTodoService();
+        var viewModel = new MainWindowViewModel(service);
+
+        var todoItem = viewModel.AddSmartTask("14:30 提交重构 提前10分钟提醒", new DateTime(2026, 5, 25));
+
+        Assert.NotNull(todoItem);
+        Assert.Equal("提交重构", todoItem.Title);
+        Assert.Equal(new DateTime(2026, 5, 25), todoItem.DueDate);
+        Assert.Equal(new TimeOnly(14, 30), todoItem.DueTime);
+        Assert.Equal(10, todoItem.ReminderOffsetMinutes);
+        Assert.True(todoItem.HasReminder);
+    }
+
     private sealed class FakeTodoService : ITodoService
     {
         public int SaveCount { get; private set; }
@@ -157,6 +213,14 @@ public class MainWindowViewModelTests
 
         public void ExportTodosToFile(IEnumerable<TodoItem> todos, string filePath)
         {
+        }
+    }
+
+    private sealed class StubHolidayDateResolver : IHolidayDateResolver
+    {
+        public HolidayDateResolution? ResolveHolidayDate(string holidayText, HolidayDateRelation relation, DateTime referenceDate)
+        {
+            return null;
         }
     }
 }

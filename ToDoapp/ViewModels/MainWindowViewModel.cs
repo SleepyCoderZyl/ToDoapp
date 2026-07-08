@@ -164,8 +164,11 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
         if (selectedDueDate.HasValue)
         {
-            // 日期选择器不提供时间 → 不自动开启提醒，避免与"必须具体时间"规则冲突
             todoItem.DueDate = selectedDueDate.Value;
+            todoItem.DueTime = parsedResult.DueTime;
+            todoItem.ReminderOffsetMinutes = parsedResult.ReminderOffsetMinutes;
+            // 手选日期 + 输入框解析时间时，才开启提醒
+            todoItem.HasReminder = parsedResult.DueTime.HasValue;
         }
         else if (parsedResult.DueDate.HasValue)
         {
@@ -452,7 +455,32 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
             text += $" {todoItem.DueDate.Value:yyyy-MM-dd}";
         }
 
+        if (todoItem.DueTime.HasValue)
+        {
+            text += $" {todoItem.DueTime.Value:HH:mm}";
+        }
+
+        if (todoItem.ReminderOffsetMinutes.HasValue && todoItem.ReminderOffsetMinutes.Value > 0)
+        {
+            text += $" {BuildClipboardReminderOffsetText(todoItem.ReminderOffsetMinutes.Value)}";
+        }
+
         return text;
+    }
+
+    private static string BuildClipboardReminderOffsetText(int minutes)
+    {
+        if (minutes % (24 * 60) == 0)
+        {
+            return $"提前 {minutes / (24 * 60)} 天";
+        }
+
+        if (minutes % 60 == 0)
+        {
+            return $"提前 {minutes / 60} 小时";
+        }
+
+        return $"提前 {minutes} 分钟";
     }
 
     private void UpdateArchivedGroups()

@@ -73,9 +73,9 @@ public class SmartTodoParser
         @"(?<!\d)(半小?时|([\d〇零一二两三四五六七八九十百千万]+)\s*分\s*钟?|([\d〇零一二两三四五六七八九十百千万]+)\s*小?时|([\d〇零一二两三四五六七八九十百千万]+)\s*天)(?:后|以后)(?!\d)",
         RegexOptions.Compiled);
 
-    // 提前N分钟/半小时/一刻钟/N小时/N天
+    // 提前N分钟/半小时/一刻钟/N小时/N天，支持中文数字与末尾“提醒”
     private static readonly Regex ReminderOffsetRegex = new(
-        @"提前\s*(?:(\d+)\s*分钟|半小时|一刻钟|(\d+)\s*小时|(\d+)\s*天)",
+        @"提前\s*(?:(?<minutes>[\d〇零一二两三四五六七八九十]+)\s*分\s*钟?|(?<half>半小?时)|(?<quarter>一刻钟)|(?<hours>[\d〇零一二两三四五六七八九十]+)\s*个?\s*小?时|(?<days>[\d〇零一二两三四五六七八九十]+)\s*天)\s*(?:提醒)?",
         RegexOptions.Compiled);
 
     private static readonly Regex LeadingPunctuationRegex = new(@"^\s*[，,。.、；;：:！!?？\s]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -601,27 +601,27 @@ public class SmartTodoParser
 
         int minutes;
         string hint;
-        if (match.Groups[1].Success)
+        if (TryParseMatchedInteger(match, "minutes", out var minuteValue))
         {
-            minutes = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+            minutes = minuteValue;
             hint = $"{minutes} 分钟";
         }
-        else if (match.Groups[2].Success)
+        else if (TryParseMatchedInteger(match, "hours", out var hourValue))
         {
-            minutes = int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) * 60;
-            hint = $"{match.Groups[2].Value} 小时";
+            minutes = hourValue * 60;
+            hint = $"{hourValue} 小时";
         }
-        else if (match.Groups[3].Success)
+        else if (TryParseMatchedInteger(match, "days", out var dayValue))
         {
-            minutes = int.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture) * 24 * 60;
-            hint = $"{match.Groups[3].Value} 天";
+            minutes = dayValue * 24 * 60;
+            hint = $"{dayValue} 天";
         }
-        else if (match.Value.Contains("半小时"))
+        else if (match.Groups["half"].Success)
         {
             minutes = 30;
             hint = "半小时";
         }
-        else if (match.Value.Contains("一刻钟"))
+        else if (match.Groups["quarter"].Success)
         {
             minutes = 15;
             hint = "一刻钟";
@@ -637,6 +637,15 @@ public class SmartTodoParser
         }
 
         return new OffsetExtractionResult(minutes, match.Value, hint);
+    }
+
+    private static bool TryParseMatchedInteger(Match match, string groupName, out int value)
+    {
+        value = 0;
+        var text = match.Groups[groupName].Value.Trim();
+        return !string.IsNullOrEmpty(text) &&
+            (int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) ||
+             TryParseChineseNumber(text, out value));
     }
 
     private static int ResolveMinutes(string halfText, string digitText, string chineseMinuteText = "")

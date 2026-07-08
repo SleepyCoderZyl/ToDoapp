@@ -134,13 +134,13 @@ public partial class MainWindow
 
         var editPanel = new StackPanel
         {
-            Margin = new Thickness(0, 8, 0, 8)
+            Margin = new Thickness(0, 4, 0, 4)
         };
 
         var titleLabel = new TextBlock
         {
             Text = "标题",
-            FontSize = 13,
+            FontSize = 12,
             Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 0, 0, 6)
         };
@@ -149,8 +149,8 @@ public partial class MainWindow
         {
             Text = selectedItem.Title,
             FontSize = 14,
-            Padding = new Thickness(10, 8, 10, 8),
-            Margin = new Thickness(0, 0, 0, 16),
+            MinHeight = 40,
+            Margin = new Thickness(0, 0, 0, 14),
             MaxLength = AppConstants.MaxTitleLength,
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
@@ -163,7 +163,7 @@ public partial class MainWindow
         var dateLabel = new TextBlock
         {
             Text = "截止日期（可选）",
-            FontSize = 13,
+            FontSize = 12,
             Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 0, 0, 6)
         };
@@ -178,18 +178,18 @@ public partial class MainWindow
 
         var timeLabel = new TextBlock
         {
-            Text = "具体时间（可选，格式 HH:mm）",
-            FontSize = 13,
+            Text = "提醒时间（可选，HH:mm）",
+            FontSize = 12,
             Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
-            Margin = new Thickness(0, 8, 0, 6)
+            Margin = new Thickness(0, 10, 0, 6)
         };
 
         var timeTextBox = new TextBox
         {
             Text = selectedItem.DueTime?.ToString("HH:mm") ?? string.Empty,
             FontSize = 14,
-            Padding = new Thickness(10, 8, 10, 8),
-            Margin = new Thickness(0, 0, 0, 6),
+            MinHeight = 40,
+            Margin = new Thickness(0, 0, 0, 4),
             MaxLength = 5,
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
@@ -203,16 +203,16 @@ public partial class MainWindow
             Text = string.Empty,
             Foreground = (Brush)Application.Current.Resources["DangerBrush"],
             FontSize = 12,
-            Margin = new Thickness(0, 0, 0, 8),
+            Margin = new Thickness(2, 0, 0, 6),
             Visibility = Visibility.Collapsed
         };
 
         var offsetLabel = new TextBlock
         {
             Text = "提前提醒",
-            FontSize = 13,
+            FontSize = 12,
             Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
-            Margin = new Thickness(0, 8, 0, 6)
+            Margin = new Thickness(0, 10, 0, 6)
         };
 
         var offsetOptions = new System.Collections.Generic.List<OffsetOption>
@@ -232,10 +232,14 @@ public partial class MainWindow
             DisplayMemberPath = "Display",
             SelectedValuePath = "Minutes",
             SelectedValue = selectedItem.ReminderOffsetMinutes ?? 0,
-            Margin = new Thickness(0, 0, 0, 8),
+            Margin = new Thickness(0, 0, 0, 4),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             FontSize = 14
         };
+        if (Application.Current.Resources["ModernComboBoxStyle"] is Style comboBoxStyle)
+        {
+            offsetComboBox.Style = comboBoxStyle;
+        }
 
         editPanel.Children.Add(titleLabel);
         editPanel.Children.Add(titleTextBox);
@@ -335,7 +339,10 @@ public partial class MainWindow
         return true;
     }
 
-    private sealed record OffsetOption(string Display, int Minutes);
+    private sealed record OffsetOption(string Display, int Minutes)
+    {
+        public override string ToString() => Display;
+    }
 
     private void TaskCheckBox_Checked(object sender, RoutedEventArgs e)
     {
