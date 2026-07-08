@@ -227,6 +227,21 @@ public class SmartTodoParserTests
     }
 
     [Fact]
+    public void Parse_DefaultOverload_UsesCurrentTimeForRelativeExpressions()
+    {
+        var before = DateTime.Now;
+        var result = SmartTodoParser.Parse("两分钟后 开会");
+        var after = DateTime.Now;
+
+        Assert.True(result.DueTime.HasValue);
+        Assert.Equal("相对当前", result.TimeSourceHint);
+
+        var actualDateTime = result.DueDate!.Value.Date.Add(result.DueTime.Value.ToTimeSpan());
+        Assert.InRange(actualDateTime, before.AddMinutes(2), after.AddMinutes(2));
+        Assert.Equal("开会", result.Title);
+    }
+
+    [Fact]
     public void Parse_StripsChineseNumeralTimeAndRelativeTimeFromTitle()
     {
         var chineseNumeralResult = SmartTodoParser.Parse("下午四点半 提交周报", new DateTime(2026, 4, 1), new StubHolidayDateResolver());

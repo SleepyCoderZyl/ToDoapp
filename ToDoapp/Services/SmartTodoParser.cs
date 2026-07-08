@@ -113,7 +113,7 @@ public class SmartTodoParser
 
     public static ParsedTodoResult Parse(string input)
     {
-        return Parse(input, DateTime.Today, HolidayCalendarService.Instance);
+        return Parse(input, DateTime.Now, HolidayCalendarService.Instance);
     }
 
     public static ParsedTodoResult Parse(string input, DateTime referenceDate, IHolidayDateResolver holidayDateResolver)
