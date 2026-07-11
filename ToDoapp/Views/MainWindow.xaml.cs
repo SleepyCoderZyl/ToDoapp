@@ -22,6 +22,7 @@ public partial class MainWindow : Window, ITrayActionHandler
     private ObservableCollection<TodoItem> _archivedTasks => _viewModel.ArchivedTasks;
     private ObservableCollection<ArchivedGroup> _archivedGroups => _viewModel.ArchivedGroups;
     private DispatcherTimer _mainTimer = new();
+    private readonly DispatcherTimer _statusResetTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private DateTime _lastAutoSaveTime = DateTime.Now;
     private DateTime _lastOverdueCheckTime = DateTime.Now;
     private DateTime _lastTrashCleanupTime = DateTime.Now;
@@ -58,6 +59,7 @@ public partial class MainWindow : Window, ITrayActionHandler
     public MainWindow()
     {
         InitializeComponent();
+        _statusResetTimer.Tick += StatusResetTimer_Tick;
         UpdateThemeToggleButton();
         _opacityManager = WidgetOpacityManager.Instance;
         _viewModel = new MainWindowViewModel(new TodoService());
@@ -72,6 +74,7 @@ public partial class MainWindow : Window, ITrayActionHandler
 
         _opacityManager.OpacityChanged += OnOpacityChanged;
         SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+        SettingsService.Instance.SettingsSaveFailed += OnSettingsSaveFailed;
         ThemeService.Instance.ThemeChanged += OnThemeChanged;
         HolidayCalendarService.Instance.WarmupStatusChanged += OnHolidayWarmupStatusChanged;
         SourceInitialized += OnMainWindowSourceInitialized;
@@ -96,10 +99,12 @@ public partial class MainWindow : Window, ITrayActionHandler
         {
             SaveData();
             _mainTimer.Stop();
+            _statusResetTimer.Stop();
             _systemTrayService?.Dispose();
             _globalHotKeyService?.Dispose();
             ThemeService.Instance.ThemeChanged -= OnThemeChanged;
             HolidayCalendarService.Instance.WarmupStatusChanged -= OnHolidayWarmupStatusChanged;
+            SettingsService.Instance.SettingsSaveFailed -= OnSettingsSaveFailed;
         }
 
         base.OnClosed(e);

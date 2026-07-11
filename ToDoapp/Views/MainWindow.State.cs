@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using ToDoapp.Models;
 using ToDoapp.Services;
@@ -108,18 +107,31 @@ public partial class MainWindow
             StatusTextBlock.ToolTip = _viewModel.StatusDetail;
         }
 
-        Task.Delay(5000).ContinueWith(_ =>
+        _statusResetTimer.Stop();
+        _statusResetTimer.Start();
+    }
+
+    private void StatusResetTimer_Tick(object? sender, EventArgs e)
+    {
+        _statusResetTimer.Stop();
+        _viewModel.ResetStatus();
+        if (StatusTextBlock != null)
         {
-            Dispatcher.Invoke(() =>
-            {
-                _viewModel.ResetStatus();
-                if (StatusTextBlock != null)
-                {
-                    StatusTextBlock.Text = _viewModel.StatusMessage;
-                    StatusTextBlock.ToolTip = _viewModel.StatusDetail;
-                }
-            });
-        });
+            StatusTextBlock.Text = _viewModel.StatusMessage;
+            StatusTextBlock.ToolTip = _viewModel.StatusDetail;
+        }
+    }
+
+    private void OnSettingsSaveFailed(object? sender, SettingsSaveFailedEventArgs e)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnSettingsSaveFailed(sender, e));
+            return;
+        }
+
+        UpdateStatus("设置保存失败", e.ErrorMessage);
+        _systemTrayService?.ShowNotification("待办便签", "设置保存失败，请检查磁盘空间或文件权限。");
     }
 
     private void OnHolidayWarmupStatusChanged(object? sender, HolidayWarmupStatusChangedEventArgs e)
