@@ -26,7 +26,7 @@
                             UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1" SnapsToDevicePixels="True">
+    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
 
         <Grid Margin="20" FocusManager.FocusedElement="{Binding ElementName=InputTextBox}">
             <Grid.RowDefinitions>

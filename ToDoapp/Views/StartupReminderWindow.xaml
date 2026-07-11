@@ -30,23 +30,24 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
 
-    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1">
+    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
 
-        <Grid Margin="22">
+        <Grid Margin="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid Margin="0,0,0,18">
+            <Border Grid.Row="0" Style="{StaticResource DialogHeaderContainerStyle}"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0">
+                    <StackPanel Grid.Column="0" Margin="22,22,0,18">
                         <TextBlock Text="{Binding TitleText}"
                                    FontSize="20"
                                    FontWeight="SemiBold"
@@ -58,17 +59,20 @@
                     </StackPanel>
 
                     <Button Grid.Column="1"
-                            Content="&#xE711;"
-                            FontFamily="Segoe Fluent Icons"
-                            Style="{StaticResource IconButtonStyle}"
-                            Foreground="{DynamicResource DangerBrush}"
-                            Click="CloseButton_Click"/>
+                            Style="{StaticResource TitleBarCloseButtonStyle}"
+                            Height="52"
+                            VerticalAlignment="Top"
+                            Click="CloseButton_Click">
+                        <Viewbox Width="{StaticResource DialogTitleBarIconSize}" Height="{StaticResource DialogTitleBarIconSize}">
+                            <Path Data="{StaticResource CloseIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
+                        </Viewbox>
+                    </Button>
                 </Grid>
             </Border>
 
             <ScrollViewer Grid.Row="1"
                           x:Name="BodyScrollViewer"
-                          Margin="0,0,0,18"
+                          Margin="22,0,22,18"
                           MaxHeight="400"
                           VerticalScrollBarVisibility="Auto">
                 <StackPanel>
@@ -113,7 +117,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <Grid Grid.Row="2" Margin="0,4,0,0">
+            <Grid Grid.Row="2" Margin="22,4,22,22">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>

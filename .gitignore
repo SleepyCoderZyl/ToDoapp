@@ -87,3 +87,6 @@ msbuild.wrn
 *.scc
 _ReSharper*/
 [Tt]humbs.db
+
+# Trae design documents
+.trae/documents/

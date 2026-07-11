@@ -9,6 +9,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="待办便签" Height="700" Width="420"
+        MinWidth="420" MaxWidth="420" MinHeight="700"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -58,19 +59,19 @@
         </EventTrigger>
     </Window.Triggers>
 
-    <Border x:Name="MainBorder" Opacity="0" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="{StaticResource RadiusWindow}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" SnapsToDevicePixels="True">
+    <Border x:Name="MainBorder" Opacity="0" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="{StaticResource RadiusWindow}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
         <Grid>
             <Grid x:Name="MainInterfaceGrid">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="52"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
             
-            <Border Grid.Row="0" Background="{DynamicResource TitleBarBrush}" CornerRadius="8,8,0,0" 
+            <Border Grid.Row="0" Style="{StaticResource TitleBarContainerStyle}"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid Margin="16,10">
+                <Grid Margin="16,0,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -83,43 +84,48 @@
                     <TextBlock Grid.Column="0" Text="待办便签" Foreground="{DynamicResource TextPrimaryBrush}" 
                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     
-                    <Button Grid.Column="1" x:Name="SettingsButton" Width="32" Height="32"
-                           Click="SettingsButton_Click" ToolTip="设置" Style="{StaticResource IconButtonStyle}"
+                    <Button Grid.Column="1" x:Name="SettingsButton"
+                           Click="SettingsButton_Click" ToolTip="设置" Style="{StaticResource TitleBarButtonStyle}"
+                           VerticalAlignment="Stretch"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
                             <Path Data="{StaticResource SettingsIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
                         </Viewbox>
                     </Button>
                     
-                    <Button Grid.Column="2" x:Name="ThemeToggleButton" Width="32" Height="32" Padding="6"
+                    <Button Grid.Column="2" x:Name="ThemeToggleButton"
                            Click="ThemeToggleButton_Click" ToolTip="切换到浅色"
-                           Style="{StaticResource IconButtonStyle}"
+                           Style="{StaticResource TitleBarButtonStyle}"
+                           VerticalAlignment="Stretch"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <Viewbox x:Name="ThemeToggleButtonIconBox" Width="{StaticResource ThemeDayIconSize}" Height="{StaticResource ThemeDayIconSize}">
                             <Path x:Name="ThemeToggleButtonIcon" Data="{StaticResource DayIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
                         </Viewbox>
                     </Button>
                     
-                    <Button Grid.Column="3" x:Name="WidgetModeButton" Width="32" Height="32"
+                    <Button Grid.Column="3" x:Name="WidgetModeButton"
                            Click="WidgetModeButton_Click" ToolTip="切换小组件模式" 
-                           Style="{StaticResource IconButtonStyle}"
+                           Style="{StaticResource TitleBarButtonStyle}"
+                           VerticalAlignment="Stretch"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
                             <Path x:Name="WidgetModeButtonIcon" Data="{StaticResource WidgetModeIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
                         </Viewbox>
                     </Button>
                     
-                    <Button Grid.Column="4" x:Name="MinimizeButton" Width="32" Height="32"
-                           Click="MinimizeButton_Click" ToolTip="最小化" Style="{StaticResource IconButtonStyle}"
+                    <Button Grid.Column="4" x:Name="MinimizeButton"
+                           Click="MinimizeButton_Click" ToolTip="最小化" Style="{StaticResource TitleBarButtonStyle}"
+                           VerticalAlignment="Stretch"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
                             <Path Data="{StaticResource MinimizeIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
                         </Viewbox>
                     </Button>
                     
-                    <Button Grid.Column="5" Width="32" Height="32"
+                    <Button Grid.Column="5"
                            Click="ExitButton_Click"
-                           Style="{StaticResource IconButtonStyle}" Foreground="{DynamicResource DangerBrush}"
+                           Style="{StaticResource TitleBarCloseButtonStyle}"
+                           VerticalAlignment="Stretch"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
                         <Viewbox Width="{StaticResource TitleBarIconSize}" Height="{StaticResource TitleBarIconSize}">
                             <Path Data="{StaticResource CloseIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
@@ -152,7 +158,7 @@
                                   IsHitTestVisible="False"/>
                     </Grid>
 
-                    <Grid Grid.Row="1" Margin="0,0,0,0" VerticalAlignment="Center">
+                    <Grid Grid.Row="1" Margin="0" VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -206,31 +212,6 @@
                                     <MenuItem Header="复制" Click="CopyTask_Click" Style="{StaticResource ModernMenuItemStyle}"/>
                                 </ContextMenu>
                             </ListBox.ContextMenu>
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="RenderTransform">
-                                        <Setter.Value>
-                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ListBoxItem">
-                                                <Border x:Name="border" Background="Transparent" 
-                                                        CornerRadius="4" Margin="0,2" Padding="4">
-                                                    <ContentPresenter/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid MinHeight="44">
@@ -338,31 +319,6 @@
                                     <MenuItem Header="归档" Click="ArchiveTask_Click" Style="{StaticResource ModernMenuItemStyle}"/>
                                 </ContextMenu>
                             </ListBox.ContextMenu>
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="RenderTransform">
-                                        <Setter.Value>
-                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ListBoxItem">
-                                                <Border x:Name="border" Background="Transparent" 
-                                                        CornerRadius="4" Margin="0,2" Padding="4">
-                                                    <ContentPresenter/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid MinHeight="44">
@@ -721,6 +677,9 @@
                                                         <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
                                                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
                                                         </Trigger>
+                                                        <Trigger Property="IsFocused" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                        </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
                                             </Setter.Value>
@@ -764,31 +723,6 @@
                                         <MenuItem Header="永久删除" Click="PermanentDeleteTask_Click" Style="{StaticResource ModernMenuItemStyle}"/>
                                     </ContextMenu>
                                 </ListBox.ContextMenu>
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="RenderTransform">
-                                            <Setter.Value>
-                                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ListBoxItem">
-                                                    <Border x:Name="border" Background="Transparent" 
-                                                            CornerRadius="4" Margin="0,2" Padding="4">
-                                                        <ContentPresenter/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid MinHeight="44">

@@ -125,11 +125,41 @@
                 </MultiDataTrigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="WidgetListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource ModernListBoxItemStyle}">
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="border"
+                                Background="Transparent"
+                                CornerRadius="{StaticResource RadiusInput}"
+                                Margin="0,2"
+                                Padding="6,4">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     
     <Grid>
         <!-- 背景层 - 单独控制透明度 -->
-        <Border x:Name="MainBorder" CornerRadius="8" BorderThickness="1" Background="{DynamicResource WidgetBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}">
+        <Border x:Name="MainBorder" CornerRadius="8" BorderThickness="1" Background="{DynamicResource WidgetBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" SnapsToDevicePixels="True" ClipToBounds="True">
         </Border>
         
         <!-- 内容层 - 不受背景透明度影响 -->
@@ -140,32 +170,8 @@
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      ScrollViewer.VerticalScrollBarVisibility="Visible"
                      VirtualizingPanel.IsVirtualizing="True"
-                     VirtualizingPanel.VirtualizationMode="Recycling">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="RenderTransform">
-                            <Setter.Value>
-                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                            </Setter.Value>
-                        </Setter>
-                        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="border" Background="Transparent" 
-                                            CornerRadius="{StaticResource RadiusInput}" Margin="0,2" Padding="6,4">
-                                        <ContentPresenter/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.ItemContainerStyle>
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     ItemContainerStyle="{StaticResource WidgetListBoxItemStyle}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid MinHeight="40" ClipToBounds="True">

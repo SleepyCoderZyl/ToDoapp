@@ -71,18 +71,18 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+    <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="52"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- 标题栏 -->
-            <Border Grid.Row="0" Background="{DynamicResource TitleBarBrush}" CornerRadius="8,8,0,0"
+            <Border Grid.Row="0" Style="{StaticResource TitleBarContainerStyle}"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid Margin="20,14">
+                <Grid Margin="20,0,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -94,10 +94,9 @@
                               VerticalAlignment="Center"/>
 
                     <Button Grid.Column="1"
-                           Width="32" Height="32"
                            Click="CloseButton_Click"
-                           Style="{StaticResource IconButtonStyle}"
-                           Foreground="{DynamicResource DangerBrush}">
+                           Style="{StaticResource TitleBarCloseButtonStyle}"
+                           VerticalAlignment="Stretch">
                         <Viewbox Width="{StaticResource DialogTitleBarIconSize}" Height="{StaticResource DialogTitleBarIconSize}">
                             <Path Data="{StaticResource CloseIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform"/>
                         </Viewbox>
