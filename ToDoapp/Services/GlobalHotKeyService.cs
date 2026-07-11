@@ -25,6 +25,7 @@ public class GlobalHotKeyService : IDisposable
     private int _currentId = 0;
     private readonly Dictionary<GlobalHotKeyAction, int> _registeredHotKeyIds = [];
     private readonly Dictionary<int, GlobalHotKeyAction> _registeredActions = [];
+    private readonly Dictionary<GlobalHotKeyAction, (uint Modifiers, uint Key)> _registeredHotKeyBindings = [];
     private readonly Dictionary<GlobalHotKeyAction, (uint Modifiers, uint Key)> _pendingRegistrations = [];
 
     public event Action<GlobalHotKeyAction>? HotKeyPressed;
@@ -72,11 +73,13 @@ public class GlobalHotKeyService : IDisposable
             return -1;
         }
         
-        if (_registeredHotKeyIds.TryGetValue(action, out var registeredId))
+        if (_registeredHotKeyIds.TryGetValue(action, out var registeredId) &&
+            _registeredHotKeyBindings.TryGetValue(action, out var registeredBinding) &&
+            registeredBinding == (modifiers, key))
         {
-            UnregisterHotKey(registeredId);
+            return registeredId;
         }
-        
+
         try
         {
             int id = ++_currentId;
@@ -87,8 +90,15 @@ public class GlobalHotKeyService : IDisposable
                 return -1;
             }
 
+            if (_registeredHotKeyIds.TryGetValue(action, out registeredId) && !UnregisterHotKey(registeredId))
+            {
+                UnregisterHotKey(_windowHandle, id);
+                return -1;
+            }
+
             _registeredHotKeyIds[action] = id;
             _registeredActions[id] = action;
+            _registeredHotKeyBindings[action] = (modifiers, key);
             return id;
         }
         catch
@@ -132,6 +142,7 @@ public class GlobalHotKeyService : IDisposable
         {
             _registeredActions.Remove(id);
             _registeredHotKeyIds.Remove(action);
+            _registeredHotKeyBindings.Remove(action);
         }
         return result;
     }

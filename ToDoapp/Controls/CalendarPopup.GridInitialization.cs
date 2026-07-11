@@ -173,7 +173,7 @@ public partial class CalendarPopup
 
         // 悬停触发器
         var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty, FindResource("HoverBrush"), "Bd"));
+        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty, FindResource("NeutralHoverBrush"), "Bd"));
         template.Triggers.Add(hoverTrigger);
 
         return template;
@@ -197,7 +197,7 @@ public partial class CalendarPopup
         template.VisualTree = factory;
 
         var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty, FindResource("HoverBrush"), "Bd"));
+        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty, FindResource("NeutralHoverBrush"), "Bd"));
         template.Triggers.Add(hoverTrigger);
 
         return template;

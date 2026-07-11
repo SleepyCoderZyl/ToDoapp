@@ -280,21 +280,22 @@ public partial class MainWindow
         var backupInfos = _todoService.GetBackupInfos();
 
         var rootPanel = new StackPanel();
-        rootPanel.Children.Add(new TextBlock
+        var descriptionText = new TextBlock
         {
             Text = "选择一个备份恢复点。恢复后将立即刷新当前待办列表。",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 0, 0, 12)
-        });
+        };
+        descriptionText.SetResourceReference(TextBlock.ForegroundProperty, "DialogSecondaryForegroundBrush");
+        rootPanel.Children.Add(descriptionText);
 
         var emptyStateText = new TextBlock
         {
             Text = "暂无可用备份。",
-            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 0, 0, 12),
             Visibility = backupInfos.Count == 0 ? Visibility.Visible : Visibility.Collapsed
         };
+        emptyStateText.SetResourceReference(TextBlock.ForegroundProperty, "DialogSecondaryForegroundBrush");
         rootPanel.Children.Add(emptyStateText);
 
         var backupListBox = new ListBox
@@ -314,11 +315,11 @@ public partial class MainWindow
 
         var statusTextBlock = new TextBlock
         {
-            Foreground = (Brush)Application.Current.Resources["DangerBrush"],
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 12, 0, 0),
             Visibility = Visibility.Collapsed
         };
+        statusTextBlock.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush");
         rootPanel.Children.Add(statusTextBlock);
 
         DialogService.OnDialogConfirmed = _ =>

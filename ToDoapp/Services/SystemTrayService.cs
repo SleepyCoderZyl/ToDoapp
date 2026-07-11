@@ -593,7 +593,7 @@ public class SystemTrayService : IDisposable
         return new Border
         {
             Height = 1,
-            Background = GetResourceBrush("BackgroundLightBrush"),
+            Background = GetResourceBrush("DividerBrush"),
             Margin = margin ?? new Thickness(0, 0, 0, 14)
         };
     }

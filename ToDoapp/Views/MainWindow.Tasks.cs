@@ -141,9 +141,9 @@ public partial class MainWindow
         {
             Text = "标题",
             FontSize = 12,
-            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 0, 0, 6)
         };
+        titleLabel.SetResourceReference(TextBlock.ForegroundProperty, "DialogSecondaryForegroundBrush");
 
         var titleTextBox = new TextBox
         {
@@ -164,9 +164,9 @@ public partial class MainWindow
         {
             Text = "截止日期（可选）",
             FontSize = 12,
-            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 0, 0, 6)
         };
+        dateLabel.SetResourceReference(TextBlock.ForegroundProperty, "DialogSecondaryForegroundBrush");
 
         var datePicker = new Controls.CalendarPopup
         {
@@ -180,9 +180,9 @@ public partial class MainWindow
         {
             Text = "提醒时间（可选，HH:mm）",
             FontSize = 12,
-            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 10, 0, 6)
         };
+        timeLabel.SetResourceReference(TextBlock.ForegroundProperty, "DialogSecondaryForegroundBrush");
 
         var timeTextBox = new TextBox
         {
@@ -201,19 +201,19 @@ public partial class MainWindow
         var timeErrorText = new TextBlock
         {
             Text = string.Empty,
-            Foreground = (Brush)Application.Current.Resources["DangerBrush"],
             FontSize = 12,
             Margin = new Thickness(2, 0, 0, 6),
             Visibility = Visibility.Collapsed
         };
+        timeErrorText.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush");
 
         var offsetLabel = new TextBlock
         {
             Text = "提前提醒",
             FontSize = 12,
-            Foreground = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             Margin = new Thickness(0, 10, 0, 6)
         };
+        offsetLabel.SetResourceReference(TextBlock.ForegroundProperty, "DialogSecondaryForegroundBrush");
 
         var offsetOptions = new System.Collections.Generic.List<OffsetOption>
         {

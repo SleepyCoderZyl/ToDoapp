@@ -165,7 +165,7 @@ public class StartupReminderService
             return false;
         }
 
-        return now.Hour == scheduledTime.Hour && now.Minute == scheduledTime.Minute;
+        return TimeOnly.FromDateTime(now) >= scheduledTime;
     }
 
     private static IEnumerable<string> GetEnabledReminderTexts(IEnumerable<StartupReminderEntry>? items)
