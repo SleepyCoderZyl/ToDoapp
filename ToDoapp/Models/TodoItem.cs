@@ -109,6 +109,7 @@ public class TodoItem : INotifyPropertyChanged
 
             _dueTime = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsOverdue));
             OnPropertyChanged(nameof(ReminderTimeDisplay));
             OnPropertyChanged(nameof(ReminderOffsetDisplay));
         }
@@ -156,7 +157,20 @@ public class TodoItem : INotifyPropertyChanged
     }
 
     // 只读属性用于UI显示
-    public bool IsOverdue => DueDate.HasValue && DueDate < DateTime.Now && !IsCompleted;
+    public bool IsOverdue => IsOverdueAt(DateTime.Now);
+
+    internal bool IsOverdueAt(DateTime now)
+    {
+        if (!DueDate.HasValue || IsCompleted)
+        {
+            return false;
+        }
+
+        var dueAt = DueTime.HasValue
+            ? DueDate.Value.Date.Add(DueTime.Value.ToTimeSpan())
+            : DueDate.Value.Date.AddDays(1);
+        return dueAt < now;
+    }
 
     public string DueDateDisplay
     {

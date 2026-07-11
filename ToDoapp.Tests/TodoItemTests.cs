@@ -7,6 +7,49 @@ namespace ToDoapp.Tests;
 public class TodoItemTests
 {
     [Fact]
+    public void IsOverdueAt_WithFutureTimeToday_ReturnsFalse()
+    {
+        var todoItem = new TodoItem
+        {
+            Title = "当天稍后到期",
+            CreatedDate = new DateTime(2026, 5, 13, 9, 0, 0),
+            DueDate = new DateTime(2026, 5, 13),
+            DueTime = new TimeOnly(18, 0)
+        };
+
+        Assert.False(todoItem.IsOverdueAt(new DateTime(2026, 5, 13, 12, 0, 0)));
+        Assert.True(todoItem.IsOverdueAt(new DateTime(2026, 5, 13, 18, 0, 1)));
+    }
+
+    [Fact]
+    public void IsOverdueAt_AllDayTask_ReturnsTrueOnlyAfterDueDateEnds()
+    {
+        var todoItem = new TodoItem
+        {
+            Title = "全天任务",
+            CreatedDate = new DateTime(2026, 5, 13, 9, 0, 0),
+            DueDate = new DateTime(2026, 5, 13)
+        };
+
+        Assert.False(todoItem.IsOverdueAt(new DateTime(2026, 5, 13, 23, 59, 59)));
+        Assert.True(todoItem.IsOverdueAt(new DateTime(2026, 5, 14, 0, 0, 1)));
+    }
+
+    [Fact]
+    public void IsOverdueAt_CompletedTask_ReturnsFalse()
+    {
+        var todoItem = new TodoItem
+        {
+            Title = "已完成任务",
+            CreatedDate = new DateTime(2026, 5, 12, 9, 0, 0),
+            DueDate = new DateTime(2026, 5, 12),
+            IsCompleted = true
+        };
+
+        Assert.False(todoItem.IsOverdueAt(new DateTime(2026, 5, 14, 12, 0, 0)));
+    }
+
+    [Fact]
     public void RefreshTimeSensitiveProperties_RaisesNotificationsForDerivedTimeFields()
     {
         var todoItem = new TodoItem
