@@ -155,7 +155,18 @@ public partial class QuickAddWindow : Window
         }
 
         _todoItems.Insert(0, todoItem);
-        _todoService.SaveTodos(_todoItems);
+        var saveResult = _todoService.SaveTodos(_todoItems);
+        if (!saveResult.IsSuccess)
+        {
+            _todoItems.Remove(todoItem);
+            MessageBox.Show(
+                this,
+                saveResult.ErrorMessage ?? "保存待办事项失败，请稍后重试。",
+                "快速添加失败",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
 
         DialogResult = true;
         Close();
