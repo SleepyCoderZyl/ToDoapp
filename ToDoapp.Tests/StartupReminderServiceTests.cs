@@ -59,7 +59,7 @@ public class StartupReminderServiceTests
     }
 
     [Fact]
-    public void ShouldShowScheduledReminder_ReturnsTrueOnlyAtDueItemMinuteOncePerDay()
+    public void ShouldShowScheduledReminder_ReturnsTrueAtOrAfterDueTimeOncePerDay()
     {
         var settings = new AppSettings
         {
@@ -71,12 +71,13 @@ public class StartupReminderServiceTests
         };
 
         Assert.True(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 5)));
+        Assert.True(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 1, 0)));
 
         settings.ScheduledReminderItems[0].LastScheduledReminderDate = StartupReminderService.GetScheduledReminderDateToken(new DateTime(2026, 4, 4));
         Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 35)));
 
         settings.ScheduledReminderItems[0].LastScheduledReminderDate = null;
-        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 1, 0)));
+        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 8, 59, 59)));
     }
 
     [Fact]
