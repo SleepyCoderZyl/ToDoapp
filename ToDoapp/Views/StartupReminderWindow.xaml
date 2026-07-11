@@ -30,7 +30,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
 
-    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
+    <Border Style="{StaticResource DialogFrameStyle}">
 
         <Grid Margin="0">
             <Grid.RowDefinitions>
@@ -77,8 +77,7 @@
                           VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <Border Padding="16"
-                            Background="{DynamicResource PanelBrush}"
-                            CornerRadius="8"
+                            Style="{StaticResource ElevatedPanelStyle}"
                             Visibility="{Binding HasCustomReminders, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel>
                             <TextBlock Text="自定义提醒"
@@ -100,10 +99,7 @@
                                         <DataTemplate>
                                             <Border Margin="0,0,0,10"
                                                     Padding="12"
-                                                    Background="{DynamicResource CardBrush}"
-                                                    CornerRadius="{StaticResource RadiusInput}"
-                                                    BorderBrush="{DynamicResource BorderBrush}"
-                                                    BorderThickness="1">
+                                                    Style="{StaticResource CardStyle}">
                                                 <TextBlock Text="{Binding}"
                                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                                            TextWrapping="Wrap"/>
@@ -126,7 +122,7 @@
                 <Border Grid.Row="0"
                         Height="1"
                         Margin="0,0,0,14"
-                        Background="{DynamicResource SeparatorBrush}"/>
+                        Background="{DynamicResource DividerBrush}"/>
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>

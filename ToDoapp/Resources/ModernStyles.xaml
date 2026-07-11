@@ -9,6 +9,119 @@
 
     <converters:BorderClipConverter x:Key="BorderClipConverter"/>
 
+    <!-- Fluent semantic surface styles -->
+    <Style x:Key="AppWindowFrameStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource AppBaseSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WindowStrokeBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusWindow}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <Style x:Key="DialogFrameStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource DialogBaseSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WindowStrokeBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusWindow}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <Style x:Key="CommandBarStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource CommandBarSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    </Style>
+
+    <Style x:Key="ContentSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource ContentSurfaceBrush}"/>
+    </Style>
+
+    <Style x:Key="StatusBarStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource StatusBarSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="CornerRadius" Value="0,0,8,8"/>
+    </Style>
+
+    <Style x:Key="SidebarStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource NavigationSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+        <Setter Property="CornerRadius" Value="0,0,0,8"/>
+    </Style>
+
+    <Style x:Key="ElevatedPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource ElevatedSurfaceBrush}"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusOverlay}"/>
+    </Style>
+
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource CardSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusInput}"/>
+    </Style>
+
+    <Style x:Key="WidgetFrameStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource WidgetSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WindowStrokeBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusWindow}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <Style x:Key="NavigationItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Grid>
+                        <Border x:Name="itemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource RadiusInput}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <Border x:Name="selectionIndicator"
+                                Width="3"
+                                Margin="0,6"
+                                HorizontalAlignment="Left"
+                                Background="{DynamicResource NavigationSelectedIndicatorBrush}"
+                                CornerRadius="1.5"
+                                Visibility="Collapsed"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="selectionIndicator" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource NavigationSelectedBackgroundBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource NavigationSelectedForegroundBrush}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsSelected" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource NavigationSelectedBackgroundBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource NavigationSelectedForegroundBrush}"/>
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- 现代化按钮样式 -->
     <Style x:Key="ModernButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
@@ -48,7 +161,8 @@
     <Style x:Key="SecondaryButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource SecondaryButtonBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="16,10"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -58,6 +172,8 @@
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="border"
                             Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{StaticResource RadiusControl}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -68,6 +184,9 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="border" Property="Background" Value="{DynamicResource SecondaryButtonPressedBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -97,11 +216,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PressedBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralPressedBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -130,11 +249,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource TitleBarHoverBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PressedBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource TitleBarPressedBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -171,7 +290,7 @@
 
     <!-- 标题栏容器样式 -->
     <Style x:Key="TitleBarContainerStyle" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource TitleBarBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource TitleBarSurfaceBrush}"/>
         <Setter Property="CornerRadius" Value="8,8,0,0"/>
         <Setter Property="ClipToBounds" Value="True"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -240,9 +359,9 @@
 
     <!-- 简化文本框样式 - 确保可输入 -->
     <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
-        <Setter Property="Background" Value="{DynamicResource InputBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource ControlFillBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="12,10"/>
         <Setter Property="FontSize" Value="14"/>
@@ -310,7 +429,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource PrimarySubtleBrush}"/>
@@ -324,9 +443,9 @@
     </Style>
 
     <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
-        <Setter Property="Background" Value="{DynamicResource InputBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource ControlFillBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="12,9"/>
         <Setter Property="FontSize" Value="14"/>
@@ -399,8 +518,8 @@
                                IsOpen="{TemplateBinding IsDropDownOpen}"
                                Placement="Bottom"
                                PopupAnimation="Slide">
-                            <Border Background="{DynamicResource PanelBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
+                            <Border Background="{DynamicResource OverlaySurfaceBrush}"
+                                    BorderBrush="{DynamicResource SurfaceStrokeBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{StaticResource RadiusOverlay}"
                                     MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
@@ -442,8 +561,8 @@
                         <Border x:Name="checkBorder" 
                                 Width="20" Height="20"
                                 CornerRadius="{StaticResource RadiusControl}"
-                                Background="{DynamicResource InputBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}"
+                                Background="{DynamicResource ControlFillBrush}"
+                                BorderBrush="{DynamicResource ControlStrokeBrush}"
                                 BorderThickness="2"
                                 Margin="0,0,10,0">
                             <TextBlock x:Name="checkMark" 
@@ -575,19 +694,32 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="border"
-                            Background="Transparent"
-                            CornerRadius="4"
-                            Margin="0,2"
-                            Padding="4">
-                        <ContentPresenter/>
-                    </Border>
+                    <Grid Margin="0,2">
+                        <Border x:Name="border"
+                                Background="Transparent"
+                                CornerRadius="{StaticResource RadiusControl}"
+                                Padding="4">
+                            <ContentPresenter/>
+                        </Border>
+                        <Border x:Name="selectionIndicator"
+                                Width="3"
+                                Margin="0,4"
+                                HorizontalAlignment="Left"
+                                Background="{DynamicResource NavigationSelectedIndicatorBrush}"
+                                CornerRadius="1.5"
+                                Visibility="Collapsed"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="selectionIndicator" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource NavigationSelectedBackgroundBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource NavigationSelectedForegroundBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -657,7 +789,7 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="{DynamicResource BackgroundLightBrush}"
+                                            <Border Background="{DynamicResource ScrollBarThumbBrush}"
                                                     CornerRadius="{StaticResource RadiusControl}"
                                                     Margin="1"/>
                                         </ControlTemplate>
@@ -706,7 +838,7 @@
                                         <Thumb>
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border Background="{DynamicResource BackgroundLightBrush}"
+                                                    <Border Background="{DynamicResource ScrollBarThumbBrush}"
                                                             CornerRadius="{StaticResource RadiusControl}"
                                                             Margin="1"/>
                                                 </ControlTemplate>
@@ -760,7 +892,7 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="{DynamicResource BorderBrush}" CornerRadius="3" Margin="1"/>
+                                            <Border Background="{DynamicResource ControlStrokeBrush}" CornerRadius="3" Margin="1"/>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -807,7 +939,7 @@
                                         <Thumb>
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border Background="{DynamicResource BorderBrush}" CornerRadius="3" Margin="1"/>
+                                                    <Border Background="{DynamicResource ControlStrokeBrush}" CornerRadius="3" Margin="1"/>
                                                 </ControlTemplate>
                                             </Thumb.Template>
                                         </Thumb>
@@ -841,8 +973,8 @@
 
     <!-- 现代化右键菜单样式 -->
     <Style x:Key="ModernContextMenuStyle" TargetType="ContextMenu">
-        <Setter Property="Background" Value="{DynamicResource PanelBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource OverlaySurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="FontSize" Value="14"/>
@@ -880,10 +1012,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralPressedBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -893,7 +1025,7 @@
 
     <!-- 现代化分隔线样式 -->
     <Style x:Key="ModernSeparatorStyle" TargetType="Separator">
-        <Setter Property="Background" Value="{DynamicResource SeparatorBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource DividerBrush}"/>
         <Setter Property="Height" Value="1"/>
         <Setter Property="Margin" Value="12,4"/>
         <Setter Property="Template">
@@ -918,7 +1050,7 @@
                     <Grid>
                         <!-- 轨道背景 -->
                         <Border x:Name="TrackBackground"
-                                Background="{DynamicResource BorderBrush}"
+                                Background="{DynamicResource ControlStrokeBrush}"
                                 Height="4"
                                 CornerRadius="2"
                                 VerticalAlignment="Center"

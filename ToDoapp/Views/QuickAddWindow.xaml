@@ -26,7 +26,7 @@
                             UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{DynamicResource DialogBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource DialogBorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
+    <Border Style="{StaticResource DialogFrameStyle}">
 
         <Grid Margin="20" FocusManager.FocusedElement="{Binding ElementName=InputTextBox}">
             <Grid.RowDefinitions>
@@ -54,7 +54,7 @@
                     KeyDown="InputTextBox_KeyDown"
                     Margin="0,0,0,12"/>
             
-            <Border Grid.Row="2" Background="{DynamicResource PanelBrush}" CornerRadius="8" Padding="14,12" Margin="0,0,0,16">
+            <Border Grid.Row="2" Style="{StaticResource ElevatedPanelStyle}" Padding="14,12" Margin="0,0,0,16">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>

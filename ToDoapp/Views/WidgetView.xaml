@@ -145,10 +145,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -159,7 +159,7 @@
     
     <Grid>
         <!-- 背景层 - 单独控制透明度 -->
-        <Border x:Name="MainBorder" CornerRadius="8" BorderThickness="1" Background="{DynamicResource WidgetBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" SnapsToDevicePixels="True" ClipToBounds="True">
+        <Border x:Name="MainBorder" Style="{StaticResource WidgetFrameStyle}">
         </Border>
         
         <!-- 内容层 - 不受背景透明度影响 -->

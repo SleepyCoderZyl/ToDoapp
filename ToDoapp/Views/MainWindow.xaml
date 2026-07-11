@@ -35,12 +35,6 @@
 
         <Style TargetType="ListBox" BasedOn="{StaticResource ModernListBoxStyle}"/>
 
-        <Style x:Key="WidgetStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource WidgetBackgroundBrush}"/>
-            <Setter Property="CornerRadius" Value="{StaticResource RadiusWindow}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
     </Window.Resources>
 
     <Window.Triggers>
@@ -59,7 +53,7 @@
         </EventTrigger>
     </Window.Triggers>
 
-    <Border x:Name="MainBorder" Opacity="0" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="{StaticResource RadiusWindow}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
+    <Border x:Name="MainBorder" Opacity="0" Style="{StaticResource AppWindowFrameStyle}">
         <Grid>
             <Grid x:Name="MainInterfaceGrid">
                 <Grid.RowDefinitions>
@@ -135,7 +129,7 @@
             </Border>
             
             <Border Grid.Row="1"
-                    Background="{DynamicResource SurfaceLightBrush}"
+                    Style="{StaticResource CommandBarStyle}"
                     Padding="16,14">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -189,7 +183,7 @@
             </Border>
 
             <Border Grid.Row="2"
-                    Background="{DynamicResource SurfaceBrush}"
+                    Style="{StaticResource ContentSurfaceStyle}"
                     Padding="12,10">
                 <TabControl x:Name="TaskTabs" Background="Transparent" BorderThickness="0" 
                           TabStripPlacement="Top" Style="{StaticResource ModernTabControlStyle}"
@@ -425,7 +419,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" Padding="12,8">
+                            <Border Grid.Row="0" Background="{DynamicResource ElevatedSurfaceBrush}" Padding="12,8">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -672,13 +666,13 @@
                                                                 <Condition Property="IsSelected" Value="True"/>
                                                                 <Condition Property="HasItems" Value="False"/>
                                                             </MultiTrigger.Conditions>
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BackgroundMediumBrush}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralPressedBrush}"/>
                                                         </MultiTrigger>
                                                         <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                                                         </Trigger>
                                                         <Trigger Property="IsFocused" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -697,7 +691,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             
-                            <Border Grid.Row="0" Background="{DynamicResource PanelBrush}" Padding="12,8">
+                            <Border Grid.Row="0" Background="{DynamicResource ElevatedSurfaceBrush}" Padding="12,8">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -799,12 +793,8 @@
                 </TabControl>
             </Border>
             
-            <Border Grid.Row="3" Background="{DynamicResource TitleBarBrush}" CornerRadius="0,0,8,8" Padding="16,10"
-                    BorderBrush="{DynamicResource BorderBrush}"
+            <Border Grid.Row="3" Style="{StaticResource StatusBarStyle}" Padding="16,10"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Border.BorderThickness>
-                    <Thickness>0,1,0,0</Thickness>
-                </Border.BorderThickness>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

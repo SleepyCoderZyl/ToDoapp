@@ -27,37 +27,6 @@
     </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <!-- 通用 ListBoxItem 样式：左侧设置项 -->
-        <Style x:Key="SettingItemButtonStyle" TargetType="ListBoxItem">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="Margin" Value="0,2"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="{StaticResource RadiusInput}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- 左侧设置项的 DataTemplate -->
         <DataTemplate x:Key="SettingItemTemplate" DataType="{x:Type settings:SettingsPageViewModel}">
             <StackPanel>
@@ -71,7 +40,7 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" SnapsToDevicePixels="True" ClipToBounds="True">
+    <Border Style="{StaticResource AppWindowFrameStyle}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -112,9 +81,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- 左侧设置项列表 -->
-                <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
-                        CornerRadius="0,0,0,8"
-                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <Border Grid.Column="0" Style="{StaticResource SidebarStyle}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="8,12">
                             <!-- 常规设置分类 -->
@@ -126,7 +93,7 @@
                             <ListBox x:Name="GeneralSettingsList"
                                      Background="Transparent"
                                      BorderThickness="0"
-                                     ItemContainerStyle="{StaticResource SettingItemButtonStyle}"
+                                     ItemContainerStyle="{StaticResource NavigationItemStyle}"
                                      ItemTemplate="{StaticResource SettingItemTemplate}"
                                      ItemsSource="{Binding GeneralPages}"
                                      SelectionChanged="SettingItem_SelectionChanged"
@@ -141,7 +108,7 @@
                             <ListBox x:Name="AppearanceSettingsList"
                                      Background="Transparent"
                                      BorderThickness="0"
-                                     ItemContainerStyle="{StaticResource SettingItemButtonStyle}"
+                                     ItemContainerStyle="{StaticResource NavigationItemStyle}"
                                      ItemTemplate="{StaticResource SettingItemTemplate}"
                                      ItemsSource="{Binding AppearancePages}"
                                      SelectionChanged="SettingItem_SelectionChanged"
@@ -151,8 +118,7 @@
                 </Border>
 
                 <!-- 右侧设置内容区域：由 Implicit DataTemplate 自动按 ViewModel 类型选 View -->
-                <Border Grid.Column="1" Background="{DynamicResource ContentBackgroundBrush}"
-                        CornerRadius="0,0,8,0">
+                <Border Grid.Column="1" Style="{StaticResource ContentSurfaceStyle}">
                     <ContentControl Content="{Binding CurrentPage}" Margin="0"/>
                 </Border>
             </Grid>

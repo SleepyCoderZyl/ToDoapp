@@ -24,8 +24,8 @@
                         <!-- 输入框区域：带日历图标的边框 -->
                         <Border x:Name="PART_InputBorder"
                                 Height="36"
-                                Background="{DynamicResource InputBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}"
+                                Background="{DynamicResource ControlFillBrush}"
+                                BorderBrush="{DynamicResource ControlStrokeBrush}"
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource RadiusInput}"
                                 Cursor="Hand">
@@ -80,8 +80,8 @@
 
                             <Border UseLayoutRounding="True"
                                     Width="280"
-                                    Background="{DynamicResource PanelBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    Background="{DynamicResource OverlaySurfaceBrush}"
+                                    BorderBrush="{DynamicResource SurfaceStrokeBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{StaticResource RadiusOverlay}"
                                     SnapsToDevicePixels="True">
@@ -115,7 +115,7 @@
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -162,7 +162,7 @@
                                                         </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -206,7 +206,7 @@
                                                         </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -236,7 +236,7 @@
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -266,7 +266,7 @@
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NeutralHoverBrush}"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>

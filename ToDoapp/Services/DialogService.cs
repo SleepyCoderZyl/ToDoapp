@@ -55,14 +55,8 @@ public static class DialogService
             Owner = Application.Current.MainWindow
         };
 
-        var border = new Border
-        {
-            Background = (Brush)Application.Current.Resources["DialogBackgroundBrush"],
-            CornerRadius = new CornerRadius(8),
-            BorderBrush = (Brush)Application.Current.Resources["DialogBorderBrush"],
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(24)
-        };
+        var border = new Border { Padding = new Thickness(24) };
+        border.SetResourceReference(FrameworkElement.StyleProperty, "DialogFrameStyle");
 
         var contentGrid = new Grid();
         contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -91,7 +85,7 @@ public static class DialogService
         };
 
         string icon = "";
-        Brush iconColor = Brushes.Transparent;
+        string? iconBrushKey = null;
 
         switch (dialogType)
         {
@@ -100,38 +94,41 @@ public static class DialogService
                 break;
             case DialogType.Information:
                 icon = "\u2139";
-                iconColor = (Brush)Application.Current.Resources["DialogForegroundBrush"];
+                iconBrushKey = "DialogForegroundBrush";
                 break;
             case DialogType.Warning:
                 icon = "\u26A0";
-                iconColor = (Brush)Application.Current.Resources["WarningBrush"];
+                iconBrushKey = "WarningBrush";
                 break;
             case DialogType.Error:
                 icon = "\u2717";
-                iconColor = (Brush)Application.Current.Resources["DangerBrush"];
+                iconBrushKey = "DangerBrush";
                 break;
             case DialogType.Question:
                 icon = "?";
-                iconColor = (Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"];
+                iconBrushKey = "DialogSecondaryForegroundBrush";
                 break;
             case DialogType.Success:
                 icon = "\u2713";
-                iconColor = (Brush)Application.Current.Resources["PrimaryButtonBackgroundBrush"];
+                iconBrushKey = "PrimaryButtonBackgroundBrush";
                 break;
         }
 
         iconTextBlock.Text = icon;
-        iconTextBlock.Foreground = iconColor;
+        if (iconBrushKey is not null)
+        {
+            iconTextBlock.SetResourceReference(TextBlock.ForegroundProperty, iconBrushKey);
+        }
 
         var titleText = new TextBlock
         {
             Text = title,
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = (Brush)Application.Current.Resources["DialogForegroundBrush"],
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
+        titleText.SetResourceReference(TextBlock.ForegroundProperty, "DialogForegroundBrush");
 
         var titleCloseButton = new Button
         {
@@ -290,14 +287,8 @@ public static class DialogService
             Owner = Application.Current.MainWindow
         };
 
-        var border = new Border
-        {
-            Background = (System.Windows.Media.Brush)Application.Current.Resources["DialogBackgroundBrush"],
-            CornerRadius = new CornerRadius(8),
-            BorderBrush = (System.Windows.Media.Brush)Application.Current.Resources["DialogBorderBrush"],
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(24)
-        };
+        var border = new Border { Padding = new Thickness(24) };
+        border.SetResourceReference(FrameworkElement.StyleProperty, "DialogFrameStyle");
 
         var contentGrid = new Grid();
         contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -318,38 +309,38 @@ public static class DialogService
         };
 
         string icon;
-        System.Windows.Media.Brush iconColor;
+        string iconBrushKey;
 
         switch (dialogType)
         {
             case DialogType.Information:
                 icon = "\u2139";
-                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DialogForegroundBrush"];
+                iconBrushKey = "DialogForegroundBrush";
                 break;
             case DialogType.Warning:
                 icon = "\u26A0";
-                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["WarningBrush"];
+                iconBrushKey = "WarningBrush";
                 break;
             case DialogType.Error:
                 icon = "\u2717";
-                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DangerBrush"];
+                iconBrushKey = "DangerBrush";
                 break;
             case DialogType.Question:
                 icon = "?";
-                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"];
+                iconBrushKey = "DialogSecondaryForegroundBrush";
                 break;
             case DialogType.Success:
                 icon = "\u2713";
-                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["PrimaryButtonBackgroundBrush"];
+                iconBrushKey = "PrimaryButtonBackgroundBrush";
                 break;
             default:
                 icon = "\u2139";
-                iconColor = (System.Windows.Media.Brush)Application.Current.Resources["DialogForegroundBrush"];
+                iconBrushKey = "DialogForegroundBrush";
                 break;
         }
 
         iconTextBlock.Text = icon;
-        iconTextBlock.Foreground = iconColor;
+        iconTextBlock.SetResourceReference(TextBlock.ForegroundProperty, iconBrushKey);
         iconTextBlock.FontWeight = FontWeights.Bold;
 
         var titleText = new TextBlock
@@ -357,9 +348,9 @@ public static class DialogService
             Text = title,
             FontSize = 18,
             FontWeight = FontWeights.SemiBold,
-            Foreground = (System.Windows.Media.Brush)Application.Current.Resources["DialogForegroundBrush"],
             VerticalAlignment = VerticalAlignment.Center
         };
+        titleText.SetResourceReference(TextBlock.ForegroundProperty, "DialogForegroundBrush");
 
         titlePanel.Children.Add(iconTextBlock);
         titlePanel.Children.Add(titleText);
@@ -369,11 +360,11 @@ public static class DialogService
         {
             Text = message,
             FontSize = 14,
-            Foreground = (System.Windows.Media.Brush)Application.Current.Resources["DialogSecondaryForegroundBrush"],
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20),
             VerticalAlignment = VerticalAlignment.Center
         };
+        messageText.SetResourceReference(TextBlock.ForegroundProperty, "DialogSecondaryForegroundBrush");
         Grid.SetRow(messageText, 1);
 
         var buttonGrid = new Grid();
