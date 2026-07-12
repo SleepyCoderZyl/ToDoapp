@@ -29,12 +29,6 @@ public class SettingsService
     {
         _settingsFilePath = Path.GetFullPath(settingsFilePath);
         _settingsBackupFilePath = $"{_settingsFilePath}.bak";
-        var directoryPath = Path.GetDirectoryName(_settingsFilePath);
-        if (!string.IsNullOrWhiteSpace(directoryPath))
-        {
-            Directory.CreateDirectory(directoryPath);
-        }
-
         _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -126,6 +120,12 @@ public class SettingsService
         var tempFilePath = $"{_settingsFilePath}.tmp";
         try
         {
+            var directoryPath = Path.GetDirectoryName(_settingsFilePath);
+            if (!string.IsNullOrWhiteSpace(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
             _settings.LastUpdated = DateTime.Now;
             var json = JsonSerializer.Serialize(_settings, _jsonOptions);
             File.WriteAllText(tempFilePath, json);

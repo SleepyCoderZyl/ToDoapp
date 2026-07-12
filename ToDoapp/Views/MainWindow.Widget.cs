@@ -28,6 +28,31 @@ public partial class MainWindow
             var useDarkMode = ThemeService.Instance.IsDarkTheme ? 1 : 0;
             var cornerPreference = 2;
 
+            var windowStyle = MainWindowNativeMethods.GetWindowLong(
+                helper.Handle,
+                MainWindowNativeMethods.GWL_STYLE);
+            var normalizedWindowStyle = MainWindowNativeMethods.NormalizeMainWindowStyle(windowStyle);
+            MainWindowNativeMethods.SetWindowLong(
+                helper.Handle,
+                MainWindowNativeMethods.GWL_STYLE,
+                normalizedWindowStyle);
+            MainWindowNativeMethods.SetWindowPos(
+                helper.Handle,
+                IntPtr.Zero,
+                0,
+                0,
+                0,
+                0,
+                MainWindowNativeMethods.SWP_NOSIZE |
+                MainWindowNativeMethods.SWP_NOMOVE |
+                MainWindowNativeMethods.SWP_NOACTIVATE |
+                MainWindowNativeMethods.SWP_FRAMECHANGED);
+
+            var appliedWindowStyle = MainWindowNativeMethods.GetWindowLong(
+                helper.Handle,
+                MainWindowNativeMethods.GWL_STYLE);
+            System.Diagnostics.Debug.WriteLine($"主窗口原生样式: 0x{appliedWindowStyle:X8}");
+
             MainWindowNativeMethods.DwmSetWindowAttribute(
                 helper.Handle,
                 darkModeAttribute,
@@ -411,13 +436,6 @@ public partial class MainWindow
 
     private void UpdateWindowFrameState()
     {
-        if (WindowState == WindowState.Maximized)
-        {
-            MainBorder.CornerRadius = new CornerRadius(0);
-            MainBorder.Margin = new Thickness(8);
-            return;
-        }
-
         MainBorder.CornerRadius = new CornerRadius(8);
         MainBorder.Margin = new Thickness(0);
     }

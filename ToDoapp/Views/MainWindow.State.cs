@@ -9,10 +9,8 @@ namespace ToDoapp.Views;
 
 public partial class MainWindow
 {
-    private void InitializeData()
+    private void InitializeEmptyState()
     {
-        _viewModel.InitializeData();
-
         if (WidgetView != null)
         {
             WidgetView.TaskChecked += WidgetView_TaskChecked;
@@ -20,6 +18,13 @@ public partial class MainWindow
             WidgetView.WidgetMouseLeftButtonDown += WidgetView_WidgetMouseLeftButtonDown;
         }
 
+        BindTaskCollections();
+        UpdateWidgetTasks();
+    }
+
+    private async Task InitializeDataAsync(CancellationToken cancellationToken)
+    {
+        await _viewModel.InitializeDataAsync(cancellationToken);
         BindTaskCollections();
         UpdateWidgetTasks();
     }

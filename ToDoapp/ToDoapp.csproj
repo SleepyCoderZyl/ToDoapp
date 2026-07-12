@@ -21,6 +21,12 @@
     <Description>一个简洁的待办事项管理工具</Description>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(RuntimeIdentifier)' == 'win-x64'">
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishSingleFile>false</PublishSingleFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
   </ItemGroup>

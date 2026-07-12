@@ -76,9 +76,7 @@ public partial class MainWindow
     {
         if (e.ClickCount == 2 && ResizeMode == ResizeMode.CanResize)
         {
-            WindowState = WindowState == WindowState.Maximized
-                ? WindowState.Normal
-                : WindowState.Maximized;
+            e.Handled = true;
             return;
         }
 
@@ -90,7 +88,7 @@ public partial class MainWindow
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
-        WindowState = WindowState.Minimized;
+        SystemCommands.MinimizeWindow(this);
     }
 
     private void ClearDateButton_Click(object sender, RoutedEventArgs e)

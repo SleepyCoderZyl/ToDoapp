@@ -11,8 +11,8 @@
         Title="待办便签" Height="700" Width="420"
         MinWidth="420" MaxWidth="420" MinHeight="700"
         WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="{DynamicResource AppBaseSurfaceBrush}"
         Topmost="False"
         ResizeMode="CanResize"
         FontSize="14"
@@ -37,23 +37,7 @@
 
     </Window.Resources>
 
-    <Window.Triggers>
-        <EventTrigger RoutedEvent="Window.Loaded">
-            <BeginStoryboard>
-                <Storyboard>
-                    <DoubleAnimation Storyboard.TargetName="MainBorder"
-                                     Storyboard.TargetProperty="Opacity"
-                                     From="0" To="1" Duration="0:0:0.3">
-                        <DoubleAnimation.EasingFunction>
-                            <CubicEase EasingMode="EaseOut"/>
-                        </DoubleAnimation.EasingFunction>
-                    </DoubleAnimation>
-                </Storyboard>
-            </BeginStoryboard>
-        </EventTrigger>
-    </Window.Triggers>
-
-    <Border x:Name="MainBorder" Opacity="0" Style="{StaticResource AppWindowFrameStyle}">
+    <Border x:Name="MainBorder" BorderThickness="0" Style="{StaticResource AppWindowFrameStyle}">
         <Grid>
             <Grid x:Name="MainInterfaceGrid">
                 <Grid.RowDefinitions>

@@ -18,6 +18,7 @@ public partial class QuickAddWindow : Window
     public QuickAddWindow(ITodoService todoService, ObservableCollection<TodoItem> todoItems)
     {
         InitializeComponent();
+        NativeWindowAppearance.ConfigureDialog(this, "DialogBaseSurfaceBrush");
         _todoService = todoService;
         _todoItems = todoItems;
         

@@ -15,6 +15,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        StartupDiagnostics.Mark("OnStartup entered");
         _mutex = new Mutex(true, "ToDoApp_SingleInstance", out bool isNewInstance);
         _ownsMutex = isNewInstance;
 
@@ -26,11 +27,9 @@ public partial class App : System.Windows.Application
         }
 
         ThemeService.Instance.Initialize();
+        StartupDiagnostics.Mark("Theme initialized");
 
         base.OnStartup(e);
-
-        StartupService.Instance.SyncWithSettings();
-        _ = WarmupHolidayCalendarAsync();
 
         // 构造并显示主窗口
         var settings = SettingsService.Instance.Settings;
@@ -38,6 +37,7 @@ public partial class App : System.Windows.Application
         bool shouldStartInWidgetMode = isAutoStartLaunch && settings.StartInWidgetMode;
 
         var mainWindow = new MainWindow();
+        StartupDiagnostics.Mark("MainWindow constructed");
         MainWindow = mainWindow;
 
         if (shouldStartInWidgetMode)
@@ -49,9 +49,28 @@ public partial class App : System.Windows.Application
         {
             mainWindow.ShowActivated = false;
         }
+        EventHandler? postRenderHandler = null;
+        postRenderHandler = async (_, _) =>
+        {
+            mainWindow.ContentRendered -= postRenderHandler;
+            try
+            {
+                await Task.Yield();
+                await Task.Run(StartupService.Instance.SyncWithSettings);
+                StartupDiagnostics.Mark("Startup registry synchronized");
+                await WarmupHolidayCalendarAsync();
+                StartupDiagnostics.Mark("Background initialization completed");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"后台启动任务失败: {ex.Message}");
+            }
+        };
+        mainWindow.ContentRendered += postRenderHandler;
         mainWindow.Show();
+        StartupDiagnostics.Mark("MainWindow.Show returned");
 
-        // 正常模式：淡入完成后激活窗口
+        // 正常模式：首帧完成后激活窗口
         if (!shouldStartInWidgetMode)
         {
             mainWindow.Dispatcher.BeginInvoke(new Action(() => mainWindow.Activate()),
@@ -101,7 +120,7 @@ public partial class App : System.Windows.Application
     {
         try
         {
-            await HolidayCalendarService.Instance.WarmupAsync(DateTime.Today);
+            await Task.Run(() => HolidayCalendarService.Instance.WarmupAsync(DateTime.Today));
         }
         catch (Exception ex)
         {

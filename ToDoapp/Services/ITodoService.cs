@@ -7,6 +7,11 @@ public interface ITodoService
 {
     TodoLoadResult LoadTodos();
 
+    /// <summary>
+    /// 在后台加载待办数据，避免阻塞 UI 线程。
+    /// </summary>
+    Task<TodoLoadResult> LoadTodosAsync(CancellationToken cancellationToken);
+
     TodoSaveResult SaveTodos(IEnumerable<TodoItem> todos);
 
     ObservableCollection<TodoItem> LoadTodosFromFile(string filePath);

@@ -37,6 +37,7 @@
                     <MultiDataTrigger.Conditions>
                         <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=IsMousePassThroughEnabled}" Value="False"/>
                         <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True"/>
+                        <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=AreAnimationsEnabled}" Value="True"/>
                     </MultiDataTrigger.Conditions>
                     <Setter Property="IsHitTestVisible" Value="True"/>
                     <MultiDataTrigger.EnterActions>
@@ -80,6 +81,20 @@
                         </BeginStoryboard>
                     </MultiDataTrigger.ExitActions>
                 </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=IsMousePassThroughEnabled}" Value="False"/>
+                        <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True"/>
+                        <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=AreAnimationsEnabled}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="IsHitTestVisible" Value="True"/>
+                    <Setter Property="Opacity" Value="1"/>
+                    <Setter Property="RenderTransform">
+                        <Setter.Value>
+                            <TranslateTransform X="0"/>
+                        </Setter.Value>
+                    </Setter>
+                </MultiDataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -95,6 +110,7 @@
                     <MultiDataTrigger.Conditions>
                         <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=IsMousePassThroughEnabled}" Value="False"/>
                         <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True"/>
+                        <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=AreAnimationsEnabled}" Value="True"/>
                     </MultiDataTrigger.Conditions>
                     <MultiDataTrigger.EnterActions>
                         <BeginStoryboard>
@@ -122,6 +138,18 @@
                             </Storyboard>
                         </BeginStoryboard>
                     </MultiDataTrigger.ExitActions>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=IsMousePassThroughEnabled}" Value="False"/>
+                        <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True"/>
+                        <Condition Binding="{Binding Source={x:Reference WidgetViewRoot}, Path=AreAnimationsEnabled}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="RenderTransform">
+                        <Setter.Value>
+                            <TranslateTransform X="24"/>
+                        </Setter.Value>
+                    </Setter>
                 </MultiDataTrigger>
             </Style.Triggers>
         </Style>

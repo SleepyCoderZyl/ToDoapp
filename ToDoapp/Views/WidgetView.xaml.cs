@@ -12,6 +12,8 @@ namespace ToDoapp.Views;
 
 public partial class WidgetView : UserControl
 {
+    public bool AreAnimationsEnabled => SystemParameters.ClientAreaAnimation;
+
     public event EventHandler<TodoItem>? TaskChecked;
     public event EventHandler<TodoItem>? TaskDeleted;
     public event EventHandler? WidgetMouseLeftButtonDown;
@@ -175,6 +177,12 @@ public partial class WidgetView : UserControl
 
     private void PlayAnimationOnListBoxItem(ListBoxItem listBoxItem, Action onCompleted)
     {
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            onCompleted();
+            return;
+        }
+
         if (Application.Current.TryFindResource("TaskActionAnimation") is Storyboard storyboard)
         {
             try

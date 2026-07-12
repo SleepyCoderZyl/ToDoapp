@@ -181,6 +181,12 @@ public class MainWindowViewModelTests
             return TodoLoadResult.Success([]);
         }
 
+        public Task<TodoLoadResult> LoadTodosAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(LoadTodos());
+        }
+
         public TodoSaveResult SaveTodos(IEnumerable<TodoItem> todos)
         {
             SaveCount++;

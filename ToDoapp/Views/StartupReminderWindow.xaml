@@ -11,8 +11,8 @@
         MinHeight="280"
         SizeToContent="Height"
         WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="{DynamicResource DialogBaseSurfaceBrush}"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="False"
@@ -30,7 +30,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
 
-    <Border Style="{StaticResource DialogFrameStyle}">
+    <Border BorderThickness="0" Style="{StaticResource DialogFrameStyle}">
 
         <Grid Margin="0">
             <Grid.RowDefinitions>

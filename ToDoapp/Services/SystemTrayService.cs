@@ -38,10 +38,23 @@ public class SystemTrayService : IDisposable
         _actionHandler = actionHandler;
         _hostWindow = actionHandler.TrayHostWindow;
         _isInitialized = false;
-        _hostWindow.SourceInitialized += MainWindow_SourceInitialized;
+        if (new WindowInteropHelper(_hostWindow).Handle != IntPtr.Zero)
+        {
+            InitializeForHostWindow();
+        }
+        else
+        {
+            _hostWindow.SourceInitialized += MainWindow_SourceInitialized;
+        }
     }
 
     private void MainWindow_SourceInitialized(object? sender, EventArgs e)
+    {
+        _hostWindow.SourceInitialized -= MainWindow_SourceInitialized;
+        InitializeForHostWindow();
+    }
+
+    private void InitializeForHostWindow()
     {
         try
         {

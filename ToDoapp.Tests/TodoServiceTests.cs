@@ -31,6 +31,26 @@ public class TodoServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadTodosAsync_MissingFile_ReturnsSuccessWithEmptyCollection()
+    {
+        var result = await _todoService.LoadTodosAsync(CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.IsRecoveredFromBackup);
+        Assert.Empty(result.Todos);
+    }
+
+    [Fact]
+    public async Task LoadTodosAsync_CanceledToken_ThrowsOperationCanceledException()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _todoService.LoadTodosAsync(cancellation.Token));
+    }
+
+    [Fact]
     public void LoadTodos_CorruptedPrimaryWithBackup_RestoresLatestBackup()
     {
         var validTodo = new TodoItem
@@ -65,11 +85,46 @@ public class TodoServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadTodosAsync_CorruptedPrimaryWithBackup_RestoresLatestBackup()
+    {
+        var todo = new TodoItem
+        {
+            Title = "异步恢复测试",
+            CreatedDate = new DateTime(2026, 7, 12, 9, 0, 0)
+        };
+        Assert.True(_todoService.SaveTodos([todo]).IsSuccess);
+
+        todo.IsCompleted = true;
+        todo.CompletedDate = new DateTime(2026, 7, 12, 10, 0, 0);
+        Assert.True(_todoService.SaveTodos([todo]).IsSuccess);
+        File.WriteAllText(Path.Combine(_testDirectory, "todos.json"), "{ invalid json");
+
+        var result = await _todoService.LoadTodosAsync(CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.IsRecoveredFromBackup);
+        Assert.Single(result.Todos);
+        Assert.False(result.Todos[0].IsCompleted);
+    }
+
+    [Fact]
     public void LoadTodos_CorruptedPrimaryWithoutBackup_ReturnsFailure()
     {
         File.WriteAllText(Path.Combine(_testDirectory, "todos.json"), "{ invalid json");
 
         var result = _todoService.LoadTodos();
+
+        Assert.False(result.IsSuccess);
+        Assert.Empty(result.Todos);
+        Assert.Contains("待办数据解析失败", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task LoadTodosAsync_CorruptedPrimaryWithoutBackup_ReturnsFailure()
+    {
+        File.WriteAllText(Path.Combine(_testDirectory, "todos.json"), "{ invalid json");
+
+        var result = await _todoService.LoadTodosAsync(CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Empty(result.Todos);

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using ToDoapp.Services;
 using ToDoapp.ViewModels;
 using ToDoapp.ViewModels.Settings;
 
@@ -13,6 +14,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        NativeWindowAppearance.ConfigureDialog(this, "AppBaseSurfaceBrush");
 
         _viewModel = new SettingsViewModel();
         DataContext = _viewModel;

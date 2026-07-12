@@ -11,8 +11,8 @@
         Title="设置"
         Height="580" Width="700"
         WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="{DynamicResource AppBaseSurfaceBrush}"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
@@ -40,7 +40,7 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border Style="{StaticResource AppWindowFrameStyle}">
+    <Border BorderThickness="0" Style="{StaticResource AppWindowFrameStyle}">
 
         <Grid>
             <Grid.RowDefinitions>

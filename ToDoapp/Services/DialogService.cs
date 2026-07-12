@@ -46,16 +46,16 @@ public static class DialogService
             Width = dialogWidth ?? 380,
             SizeToContent = SizeToContent.Height,
             WindowStyle = WindowStyle.None,
-            AllowsTransparency = true,
-            Background = Brushes.Transparent,
+            AllowsTransparency = false,
             ResizeMode = ResizeMode.NoResize,
             WindowStartupLocation = WindowStartupLocation.CenterScreen,
             Topmost = true,
             ShowInTaskbar = false,
             Owner = Application.Current.MainWindow
         };
+        NativeWindowAppearance.ConfigureDialog(dialog, "DialogBaseSurfaceBrush");
 
-        var border = new Border { Padding = new Thickness(24) };
+        var border = new Border { Padding = new Thickness(24), BorderThickness = new Thickness(0) };
         border.SetResourceReference(FrameworkElement.StyleProperty, "DialogFrameStyle");
 
         var contentGrid = new Grid();
@@ -278,16 +278,16 @@ public static class DialogService
             Width = 380,
             Height = 200,
             WindowStyle = WindowStyle.None,
-            AllowsTransparency = true,
-            Background = Brushes.Transparent,
+            AllowsTransparency = false,
             ResizeMode = ResizeMode.NoResize,
             WindowStartupLocation = WindowStartupLocation.CenterScreen,
             Topmost = true,
             ShowInTaskbar = false,
             Owner = Application.Current.MainWindow
         };
+        NativeWindowAppearance.ConfigureDialog(dialog, "DialogBaseSurfaceBrush");
 
-        var border = new Border { Padding = new Thickness(24) };
+        var border = new Border { Padding = new Thickness(24), BorderThickness = new Thickness(0) };
         border.SetResourceReference(FrameworkElement.StyleProperty, "DialogFrameStyle");
 
         var contentGrid = new Grid();

@@ -11,6 +11,7 @@ public partial class StartupReminderWindow : Window
     public StartupReminderWindow(MainWindow mainWindow, ReminderSnapshot snapshot)
     {
         InitializeComponent();
+        NativeWindowAppearance.ConfigureDialog(this, "DialogBaseSurfaceBrush");
         _mainWindow = mainWindow;
         DataContext = snapshot;
     }

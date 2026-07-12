@@ -70,10 +70,8 @@ public class TodoService : ITodoService
             appFolder = Path.GetFullPath(dataDirectoryOverride);
         }
 
-        Directory.CreateDirectory(appFolder);
         _dataFilePath = Path.Combine(appFolder, "todos.json");
         _backupDirectoryPath = Path.Combine(appFolder, "backups");
-        Directory.CreateDirectory(_backupDirectoryPath);
         _maxBackupFiles = maxBackupFiles;
         _backupInterval = resolvedBackupInterval;
 
@@ -118,6 +116,16 @@ public class TodoService : ITodoService
         }
     }
 
+    /// <inheritdoc />
+    public async Task<TodoLoadResult> LoadTodosAsync(CancellationToken cancellationToken)
+    {
+        return await Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return LoadTodos();
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// 保存待办事项列表
     /// </summary>
@@ -128,6 +136,7 @@ public class TodoService : ITodoService
 
         try
         {
+            EnsureStorageDirectories();
             var storageItems = (todos ?? Enumerable.Empty<TodoItem>())
                 .Select(TodoStorageItem.FromTodoItem)
                 .ToList();
@@ -182,6 +191,17 @@ public class TodoService : ITodoService
                 }
             }
         }
+    }
+
+    private void EnsureStorageDirectories()
+    {
+        var dataDirectory = Path.GetDirectoryName(_dataFilePath);
+        if (!string.IsNullOrWhiteSpace(dataDirectory))
+        {
+            Directory.CreateDirectory(dataDirectory);
+        }
+
+        Directory.CreateDirectory(_backupDirectoryPath);
     }
 
     /// <summary>

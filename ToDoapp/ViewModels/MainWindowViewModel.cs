@@ -118,7 +118,19 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
     public void InitializeData()
     {
-        var loadResult = TodoService.LoadTodos();
+        ApplyLoadResult(TodoService.LoadTodos());
+        CheckAndAutoArchiveCompletedTasks(SettingsService.Instance.Settings.AutoArchiveDays);
+    }
+
+    public async Task InitializeDataAsync(CancellationToken cancellationToken)
+    {
+        var loadResult = await TodoService.LoadTodosAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        ApplyLoadResult(loadResult);
+    }
+
+    private void ApplyLoadResult(TodoLoadResult loadResult)
+    {
         CanPersistData = loadResult.IsSuccess;
         ReplaceTodoItems(loadResult.Todos);
 
@@ -137,7 +149,6 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
         RefreshTaskCollections();
         UpdateTaskCount();
-        CheckAndAutoArchiveCompletedTasks(SettingsService.Instance.Settings.AutoArchiveDays);
     }
 
     public TodoItem? AddSmartTask(string input, DateTime? selectedDueDate)

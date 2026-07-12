@@ -11,7 +11,6 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Resources/Themes/DarkTheme.xaml"/>
                 <ResourceDictionary Source="Resources/ModernStyles.xaml"/>
                 <ResourceDictionary Source="Resources/IconGeometries.xaml"/>
                 <ResourceDictionary Source="Resources/AppDialogStyles.xaml"/>
