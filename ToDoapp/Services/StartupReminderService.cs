@@ -30,9 +30,15 @@ public class StartupReminderService
         return BuildStartupSnapshot(loadResult.IsSuccess ? loadResult.Todos : [], _settingsAccessor(), now);
     }
 
-    public ReminderSnapshot CreateScheduledSnapshot(DateTime now)
+    /// <summary>
+    /// 创建当前补弹窗口内到期的每日定时提醒快照。
+    /// </summary>
+    /// <param name="now">本次检查使用的当前本地时间。</param>
+    /// <param name="earliestTriggerTime">本次允许补弹的最早触发时间，包含边界。</param>
+    /// <returns>每日定时提醒快照。</returns>
+    public ReminderSnapshot CreateScheduledSnapshot(DateTime now, DateTime earliestTriggerTime)
     {
-        return BuildScheduledSnapshot(_settingsAccessor(), now);
+        return BuildScheduledSnapshot(_settingsAccessor(), now, earliestTriggerTime);
     }
 
     public static ReminderSnapshot BuildTodoSnapshot(TodoItem todoItem, DateTime now)
@@ -68,21 +74,39 @@ public class StartupReminderService
         return BuildSnapshot(ReminderKind.Startup, GetEnabledReminderTexts(settings.StartupReminderItems), now);
     }
 
-    public static ReminderSnapshot BuildScheduledSnapshot(AppSettings settings, DateTime now)
+    /// <summary>
+    /// 根据设置构建当前补弹窗口内到期的每日定时提醒快照。
+    /// </summary>
+    public static ReminderSnapshot BuildScheduledSnapshot(
+        AppSettings settings,
+        DateTime now,
+        DateTime earliestTriggerTime)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        var dueReminderTexts = GetDueScheduledReminderEntries(settings, now)
+        var dueReminderTexts = GetDueScheduledReminderEntries(settings, now, earliestTriggerTime)
             .Select(item => item.Text.Trim());
         return BuildSnapshot(ReminderKind.Scheduled, dueReminderTexts, now);
     }
 
-    public static bool ShouldShowScheduledReminder(AppSettings settings, DateTime now)
+    /// <summary>
+    /// 判断当前补弹窗口内是否存在到期的每日定时提醒。
+    /// </summary>
+    public static bool ShouldShowScheduledReminder(
+        AppSettings settings,
+        DateTime now,
+        DateTime earliestTriggerTime)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        return GetDueScheduledReminderEntries(settings, now).Any();
+        return GetDueScheduledReminderEntries(settings, now, earliestTriggerTime).Any();
     }
 
-    public static IReadOnlyList<StartupReminderEntry> GetDueScheduledReminderEntries(AppSettings settings, DateTime now)
+    /// <summary>
+    /// 获取触发时间位于指定下限与当前时间之间、且今天尚未显示的每日定时提醒。
+    /// </summary>
+    public static IReadOnlyList<StartupReminderEntry> GetDueScheduledReminderEntries(
+        AppSettings settings,
+        DateTime now,
+        DateTime earliestTriggerTime)
     {
         ArgumentNullException.ThrowIfNull(settings);
         if (!settings.ShowScheduledReminderDaily)
@@ -92,7 +116,7 @@ public class StartupReminderService
 
         var today = now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         return (settings.ScheduledReminderItems ?? [])
-            .Where(item => IsScheduledReminderDue(item, settings, now, today))
+            .Where(item => IsScheduledReminderDue(item, settings, now, earliestTriggerTime, today))
             .ToList();
     }
 
@@ -145,7 +169,12 @@ public class StartupReminderService
         };
     }
 
-    private static bool IsScheduledReminderDue(StartupReminderEntry item, AppSettings settings, DateTime now, string today)
+    private static bool IsScheduledReminderDue(
+        StartupReminderEntry item,
+        AppSettings settings,
+        DateTime now,
+        DateTime earliestTriggerTime,
+        string today)
     {
         if (!item.IsEnabled || string.IsNullOrWhiteSpace(item.Text))
         {
@@ -165,7 +194,8 @@ public class StartupReminderService
             return false;
         }
 
-        return TimeOnly.FromDateTime(now) >= scheduledTime;
+        var scheduledAt = now.Date.Add(scheduledTime.ToTimeSpan());
+        return scheduledAt >= earliestTriggerTime && now >= scheduledAt;
     }
 
     private static IEnumerable<string> GetEnabledReminderTexts(IEnumerable<StartupReminderEntry>? items)

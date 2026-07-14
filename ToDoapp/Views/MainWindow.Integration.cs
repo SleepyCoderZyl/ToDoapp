@@ -12,24 +12,30 @@ namespace ToDoapp.Views;
 
 public partial class MainWindow
 {
+    private static readonly TimeSpan ReminderCatchUpWindow = TimeSpan.FromMinutes(1);
     private readonly TodoReminderService _todoReminderService = new();
     private StartupReminderWindow? _activeTodoReminderWindow;
+    private DateTime _earliestReminderTriggerTime;
+    private DateTime _lastReminderCheckTime;
 
     private void InitializeTimer()
     {
+        var now = DateTime.Now;
+        UpdateReminderEligibilityWindow(now);
         _mainTimer.Interval = TimeSpan.FromSeconds(30);
         _mainTimer.Tick += MainTimer_Tick;
         _mainTimer.Start();
 
         CheckOverdueTasks();
         CleanupExpiredTrashItems();
-        CheckScheduledReminder();
-        CheckTodoReminders();
+        CheckScheduledReminder(now);
+        CheckTodoReminders(now);
     }
 
     private void MainTimer_Tick(object? sender, EventArgs e)
     {
         var now = DateTime.Now;
+        UpdateReminderEligibilityWindow(now);
 
         if (now.Date != _lastTimeSensitiveRefreshDate)
         {
@@ -61,8 +67,32 @@ public partial class MainWindow
             _lastAutoArchiveCheckTime = now;
         }
 
-        CheckScheduledReminder();
-        CheckTodoReminders();
+        CheckScheduledReminder(now);
+        CheckTodoReminders(now);
+    }
+
+    private void UpdateReminderEligibilityWindow(DateTime now)
+    {
+        _earliestReminderTriggerTime = CalculateEarliestReminderTriggerTime(
+            now,
+            _lastReminderCheckTime,
+            _earliestReminderTriggerTime);
+        _lastReminderCheckTime = now;
+    }
+
+    internal static DateTime CalculateEarliestReminderTriggerTime(
+        DateTime now,
+        DateTime lastReminderCheckTime,
+        DateTime currentEarliestTriggerTime)
+    {
+        if (lastReminderCheckTime == default ||
+            now < lastReminderCheckTime ||
+            now - lastReminderCheckTime > ReminderCatchUpWindow)
+        {
+            return now - ReminderCatchUpWindow;
+        }
+
+        return currentEarliestTriggerTime;
     }
 
     private void RefreshTimeSensitiveTaskProperties()
@@ -112,17 +142,20 @@ public partial class MainWindow
         _systemTrayService?.ShowNotification("待办事项提醒", message);
     }
 
-    private void CheckScheduledReminder()
+    private void CheckScheduledReminder(DateTime now)
     {
         var settings = SettingsService.Instance.Settings;
-        var now = DateTime.Now;
-        var dueReminderEntries = StartupReminderService.GetDueScheduledReminderEntries(settings, now);
+        var dueReminderEntries = StartupReminderService.GetDueScheduledReminderEntries(
+            settings,
+            now,
+            _earliestReminderTriggerTime);
         if (dueReminderEntries.Count == 0)
         {
             return;
         }
 
-        var snapshot = new StartupReminderService(_todoService, () => settings).CreateScheduledSnapshot(now);
+        var snapshot = new StartupReminderService(_todoService, () => settings)
+            .CreateScheduledSnapshot(now, _earliestReminderTriggerTime);
         if (!snapshot.HasContent)
         {
             return;
@@ -135,14 +168,17 @@ public partial class MainWindow
         reminderWindow.ShowDialog();
     }
 
-    private void CheckTodoReminders()
+    private void CheckTodoReminders(DateTime now)
     {
         if (!IsLoaded || _activeTodoReminderWindow is { IsVisible: true })
         {
             return;
         }
 
-        var matches = _todoReminderService.Scan(_viewModel.TodoItems, DateTime.Now);
+        var matches = _todoReminderService.Scan(
+            _viewModel.TodoItems,
+            now,
+            _earliestReminderTriggerTime);
         if (matches.Count == 0)
         {
             return;

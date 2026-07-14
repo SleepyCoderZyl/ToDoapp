@@ -51,7 +51,10 @@ public class StartupReminderServiceTests
             ]
         };
 
-        var snapshot = StartupReminderService.BuildScheduledSnapshot(settings, new DateTime(2026, 4, 4, 18, 30, 0));
+        var snapshot = StartupReminderService.BuildScheduledSnapshot(
+            settings,
+            new DateTime(2026, 4, 4, 18, 30, 0),
+            DateTime.MinValue);
 
         Assert.Equal(ReminderKind.Scheduled, snapshot.ReminderKind);
         Assert.Equal(["喝水", "站起来活动一下"], snapshot.CustomReminders);
@@ -70,14 +73,97 @@ public class StartupReminderServiceTests
             ]
         };
 
-        Assert.True(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 5)));
-        Assert.True(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 1, 0)));
+        Assert.True(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 9, 0, 5),
+            DateTime.MinValue));
+        Assert.True(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 9, 1, 0),
+            DateTime.MinValue));
 
         settings.ScheduledReminderItems[0].LastScheduledReminderDate = StartupReminderService.GetScheduledReminderDateToken(new DateTime(2026, 4, 4));
-        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 35)));
+        Assert.False(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 9, 0, 35),
+            DateTime.MinValue));
 
         settings.ScheduledReminderItems[0].LastScheduledReminderDate = null;
-        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 8, 59, 59)));
+        Assert.False(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 8, 59, 59),
+            DateTime.MinValue));
+    }
+
+    [Fact]
+    public void ShouldShowScheduledReminder_WhenThirtySecondsLate_ReturnsTrue()
+    {
+        var settings = CreateScheduledSettings("09:00");
+        var now = new DateTime(2026, 4, 4, 9, 0, 30);
+
+        var shouldShow = StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            now,
+            now.AddMinutes(-1));
+
+        Assert.True(shouldShow);
+    }
+
+    [Fact]
+    public void ShouldShowScheduledReminder_WhenScheduledTimeOlderThanEarliest_ReturnsFalse()
+    {
+        var settings = CreateScheduledSettings("09:00");
+        var now = new DateTime(2026, 4, 4, 12, 0, 0);
+
+        var shouldShow = StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            now,
+            now.AddMinutes(-1));
+
+        Assert.False(shouldShow);
+    }
+
+    [Fact]
+    public void ShouldShowScheduledReminder_WhenScheduledTimeEqualsEarliest_ReturnsTrue()
+    {
+        var settings = CreateScheduledSettings("09:00");
+        var now = new DateTime(2026, 4, 4, 9, 1, 0);
+
+        var shouldShow = StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            now,
+            new DateTime(2026, 4, 4, 9, 0, 0));
+
+        Assert.True(shouldShow);
+    }
+
+    [Fact]
+    public void ShouldShowScheduledReminder_WhenEligibleBeforeQueueDelay_ReturnsTrue()
+    {
+        var settings = CreateScheduledSettings("09:00");
+        var now = new DateTime(2026, 4, 4, 9, 5, 0);
+
+        var shouldShow = StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            now,
+            new DateTime(2026, 4, 4, 8, 59, 0));
+
+        Assert.True(shouldShow);
+    }
+
+    [Fact]
+    public void ShouldShowScheduledReminder_OnNextDayAfterPreviousReminder_ReturnsTrue()
+    {
+        var settings = CreateScheduledSettings("09:00");
+        settings.ScheduledReminderItems[0].LastScheduledReminderDate = "2026-04-04";
+        var now = new DateTime(2026, 4, 5, 9, 0, 0);
+
+        var shouldShow = StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            now,
+            new DateTime(2026, 4, 4, 12, 0, 0));
+
+        Assert.True(shouldShow);
     }
 
     [Fact]
@@ -92,19 +178,31 @@ public class StartupReminderServiceTests
             ]
         };
 
-        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 0)));
+        Assert.False(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 9, 0, 0),
+            DateTime.MinValue));
 
         settings.ShowScheduledReminderDaily = true;
         settings.ScheduledReminderItems[0].IsEnabled = false;
-        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 0)));
+        Assert.False(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 9, 0, 0),
+            DateTime.MinValue));
 
         settings.ScheduledReminderItems[0].IsEnabled = true;
         settings.ScheduledReminderItems[0].Text = " ";
-        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 0)));
+        Assert.False(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 9, 0, 0),
+            DateTime.MinValue));
 
         settings.ScheduledReminderItems[0].Text = "开会";
         settings.ScheduledReminderItems[0].ScheduledTime = "invalid";
-        Assert.False(StartupReminderService.ShouldShowScheduledReminder(settings, new DateTime(2026, 4, 4, 9, 0, 0)));
+        Assert.False(StartupReminderService.ShouldShowScheduledReminder(
+            settings,
+            new DateTime(2026, 4, 4, 9, 0, 0),
+            DateTime.MinValue));
     }
 
     [Fact]
@@ -120,13 +218,19 @@ public class StartupReminderServiceTests
             ]
         };
 
-        var morningEntries = StartupReminderService.GetDueScheduledReminderEntries(settings, new DateTime(2026, 4, 4, 9, 0, 0));
+        var morningEntries = StartupReminderService.GetDueScheduledReminderEntries(
+            settings,
+            new DateTime(2026, 4, 4, 9, 0, 0),
+            DateTime.MinValue);
         Assert.Single(morningEntries);
         Assert.Equal("早会", morningEntries[0].Text);
 
         StartupReminderService.MarkScheduledRemindersShown(morningEntries, new DateTime(2026, 4, 4, 9, 0, 0));
 
-        var eveningEntries = StartupReminderService.GetDueScheduledReminderEntries(settings, new DateTime(2026, 4, 4, 18, 30, 0));
+        var eveningEntries = StartupReminderService.GetDueScheduledReminderEntries(
+            settings,
+            new DateTime(2026, 4, 4, 18, 30, 0),
+            DateTime.MinValue);
         Assert.Single(eveningEntries);
         Assert.Equal("日报", eveningEntries[0].Text);
     }
@@ -144,8 +248,28 @@ public class StartupReminderServiceTests
             ]
         };
 
-        var snapshot = StartupReminderService.BuildScheduledSnapshot(settings, new DateTime(2026, 4, 4, 10, 15, 30));
+        var snapshot = StartupReminderService.BuildScheduledSnapshot(
+            settings,
+            new DateTime(2026, 4, 4, 10, 15, 30),
+            DateTime.MinValue);
 
         Assert.Equal(["喝水", "活动一下"], snapshot.CustomReminders);
+    }
+
+    private static AppSettings CreateScheduledSettings(string scheduledTime)
+    {
+        return new AppSettings
+        {
+            ShowScheduledReminderDaily = true,
+            ScheduledReminderItems =
+            [
+                new StartupReminderEntry
+                {
+                    Text = "定时事项",
+                    IsEnabled = true,
+                    ScheduledTime = scheduledTime
+                }
+            ]
+        };
     }
 }

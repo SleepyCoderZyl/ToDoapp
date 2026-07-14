@@ -10,7 +10,17 @@ namespace ToDoapp.Services;
 /// </summary>
 public class TodoReminderService
 {
-    public IReadOnlyList<TodoReminderMatch> Scan(IEnumerable<TodoItem> todos, DateTime now)
+    /// <summary>
+    /// 查找触发时间位于指定下限与当前时间之间、且尚未显示的待办提醒。
+    /// </summary>
+    /// <param name="todos">要扫描的待办集合。</param>
+    /// <param name="now">本次扫描使用的当前本地时间。</param>
+    /// <param name="earliestTriggerTime">本次允许补弹的最早触发时间，包含边界。</param>
+    /// <returns>当前应显示的待办提醒。</returns>
+    public IReadOnlyList<TodoReminderMatch> Scan(
+        IEnumerable<TodoItem> todos,
+        DateTime now,
+        DateTime earliestTriggerTime)
     {
         ArgumentNullException.ThrowIfNull(todos);
         var matches = new List<TodoReminderMatch>();
@@ -37,7 +47,7 @@ public class TodoReminderService
                 continue;
             }
 
-            if (now < trigger.Value)
+            if (trigger.Value < earliestTriggerTime || now < trigger.Value)
             {
                 continue;
             }
